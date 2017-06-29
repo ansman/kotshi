@@ -1,0 +1,20 @@
+apply plugin: 'org.jetbrains.dokka-android'
+
+dokka {
+    outputFormat = 'javadoc'
+    outputDirectory = "$buildDir/javadoc"
+
+    linkMapping {
+        dir = "src/main/kotlin"
+        url = "https://github.com/ansman/kotshi/api/src/main/kotlin"
+        suffix = "#L"
+    }
+}
+
+dependencies {
+    compile libraries.kotlin
+    compile libraries.moshi
+}
+
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')

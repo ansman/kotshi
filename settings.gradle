@@ -1,0 +1,5 @@
+rootProject.name = 'kotshi'
+include 'compiler'
+include 'api'
+include 'tests'
+

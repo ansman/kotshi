@@ -1,0 +1,55 @@
+subprojects { project ->
+    group = GROUP
+    version = VERSION_NAME
+}
+
+buildscript {
+    ext.kotlin_version = '1.1.3'
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
+        classpath 'org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.8'
+    }
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'kotlin'
+    apply plugin: 'idea'
+
+    repositories {
+        mavenCentral()
+    }
+
+    idea {
+        module {
+            sourceDirs += file('build/generated/source/kapt/main')
+            generatedSourceDirs += file('build/generated/source/kapt/main')
+        }
+    }
+}
+
+subprojects {
+    tasks.withType(Javadoc).all { enabled = false }
+}
+
+ext {
+    libraries = [
+            javapoet      : 'com.squareup:javapoet:1.9.0',
+            autocommon    : 'com.google.auto:auto-common:0.8',
+            autoservice   : 'com.google.auto.service:auto-service:1.0-rc2',
+            javaFormat    : 'com.google.googlejavaformat:google-java-format:1.1',
+            junit         : 'junit:junit:4.12',
+            truth         : 'com.google.truth:truth:0.30',
+            compiletesting: 'com.google.testing.compile:compile-testing:0.10',
+            kotlin        : "org.jetbrains.kotlin:kotlin-stdlib-jre7",
+            moshi         : "com.squareup.moshi:moshi:1.5.0"
+    ]
+}

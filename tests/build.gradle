@@ -1,0 +1,14 @@
+
+apply plugin: 'kotlin-kapt'
+
+dependencies {
+    compile project(':api')
+    compile libraries.moshi
+    kapt project(':compiler')
+    compile project(':compiler')
+    compile libraries.kotlin
+    testCompile libraries.truth
+    testCompile libraries.compiletesting
+    testCompile libraries.junit
+    testCompile libraries.moshi
+}

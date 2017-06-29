@@ -1,0 +1,17 @@
+dependencies {
+    compile project(':api')
+    compile libraries.autoservice
+    kapt libraries.autoservice
+    compile libraries.autocommon
+    compile libraries.javapoet
+    compile libraries.javaFormat
+    compile libraries.kotlin
+    compile libraries.moshi
+    testCompile libraries.truth
+    testCompile libraries.compiletesting
+    testCompile libraries.junit
+    testCompile libraries.moshi
+}
+
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')

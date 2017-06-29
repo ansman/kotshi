@@ -1,0 +1,117 @@
+package se.ansman.kotshi
+
+import com.google.auto.common.BasicAnnotationProcessor
+import com.google.common.collect.SetMultimap
+import com.squareup.javapoet.*
+import com.squareup.javapoet.WildcardTypeName
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
+import javax.lang.model.element.Element
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeMirror
+import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
+import javax.tools.Diagnostic
+import kotlin.reflect.KClass
+
+class FactoryProcessingStep(
+        val messager: Messager,
+        val filer: Filer,
+        val types: Types,
+        val elements: Elements,
+        val adapters: Map<TypeName, TypeName>
+) : BasicAnnotationProcessor.ProcessingStep {
+
+    private fun TypeMirror.implements(someType: KClass<*>): Boolean {
+        return types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
+    }
+
+    override fun annotations(): Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
+
+    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
+        val elements = elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
+        if (elements.size > 1) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Multiple classes found with annotations KotshiJsonAdapterFactory")
+        } else {
+            for (element in elements) {
+                generateFactory(element)
+            }
+        }
+        return emptySet()
+    }
+
+    private fun generateFactory(element: Element) {
+        if (Modifier.ABSTRACT !in element.modifiers) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Must be abstract", element)
+        }
+
+        if (!element.asType().implements(JsonAdapter.Factory::class)) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Must implement JsonAdapter.Factory", element)
+        }
+
+        val factoryType = element as TypeElement
+        val generatedName = ClassName.get(factoryType).let {
+            it.peerClass("Kotshi" + it.simpleNames().joinToString("_"))
+        }
+
+        val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value is ParameterizedTypeName }
+
+        val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .superclass(TypeName.get(factoryType.asType()))
+                .addMethod(MethodSpec.methodBuilder("create")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override::class.java)
+                        .returns(ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), WildcardTypeName.subtypeOf(TypeName.OBJECT)))
+                        .addParameter(Type::class.java, "type")
+                        .addParameter(ParameterizedTypeName.get(ClassName.get(Set::class.java), WildcardTypeName.subtypeOf(Annotation::class.java)), "annotations")
+                        .addParameter(TypeName.get(Moshi::class.java), "moshi")
+                        .addStatement("if (!annotations.isEmpty()) return null")
+                        .apply {
+                            if (genericAdapters.isEmpty()) {
+                                addCode(handleRegularAdapters(regularAdapters))
+                            } else if (regularAdapters.isEmpty()) {
+                                addCode(handleGenericAdapters(genericAdapters))
+                            } else {
+                                addIfElse("type instanceof \$T", ParameterizedType::class.java) {
+                                    addCode(handleGenericAdapters(genericAdapters))
+                                }
+                                addElse { addCode(handleRegularAdapters(regularAdapters)) }
+                            }
+                        }
+                        .addStatement("return null")
+                        .build())
+                .build()
+
+        JavaFile.builder(generatedName.packageName(), typeSpec).build().writeTo(filer)
+    }
+
+    private fun handleGenericAdapters(adapters: List<Map.Entry<TypeName, TypeName>>): CodeBlock = CodeBlock.builder()
+            .addStatement("\$T parameterized = (\$T) type", ParameterizedType::class.java, ParameterizedType::class.java)
+            .addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
+            .apply {
+                for ((type, adapter) in adapters) {
+                    addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
+                        addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
+                                (adapter as ParameterizedTypeName).rawType)
+                    }
+                }
+            }
+            .build()
+
+    private fun handleRegularAdapters(adapters: List<Map.Entry<TypeName, TypeName>>): CodeBlock = CodeBlock.builder()
+            .apply {
+                for ((type, adapter) in adapters) {
+                    addIf("type.equals(\$T.class)", type) {
+                        addStatement("return new \$T(moshi)", adapter)
+                    }
+                }
+            }
+            .build()
+
+}
