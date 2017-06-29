@@ -49,7 +49,7 @@ ext {
             junit         : 'junit:junit:4.12',
             truth         : 'com.google.truth:truth:0.30',
             compiletesting: 'com.google.testing.compile:compile-testing:0.10',
-            kotlin        : "org.jetbrains.kotlin:kotlin-stdlib-jre7",
+            kotlin        : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version",
             moshi         : "com.squareup.moshi:moshi:1.5.0"
     ]
 }
