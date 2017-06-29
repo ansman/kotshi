@@ -4,7 +4,7 @@ def repositoryUserName = hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
 def repositoryPassword = hasProperty('BINTRAY_API_KEY') ? BINTRAY_API_KEY : ""
 
 artifactory {
-    contextUrl = 'http://oss.jfrog.org/artifactory'
+    contextUrl = 'https://oss.jfrog.org/artifactory'
     publish {
         repository {
             repoKey = 'oss-snapshot-local'
