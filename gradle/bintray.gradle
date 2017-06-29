@@ -21,8 +21,8 @@ bintray {
     key = getRepositoryApiKey()
     configurations = ['archives']
     pkg {
-        repo = 'maven'
-        name = 'kotshi'
+        repo = 'kotshi'
+        name = project.name
         desc = POM_DESCRIPTION
         websiteUrl = POM_URL
         vcsUrl = VCS_URL
