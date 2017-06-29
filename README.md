@@ -48,7 +48,7 @@ val moshi = Moshi.Builder()
 Limitations
 ---
 Currently KAPT does not allow processing Kotlin files directly but rather the generated stubs. This has some downsides
-since some Kotlin features are not available in Java. 
+since some Kotlin features are not available in Java.
 
 Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
 you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
@@ -58,8 +58,8 @@ Currently default values are not supported in Kotshi but will hopefully be added
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:0.1.0'
-kapt 'se.ansman.kotshi:compiler:0.1.0'
+compile 'se.ansman.kotshi:api:0.1.1'
+kapt 'se.ansman.kotshi:compiler:0.1.1'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
