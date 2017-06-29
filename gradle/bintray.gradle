@@ -22,7 +22,7 @@ bintray {
     configurations = ['archives']
     pkg {
         repo = 'kotshi'
-        name = project.name
+        name = POM_ARTIFACT_ID
         desc = POM_DESCRIPTION
         websiteUrl = POM_URL
         vcsUrl = VCS_URL
