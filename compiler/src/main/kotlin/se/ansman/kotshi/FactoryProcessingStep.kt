@@ -56,7 +56,7 @@ class FactoryProcessingStep(
 
         val factoryType = element as TypeElement
         val generatedName = ClassName.get(factoryType).let {
-            it.peerClass("Kotshi" + it.simpleNames().joinToString("_"))
+            ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}")
         }
 
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value is ParameterizedTypeName }

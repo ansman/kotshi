@@ -73,7 +73,7 @@ class AdaptersProcessingStep(
                 }
 
         val adapter = ClassName.bestGuess(typeElement.toString()).let {
-            it.peerClass("Kotshi${it.simpleNames().joinToString("_")}JsonAdapter")
+            ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}JsonAdapter")
         }
 
         val genericTypes: List<TypeVariableName> = (typeName as? ParameterizedTypeName)

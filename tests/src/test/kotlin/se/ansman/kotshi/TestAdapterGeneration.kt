@@ -124,4 +124,13 @@ class TestAdapterGeneration {
         assertEquals(Simple("value"), actual)
         assertEquals("""{"prop":"value"}""", adapter.toJson(actual))
     }
+
+    @Test
+    fun testNestedClasses() {
+        val adapter = moshi.adapter(NestedClasses::class.java)
+        val json = """{"inner":{"prop":"value"}}"""
+        val actual = adapter.fromJson(json)
+        assertEquals(NestedClasses(NestedClasses.Inner("value")), actual)
+        assertEquals(json, adapter.toJson(actual))
+    }
 }
