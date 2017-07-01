@@ -1,6 +1,19 @@
-Kotshi
+Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
 ===
-An annotations processor that generates Moshi adapters from Kotlin data classes.
+
+An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin data classes.
+
+Moshi's default reflective adapters assume your classes are compiled from Java code which causes problem for Kotlin
+data classes.
+
+There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
+increase the binary size which in a constrained environment such as Android is something that has to be considered.
+
+This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
+hand written them yourself. It will automatically regenerate the adapters when you modify your class.
+
+It's made to work with Kotlin data classes with minimal setup, through there are [limitations](#limitations).
+Most of the limitations will be addressed when the support for Kotlin annotation processors improves.
 
 Usage
 ---
@@ -14,7 +27,7 @@ data class Person(
     @get:JvmName("hasVerifiedAccount") @Getter("hasVerifiedAccount")
     val hasVerifiedAccount: Boolean,
     // This property has a different name in the Json than here so @Json must be applied.
-    @Json(name = "sign_up_date")
+    @Json(name = "created_at")
     val signUpDate: Date,
     // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
     @NullIfEmpty
@@ -27,7 +40,7 @@ Then create a class that will be your factory:
 @KotshiJsonAdapterFactory
 abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
     companion object {
-        val INSTANCE = KotshiApplicationJsonAdapterFactory()
+        val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory()
     }
 }
 ```
@@ -53,7 +66,8 @@ since some Kotlin features are not available in Java.
 Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
 you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
 
-Currently default values are not supported in Kotshi but will hopefully be added later through annotations.
+Currently default values are not supported in Kotshi but will hopefully be added later through annotations or hopefully
+through Kotlin default values.
 
 Download
 ---
