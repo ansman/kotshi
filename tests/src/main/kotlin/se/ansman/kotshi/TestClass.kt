@@ -1,15 +1,11 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.Json
-import com.squareup.moshi.JsonQualifier
 
 abstract class SuperClass {
     val someSuperProperty: String = "Hello"
     abstract val abstractProperty: String
 }
-
-@JsonQualifier
-annotation class Hello
 
 @JsonSerializable
 data class TestClass(

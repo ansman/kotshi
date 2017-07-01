@@ -133,4 +133,14 @@ class TestAdapterGeneration {
         assertEquals(NestedClasses(NestedClasses.Inner("value")), actual)
         assertEquals(json, adapter.toJson(actual))
     }
+
+    @Test
+    fun testGenericTypeWithQualifier() {
+        val adapter: JsonAdapter<GenericClassWithQualifier<String>> =
+                moshi.adapter(Types.newParameterizedType(GenericClassWithQualifier::class.java, String::class.java))
+        val json = """{"value":"world!"}"""
+        val actual = adapter.fromJson(json)
+        assertEquals(GenericClassWithQualifier("Hello, world!"), actual)
+        assertEquals(json, adapter.toJson(actual))
+    }
 }
