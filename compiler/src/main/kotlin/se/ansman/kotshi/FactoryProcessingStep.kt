@@ -73,15 +73,15 @@ class FactoryProcessingStep(
                         .addParameter(TypeName.get(Moshi::class.java), "moshi")
                         .addStatement("if (!annotations.isEmpty()) return null")
                         .apply {
-                            if (genericAdapters.isEmpty()) {
-                                addCode(handleRegularAdapters(regularAdapters))
-                            } else if (regularAdapters.isEmpty()) {
-                                addCode(handleGenericAdapters(genericAdapters))
-                            } else {
-                                addIfElse("type instanceof \$T", ParameterizedType::class.java) {
-                                    addCode(handleGenericAdapters(genericAdapters))
+                            when {
+                                genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
+                                regularAdapters.isEmpty() -> addCode(handleGenericAdapters(genericAdapters))
+                                else -> {
+                                    addIfElse("type instanceof \$T", ParameterizedType::class.java) {
+                                        addCode(handleGenericAdapters(genericAdapters))
+                                    }
+                                    addElse { addCode(handleRegularAdapters(regularAdapters)) }
                                 }
-                                addElse { addCode(handleRegularAdapters(regularAdapters)) }
                             }
                         }
                         .addStatement("return null")

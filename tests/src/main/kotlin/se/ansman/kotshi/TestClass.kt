@@ -23,6 +23,8 @@ data class TestClass(
         val customName: String,
         @Hello
         val annotated: String,
+        @Hello
+        val anotherAnnotated: String,
         val genericClass: GenericClass<String, List<String>>
 ) : SuperClass() {
 

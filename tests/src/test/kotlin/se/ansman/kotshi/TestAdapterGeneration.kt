@@ -59,6 +59,7 @@ class TestAdapterGeneration {
         |  "abstractProperty": "abstract",
         |  "other_name": "other_value",
         |  "annotated": "World!",
+        |  "anotherAnnotated": "Other World!",
         |  "genericClass": {
         |    "collection": [
         |      "val1",
@@ -86,6 +87,7 @@ class TestAdapterGeneration {
                 abstractProperty = "abstract",
                 customName = "other_value",
                 annotated = "Hello, World!",
+                anotherAnnotated = "Hello, Other World!",
                 genericClass = GenericClass(listOf("val1", "val2"), "val3"))
 
         assertEquals(expected, actual)
@@ -103,7 +105,7 @@ class TestAdapterGeneration {
         try {
             moshi.adapter(TestClass::class.java).fromJson("{}")
         } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: string, integer, isBoolean, list, nestedList, abstractProperty, customName, annotated, genericClass", e.message)
+            assertEquals("The following properties were null: string, integer, isBoolean, list, nestedList, abstractProperty, customName, annotated, anotherAnnotated, genericClass", e.message)
         }
     }
 
