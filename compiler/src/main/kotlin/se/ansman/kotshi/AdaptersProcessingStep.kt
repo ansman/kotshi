@@ -72,6 +72,8 @@ class AdaptersProcessingStep(
                     Property(parameter, field, getter)
                 }
 
+        val adapterKeys: Set<AdapterKey> = properties.mapTo(mutableSetOf()) { it.adapterKey }
+
         val adapter = ClassName.bestGuess(typeElement.toString()).let {
             ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}JsonAdapter")
         }
@@ -82,17 +84,17 @@ class AdaptersProcessingStep(
                 ?: emptyList()
 
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
-                .initializer("\$T.of(${properties.map { "\"${it.jsonName}\"" }.joinToString(", ")})", JsonReader.Options::class.java)
+                .initializer("\$T.of(${properties.joinToString(", ") { "\"${it.jsonName}\"" }})", JsonReader.Options::class.java)
                 .build()
         val typeSpec = TypeSpec.classBuilder(adapter)
                 .addTypeVariables(genericTypes)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .superclass(getAdapterType(typeName))
                 .addField(optionsField)
-                .addFields(generateFields(properties))
-                .addMethod(generateConstructor(properties, genericTypes))
-                .addMethod(generateWriteMethod(typeMirror, properties))
-                .addMethod(generateReadMethod(typeMirror, properties, optionsField))
+                .addFields(generateFields(adapterKeys))
+                .addMethod(generateConstructor(adapterKeys, genericTypes))
+                .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
+                .addMethod(generateReadMethod(typeMirror, properties, adapterKeys, optionsField))
                 .build()
 
         val output = JavaFile.builder(adapter.packageName(), typeSpec).build()
@@ -113,7 +115,7 @@ class AdaptersProcessingStep(
             throw ProcessingError("No non empty constructor found", element)
         }
 
-        fun ExecutableElement.validate(): Unit {
+        fun ExecutableElement.validate() {
             if (Modifier.PRIVATE in modifiers) {
                 throw ProcessingError("Constructor is private", this)
             }
@@ -138,16 +140,17 @@ class AdaptersProcessingStep(
         }.also { it.validate() }
     }
 
-    private fun generateFields(properties: Iterable<Property>): List<FieldSpec> = properties.map {
-        FieldSpec
-                .builder(getAdapterType(it.type),
-                        it.adapterFieldName,
-                        Modifier.PRIVATE,
-                        Modifier.FINAL)
-                .build()
-    }
+    private fun generateFields(properties: Set<AdapterKey>): List<FieldSpec> =
+            properties.mapIndexed { index, (type) ->
+                FieldSpec
+                        .builder(getAdapterType(type),
+                                generateAdapterFieldName(index),
+                                Modifier.PRIVATE,
+                                Modifier.FINAL)
+                        .build()
+            }
 
-    private fun generateConstructor(properties: Iterable<Property>,
+    private fun generateConstructor(adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
             .addParameter(Moshi::class.java, "moshi")
@@ -157,7 +160,7 @@ class AdaptersProcessingStep(
                 }
             }
             .apply {
-                fun Property.annotations(): CodeBlock = when (jsonQualifiers.size) {
+                fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
                     0 -> CodeBlock.of("")
                     1 -> CodeBlock.of(", \$T.class", jsonQualifiers.first())
                     else -> CodeBlock.builder()
@@ -172,23 +175,24 @@ class AdaptersProcessingStep(
                             .build()
                 }
 
-                for (property in properties) {
-                    if (property.isGeneric) {
-                        val genericIndex = genericTypes.indexOf(property.type)
+                adapters.forEachIndexed { index, adapterKey ->
+                    val fieldName = generateAdapterFieldName(index)
+                    if (adapterKey.isGeneric) {
+                        val genericIndex = genericTypes.indexOf(adapterKey.type)
                         if (genericIndex == -1) {
-                            messager.printMessage(Diagnostic.Kind.ERROR, "Element is generic but if an unknown type", property.field)
-                            continue
+                            messager.printMessage(Diagnostic.Kind.ERROR, "Element is generic but if an unknown type")
+                            return@forEachIndexed
                         }
                         addCode(CodeBlock.builder()
-                                .add("\$[\$L = moshi.adapter(types[$genericIndex]", property.adapterFieldName)
-                                .add(property.annotations())
+                                .add("\$[\$L = moshi.adapter(types[$genericIndex]", fieldName)
+                                .add(adapterKey.annotations())
                                 .add(");\$]\n")
                                 .build())
                     } else {
                         addCode(CodeBlock.builder()
-                                .add("\$[\$L = moshi.adapter(", property.adapterFieldName)
-                                .add(property.asRuntimeType())
-                                .add(property.annotations())
+                                .add("\$[\$L = moshi.adapter(", fieldName)
+                                .add(adapterKey.asRuntimeType())
+                                .add(adapterKey.annotations())
                                 .add(");\$]\n")
                                 .build())
                     }
@@ -199,32 +203,38 @@ class AdaptersProcessingStep(
     private fun getAdapterType(typeName: TypeName): ParameterizedTypeName =
             ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), typeName.box())
 
+    private fun generateAdapterFieldName(index: Int): String = "adapter$index"
+
     private fun generateWriteMethod(type: TypeMirror,
-                                    properties: Iterable<Property>): MethodSpec = MethodSpec.methodBuilder("toJson")
-            .addAnnotation(Override::class.java)
-            .addModifiers(Modifier.PUBLIC)
-            .addException(IOException::class.java)
-            .addParameter(JsonWriter::class.java, "writer")
-            .addParameter(TypeName.get(type), "value")
-            .addIfElse("value == null") {
-                addStatement("writer.nullValue()")
-            }
-            .addElse {
-                addStatement("writer.beginObject()")
-                for (property in properties) {
-                    addStatement("writer.name(\$S)", property.jsonName)
-                    if (property.getter == null) {
-                        addStatement("\$L.toJson(writer, value.\$N)", property.adapterFieldName, property.field.simpleName)
-                    } else {
-                        addStatement("\$L.toJson(writer, value.\$N())", property.adapterFieldName, property.getter.simpleName)
+                                    properties: Iterable<Property>,
+                                    adapterKeys: Set<AdapterKey>): MethodSpec =
+            MethodSpec.methodBuilder("toJson")
+                    .addAnnotation(Override::class.java)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addException(IOException::class.java)
+                    .addParameter(JsonWriter::class.java, "writer")
+                    .addParameter(TypeName.get(type), "value")
+                    .addIfElse("value == null") {
+                        addStatement("writer.nullValue()")
                     }
-                }
-                addStatement("writer.endObject()")
-            }
-            .build()
+                    .addElse {
+                        addStatement("writer.beginObject()")
+                        for (property in properties) {
+                            addStatement("writer.name(\$S)", property.jsonName)
+                            val adapterFieldName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
+                            if (property.getter == null) {
+                                addStatement("\$L.toJson(writer, value.\$N)", adapterFieldName, property.field.simpleName)
+                            } else {
+                                addStatement("\$L.toJson(writer, value.\$N())", adapterFieldName, property.getter.simpleName)
+                            }
+                        }
+                        addStatement("writer.endObject()")
+                    }
+                    .build()
 
     private fun generateReadMethod(type: TypeMirror,
                                    properties: Iterable<Property>,
+                                   adapters: Set<AdapterKey>,
                                    optionsField: FieldSpec): MethodSpec = MethodSpec.methodBuilder("fromJson")
             .addAnnotation(Override::class.java)
             .addModifiers(Modifier.PUBLIC)
@@ -244,7 +254,9 @@ class AdaptersProcessingStep(
                 addSwitch("reader.selectName(\$N)", optionsField) {
                     properties.forEachIndexed { index, property ->
                         addSwitchBranch("case \$L", index) {
-                            addStatement("\$L = \$L.fromJson(reader)", property.name, property.adapterFieldName)
+                            addStatement("\$L = \$L.fromJson(reader)",
+                                    property.name,
+                                    generateAdapterFieldName(adapters.indexOf(property.adapterKey)))
                         }
                     }
                     addSwitchBranch("case -1") {
@@ -267,7 +279,8 @@ class AdaptersProcessingStep(
                     }
                 }
             }
-            .addStatement("return new \$T(\n${properties.map { it.name }.joinToString(", \n")})", type)
+            .addStatement("return new \$T(\n${properties.joinToString(", \n") { it.name }})", type)
             .build()
 
 }
+

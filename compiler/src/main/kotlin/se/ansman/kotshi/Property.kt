@@ -1,12 +1,8 @@
 package se.ansman.kotshi
 
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeVariableName
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonQualifier
-import com.squareup.moshi.Types
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.VariableElement
@@ -16,9 +12,9 @@ data class Property(
         val field: VariableElement,
         val getter: ExecutableElement?
 ) {
-    val adapterFieldName: String by lazy { "${name}Adapter" }
+    val adapterKey: AdapterKey by lazy(LazyThreadSafetyMode.NONE) { AdapterKey(type, jsonQualifiers) }
 
-    val jsonQualifiers: List<Element> by lazy {
+    private val jsonQualifiers: List<Element> by lazy {
         parameter.getJsonQualifiers().let { if (it.isEmpty()) field.getJsonQualifiers() else it }
     }
 
@@ -36,26 +32,6 @@ data class Property(
     }
 
     val type: TypeName = TypeName.get(field.asType())
-
-    fun asRuntimeType(): CodeBlock = type.asRuntimeType()
-
-    private fun TypeName.asRuntimeType(): CodeBlock = when (this) {
-        is ParameterizedTypeName -> when (rawType.reflectionName()) {
-            else -> CodeBlock.builder()
-                    .add("\$T.newParameterizedType(\$T.class", Types::class.java, rawType.box())
-                    .apply {
-                        for (typeArgument in typeArguments) {
-                            add(", ")
-                            add(typeArgument.asRuntimeType())
-                        }
-                    }
-                    .add(")")
-                    .build()
-        }
-        else -> CodeBlock.of("\$T.class", box())
-    }
-
-    val isGeneric: Boolean by lazy { type is TypeVariableName }
 
     private fun Element.getJsonQualifiers(): List<Element> = annotationMirrors
             .asSequence()
