@@ -105,7 +105,7 @@ class TestAdapterGeneration {
         try {
             moshi.adapter(TestClass::class.java).fromJson("{}")
         } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: string, integer, isBoolean, list, nestedList, abstractProperty, customName, annotated, genericClass", e.message)
+            assertEquals("The following properties were null: string, integer, isBoolean, list, nestedList, abstractProperty, customName, annotated, anotherAnnotated, genericClass", e.message)
         }
     }
 
