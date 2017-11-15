@@ -83,9 +83,8 @@ class AdaptersProcessingStep(
         val adapterKeys: Set<AdapterKey> = properties
                 .asSequence()
                 .filter { it.shouldUseAdapter }
-                .mapTo(mutableSetOf()) {
-                    it.adapterKey
-                }
+                .map { it.adapterKey }
+                .toSet()
 
         val adapter = ClassName.bestGuess(typeElement.toString()).let {
             ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}JsonAdapter")
