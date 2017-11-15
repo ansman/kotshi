@@ -12,7 +12,7 @@ import java.lang.reflect.Proxy
  * These functions should not be considered public and are subject to change without notice.
  */
 object KotshiUtils {
-    const val ERROR_FORMAT = "Expected %s but was %s at path %s"
+    private const val ERROR_FORMAT = "Expected %s but was %s at path %s"
 
     @JvmStatic
     fun appendNullableError(stringBuilder: StringBuilder?, propertyName: String): StringBuilder =
