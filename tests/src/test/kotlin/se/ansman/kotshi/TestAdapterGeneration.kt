@@ -2,28 +2,12 @@ package se.ansman.kotshi
 
 import com.squareup.moshi.*
 import okio.Buffer
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
-private const val HELLO_PREFIX = "Hello, "
-
-class HelloJsonAdapter : JsonAdapter<String>() {
-    override fun toJson(writer: JsonWriter, value: String?) {
-        if (value == null) {
-            writer.nullValue()
-        } else {
-            writer.value(value.removePrefix(HELLO_PREFIX))
-        }
-    }
-
-    override fun fromJson(reader: JsonReader): String? = when (reader.peek()) {
-        JsonReader.Token.NULL -> reader.nextNull()
-        else -> HELLO_PREFIX + reader.nextString()
-    }
-}
 
 class TestAdapterGeneration {
-    val moshi: Moshi = Moshi.Builder()
+    private val moshi: Moshi = Moshi.Builder()
             .add(TestFactory.INSTANCE)
             .add(String::class.java, Hello::class.java, HelloJsonAdapter())
             .build()
@@ -37,6 +21,12 @@ class TestAdapterGeneration {
         |  "nullableInt": 1337,
         |  "isBoolean": true,
         |  "isNullableBoolean": false,
+        |  "aShort": 32767,
+        |  "nullableShort": -32768,
+        |  "aByte": 255,
+        |  "nullableByte": 128,
+        |  "aChar": "c",
+        |  "nullableChar": "n",
         |  "list": [
         |    "String1",
         |    "String2"
@@ -78,12 +68,18 @@ class TestAdapterGeneration {
                 nullableInt = 1337,
                 isBoolean = true,
                 isNullableBoolean = false,
+                aShort = Short.MAX_VALUE,
+                nullableShort = Short.MIN_VALUE,
+                aByte = -1,
+                nullableByte = Byte.MIN_VALUE,
+                aChar = 'c',
+                nullableChar = 'n',
                 list = listOf("String1", "String2"),
                 nestedList = listOf(
                         mapOf("key1" to setOf("set1", "set2")),
                         mapOf(
                                 "key2" to setOf("set1", "set2"),
-                                "key3" to setOf<String>())),
+                                "key3" to setOf())),
                 abstractProperty = "abstract",
                 customName = "other_value",
                 annotated = "Hello, World!",
@@ -97,7 +93,8 @@ class TestAdapterGeneration {
                         indent = "  "
                         adapter.toJson(this, actual)
                     }
-                }.readUtf8())
+                }
+                .readUtf8())
     }
 
     @Test
@@ -105,7 +102,21 @@ class TestAdapterGeneration {
         try {
             moshi.adapter(TestClass::class.java).fromJson("{}")
         } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: string, integer, isBoolean, list, nestedList, abstractProperty, customName, annotated, anotherAnnotated, genericClass", e.message)
+            assertEquals("The following properties were null: " +
+                    "string, " +
+                    "integer, " +
+                    "isBoolean, " +
+                    "aShort, " +
+                    "aByte, " +
+                    "aChar, " +
+                    "list, " +
+                    "nestedList, " +
+                    "abstractProperty, " +
+                    "customName, " +
+                    "annotated, " +
+                    "anotherAnnotated, " +
+                    "genericClass",
+                    e.message)
         }
     }
 

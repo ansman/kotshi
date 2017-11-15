@@ -8,7 +8,9 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.VariableElement
 
 data class Property(
-        val parameter: VariableElement,
+        private val globalConfig: GlobalConfig,
+        private val enclosingClass: Element,
+        private val parameter: VariableElement,
         val field: VariableElement,
         val getter: ExecutableElement?
 ) {
@@ -32,6 +34,15 @@ data class Property(
     }
 
     val type: TypeName = TypeName.get(field.asType())
+
+    val shouldUseAdapter: Boolean by lazy { !(type.isPrimitive || type.isBoxedPrimitive) || useAdaptersForPrimitives }
+
+    private val useAdaptersForPrimitives: Boolean
+        get() = when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
+            PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
+            PrimitiveAdapters.ENABLED -> true
+            PrimitiveAdapters.DISABLED -> false
+        }
 
     private fun Element.getJsonQualifiers(): List<Element> = annotationMirrors
             .asSequence()
