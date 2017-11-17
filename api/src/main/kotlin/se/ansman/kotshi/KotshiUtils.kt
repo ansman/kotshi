@@ -56,7 +56,7 @@ object KotshiUtils {
     }
 
     @JvmStatic
-    fun JsonReader.nextByte(): Byte = nextIntInRange("a byte", -128, 265).toByte()
+    fun JsonReader.nextByte(): Byte = nextIntInRange("a byte", -128, 255).toByte()
 
     @JvmStatic
     fun JsonReader.nextShort(): Short = nextIntInRange("a short", -32768, 32767).toShort()

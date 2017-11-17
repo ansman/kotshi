@@ -14,35 +14,30 @@ data class Property(
         val field: VariableElement,
         val getter: ExecutableElement?
 ) {
-    val adapterKey: AdapterKey by lazy(LazyThreadSafetyMode.NONE) { AdapterKey(type, jsonQualifiers) }
+    val adapterKey: AdapterKey = AdapterKey(type, jsonQualifiers)
 
-    private val jsonQualifiers: List<Element> by lazy {
-        parameter.getJsonQualifiers().let { if (it.isEmpty()) field.getJsonQualifiers() else it }
-    }
+    private val jsonQualifiers: List<Element> =
+            parameter.getJsonQualifiers().let { if (it.isEmpty()) field.getJsonQualifiers() else it }
 
-    val name: CharSequence
-        get() = this.field.simpleName
+    val name: CharSequence = field.simpleName
 
-    val jsonName: CharSequence by lazy {
-        field.getAnnotation(Json::class.java)?.name
+    val jsonName: CharSequence = field.getAnnotation(Json::class.java)?.name
                 ?: parameter.getAnnotation(Json::class.java)?.name
                 ?: name
-    }
 
-    val isNullable: Boolean by lazy {
+    val isNullable: Boolean =
         field.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("Nullable") }
-    }
 
     val type: TypeName = TypeName.get(field.asType())
 
-    val shouldUseAdapter: Boolean by lazy { !(type.isPrimitive || type.isBoxedPrimitive) || useAdaptersForPrimitives }
+    private val useAdaptersForPrimitives: Boolean =
+            when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
+                PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
+                PrimitiveAdapters.ENABLED -> true
+                PrimitiveAdapters.DISABLED -> false
+            }
 
-    private val useAdaptersForPrimitives: Boolean
-        get() = when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
-            PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
-            PrimitiveAdapters.ENABLED -> true
-            PrimitiveAdapters.DISABLED -> false
-        }
+    val shouldUseAdapter: Boolean = !(type.isPrimitive || type.isBoxedPrimitive) || useAdaptersForPrimitives
 
     private fun Element.getJsonQualifiers(): List<Element> = annotationMirrors
             .asSequence()

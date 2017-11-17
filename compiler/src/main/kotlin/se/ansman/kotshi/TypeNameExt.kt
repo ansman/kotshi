@@ -12,7 +12,7 @@ val TypeName.jvmDefault: String
             TypeName.INT -> "0"
             TypeName.LONG -> "0"
             TypeName.CHAR -> "0"
-            TypeName.FLOAT -> "0.0f"
+            TypeName.FLOAT -> "0f"
             TypeName.DOUBLE -> "0.0"
             else -> throw AssertionError("Unknown type $this")
         }
