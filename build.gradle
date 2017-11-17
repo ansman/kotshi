@@ -4,7 +4,7 @@ subprojects { project ->
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.4-3'
+    ext.kotlin_version = '1.1.60'
 
     repositories {
         mavenCentral()
@@ -50,6 +50,7 @@ ext {
             truth         : 'com.google.truth:truth:0.30',
             compiletesting: 'com.google.testing.compile:compile-testing:0.10',
             kotlin        : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version",
+            kotlin_junit  : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
             moshi         : "com.squareup.moshi:moshi:1.5.0"
     ]
 }

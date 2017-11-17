@@ -10,5 +10,6 @@ dependencies {
     testCompile libraries.truth
     testCompile libraries.compiletesting
     testCompile libraries.junit
+    testCompile libraries.kotlin_junit
     testCompile libraries.moshi
 }

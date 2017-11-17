@@ -27,9 +27,8 @@ class FactoryProcessingStep(
         val adapters: Map<TypeName, TypeName>
 ) : BasicAnnotationProcessor.ProcessingStep {
 
-    private fun TypeMirror.implements(someType: KClass<*>): Boolean {
-        return types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
-    }
+    private fun TypeMirror.implements(someType: KClass<*>): Boolean =
+            types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
 
     override fun annotations(): Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
 

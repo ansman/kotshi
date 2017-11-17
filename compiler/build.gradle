@@ -1,3 +1,5 @@
+apply plugin: "kotlin-kapt"
+
 dependencies {
     compile project(':api')
     compile libraries.autoservice

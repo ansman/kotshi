@@ -24,8 +24,14 @@ package se.ansman.kotshi
  *     val jobTitle: String?
  * )
  * ```
+ *
+ * @param useAdaptersForPrimitives A flag to enable/disable the use of adapters to read and write primitive values.
+ *                                 The default value is the same as [KotshiJsonAdapterFactory.useAdaptersForPrimitives].
+ *                                 If you don't actually need it it's better to not use adapters for performance reasons.
  */
 @Target(AnnotationTarget.CLASS)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
-annotation class JsonSerializable
+annotation class JsonSerializable(
+        val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT
+)

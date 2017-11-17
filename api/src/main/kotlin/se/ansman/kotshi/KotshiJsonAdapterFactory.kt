@@ -14,8 +14,15 @@ package se.ansman.kotshi
  *     }
  * }
  * ```
+ *
+ * @param useAdaptersForPrimitives A flag to enable or disable the use of adapters on a module basis. Since using
+ *                                 adapters is worse for performance don't enable it unless you need it. This flag can
+ *                                 be overridden in each adapter using [JsonSerializable.useAdaptersForPrimitives].
+ *
  */
 @Target(AnnotationTarget.CLASS)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
-annotation class KotshiJsonAdapterFactory
+annotation class KotshiJsonAdapterFactory(
+        val useAdaptersForPrimitives: Boolean = false
+)
