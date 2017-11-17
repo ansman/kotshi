@@ -11,7 +11,7 @@ data class Property(
         private val globalConfig: GlobalConfig,
         private val enclosingClass: Element,
         private val parameter: VariableElement,
-        private val field: VariableElement,
+        val field: VariableElement,
         val getter: ExecutableElement?
 ) {
 
