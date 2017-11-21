@@ -18,12 +18,15 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
+import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
-        val messager: Messager,
-        val filer: Filer,
-        val adapters: MutableMap<TypeName, TypeName>
+        private val messager: Messager,
+        private val types: Types,
+        private val filer: Filer,
+        private val adapters: MutableMap<TypeName, TypeName>,
+        private val defaultValueProviders: DefaultValueProviders
 ) : BasicAnnotationProcessor.ProcessingStep {
     override fun annotations(): Set<Class<out Annotation>> = setOf(
             JsonSerializable::class.java,
@@ -40,7 +43,7 @@ class AdaptersProcessingStep(
             try {
                 generateJsonAdapter(globalConfig, element)
             } catch (e: ProcessingError) {
-                messager.printMessage(Diagnostic.Kind.ERROR, e.message, e.element)
+                messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }
         return emptySet()
@@ -77,7 +80,7 @@ class AdaptersProcessingStep(
                         throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
                     }
 
-                    Property(globalConfig, element, parameter, field, getter)
+                    Property(types, globalConfig, element, parameter, field, getter)
                 }
 
         val adapterKeys: Set<AdapterKey> = properties
@@ -366,8 +369,27 @@ class AdaptersProcessingStep(
                             } else {
                                 "!${property.helperBooleanName()}"
                             }
+
                             addIf(check) {
-                                addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                                val defaultValueProvider = if (property.shouldUseDefaultValue) {
+                                    defaultValueProviders[property]
+                                } else {
+                                    null
+                                }
+                                if (defaultValueProvider == null) {
+                                    addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                                } else {
+                                    addCode("\$[")
+                                    addCode("${property.name} = ")
+                                    addCode(defaultValueProvider.accessor)
+                                    addCode(";\n\$]")
+
+                                    if (defaultValueProvider.canReturnNull) {
+                                        addIf("${property.name} == null") {
+                                            addStatement("throw new \$T(\"The default value provider returned null\")", java.lang.NullPointerException::class.java)
+                                        }
+                                    }
+                                }
                             }
                         }
                         addIf("stringBuilder != null") {
@@ -378,7 +400,6 @@ class AdaptersProcessingStep(
                 .addStatement("return new \$T(\n${properties.joinToString(", \n") { it.name }})", type)
                 .build()
     }
-
 }
 
 data class GlobalConfig(

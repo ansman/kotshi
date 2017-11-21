@@ -12,11 +12,19 @@ class KotshiProcessor : BasicAnnotationProcessor() {
 
     override fun initSteps(): Iterable<ProcessingStep> {
         val adapters: MutableMap<TypeName, TypeName> = mutableMapOf()
+        val defaultValueProviders = DefaultValueProviders(processingEnv.typeUtils)
         return listOf(
+                DefaultValuesProcessingStep(
+                        messager = processingEnv.messager,
+                        types = processingEnv.typeUtils,
+                        defaultValueProviders = defaultValueProviders
+                ),
                 AdaptersProcessingStep(
                         messager = processingEnv.messager,
+                        types = processingEnv.typeUtils,
                         filer = processingEnv.filer,
-                        adapters = adapters
+                        adapters = adapters,
+                        defaultValueProviders = defaultValueProviders
                 ),
                 FactoryProcessingStep(
                         messager = processingEnv.messager,

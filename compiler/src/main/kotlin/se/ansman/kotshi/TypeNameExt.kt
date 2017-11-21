@@ -1,5 +1,6 @@
 package se.ansman.kotshi
 
+import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 
 val TypeName.jvmDefault: String
@@ -16,4 +17,10 @@ val TypeName.jvmDefault: String
             TypeName.DOUBLE -> "0.0"
             else -> throw AssertionError("Unknown type $this")
         }
+    }
+
+val TypeName.rawType: TypeName
+    get() = when (this) {
+        is ParameterizedTypeName -> this.rawType
+        else -> this
     }
