@@ -31,7 +31,7 @@ data class Person(
     val signUpDate: Date,
     // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
     @NullIfEmpty
-    val jobTitle: String?
+    val jobTitle: String?,
 )
 ```
 
@@ -51,6 +51,14 @@ val moshi = Moshi.Builder()
     .add(ApplicationJsonAdapterFactory.INSTANCE)
     .build()
 ```
+
+By default adapters aren't requested for primitive types (even boxed primitive
+types) since it is worse for performance and most people will not have custom
+adapters anyway.
+If you need to use custom adapters you can enable it per module be passing the
+`useAdaptersForPrimitives` to `@KotshiJsonAdapterFactory` or on a per adapter
+by passing the same argument to `@JsonSerializable` (the default is to follow
+the module wide setting).
 
 ### Annotations
 * `@GetterName` must be used when overriding the default getter name using `@get:JvmName("...")`.
@@ -72,8 +80,8 @@ through Kotlin default values.
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:0.1.1'
-kapt 'se.ansman.kotshi:compiler:0.1.1'
+compile 'se.ansman.kotshi:api:0.2.0'
+kapt 'se.ansman.kotshi:compiler:0.2.0'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
