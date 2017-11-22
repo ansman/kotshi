@@ -31,7 +31,7 @@ data class Person(
     val signUpDate: Date,
     // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
     @NullIfEmpty
-    val jobTitle: String?,
+    val jobTitle: String?
 )
 ```
 
