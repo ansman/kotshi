@@ -1,34 +1,45 @@
 package se.ansman.kotshi
 
 /**
- * Tells Kotshi that you want this, non nullable, property to have a default value if the value is `null` or absent
- * in the Json.
+ * An annotation that indicates that the target wants or provides a default value.
  *
- * Simply annotate a property with `@JsonDefaultValue` and annotate a function or field with
- * [`@JsonDefaultValue`][JsonDefaultValue]:
- * ```
- * data class MyClass(@JsonDefaultValue val myProperty: String)
+ * When applied to a constructor property in a data class it indicates that if the value is null or absent in the JSON
+ * a default value will be used instead.
  *
- * @JsonDefaultValueProvider
- * fun provideDefaultJsonString() = "Some default value"
- * ```
+ * When applied to a function, property, constructor or enum type indicates that it's a provider of default values.
+ * The provider must not return `null` unless annotated by `@Nullable`.
  *
- * You can also annotate another annotation with this annotation to create a qualifier to allow providing different
- * values for the same type:
+ * You can also apply this annotation to another annotation for when you need multiple default values for different
+ * properties.
+ *
+ * Example:
  * ```
- * @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
+ * @Target(AnnotationTarget.VALUE_PARAMETER,
+ *         AnnotationTarget.FUNCTION,
+ *         AnnotationTarget.CONSTRUCTOR,
+ *         AnnotationTarget.FIELD,
+ *         AnnotationTarget.PROPERTY_GETTER)
  * @MustBeDocumented
  * @Retention(AnnotationRetention.SOURCE)
- * @JsonDefaultValue
- * annotation class UseOtherDefaultValue
+ * annotation class StringWithNA
  *
- * data class MyClass(@UseOtherDefaultValue val myProperty: String)
+ * @JsonSerializable
+ * data class MyClass(
+ *   @JsonDefaultValue
+ *   val name: String,
+ *   @StringWithNA
+ *   val address: String
+ * ) {
+ *   companion object {
+ *     @JsonDefaultValue
+ *     @JvmField
+ *     val defaultString = ""
  *
- * @UseOtherDefaultValue
- * fun provideOtherDefaultJsonString() = "Some other default value"
+ *     @StringWithNA
+ *     fun defaultStringWithNA() = "N/A"
+ *   }
+ * }
  * ```
- *
- * @see JsonDefaultValueProvider
  */
 @Target(AnnotationTarget.VALUE_PARAMETER,
         AnnotationTarget.ANNOTATION_CLASS,

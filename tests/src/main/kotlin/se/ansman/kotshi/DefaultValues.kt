@@ -60,7 +60,7 @@ data class WithStaticFunction(val v: String?) {
 @JsonSerializable
 data class WithCompanionProperty(val v: String?) {
     companion object {
-        @get:JsonDefaultValue
+        @JsonDefaultValue
         val defaultValue = WithCompanionProperty("WithCompanionProperty")
     }
 }
@@ -69,7 +69,7 @@ data class WithCompanionProperty(val v: String?) {
 data class WithStaticProperty(val v: String?) {
     companion object {
         @JvmField
-        @field:JsonDefaultValue
+        @JsonDefaultValue
         val defaultValue = WithStaticProperty("WithStaticProperty")
     }
 }

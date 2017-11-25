@@ -62,12 +62,7 @@ class AdaptersProcessingStep(
                     val field = fields[parameter.simpleName.toString()]
                             ?: throw ProcessingError("Could not find a field name ${parameter.simpleName}", parameter)
 
-                    val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: if (parameter.simpleName.startsWith("is")) {
-                        parameter.simpleName.toString()
-                    } else {
-                        "get${parameter.simpleName.toString().capitalize()}"
-                    }
-
+                    val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: parameter.getGetterName()
                     val getter = methods[getterName]
 
                     if (getter != null && Modifier.PRIVATE in getter.modifiers) {
@@ -406,7 +401,7 @@ class AdaptersProcessingStep(
                                 // If the variable we're assigning to is primitive we don't need any checks since java
                                 // throws and if the default value provider cannot return null we don't need a check
                                 if (!defaultValueProvider.type.isPrimitive && defaultValueProvider.canReturnNull) {
-                                    if (!defaultValueProvider.isNullable) { 
+                                    if (!defaultValueProvider.isNullable) {
                                         addIf("$variableName == null") {
                                             addStatement("throw new \$T(\"The default value provider returned null\")",
                                                     java.lang.NullPointerException::class.java)

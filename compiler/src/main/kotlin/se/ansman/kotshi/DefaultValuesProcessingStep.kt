@@ -1,5 +1,6 @@
 package se.ansman.kotshi
 
+import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.google.common.collect.SetMultimap
 import javax.annotation.processing.Messager
@@ -37,16 +38,44 @@ class DefaultValuesProcessingStep(
                         when (e.kind) {
                             ElementKind.CONSTRUCTOR,
                             ElementKind.FIELD,
-                            ElementKind.METHOD -> defaultValueProviders.register(DefaultValueProvider(types, e))
+                            ElementKind.METHOD -> defaultValueProviders.register(DefaultValueProvider(types, e.getProvider()))
                             else -> {
                             }
                         }
                     }
                 }
-                else -> defaultValueProviders.register(DefaultValueProvider(types, element))
+                else -> defaultValueProviders.register(DefaultValueProvider(types, element.getProvider()))
             }
         } catch (e: ProcessingError) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
         }
     }
+
+    private fun Element.getProvider(): Element =
+            if (isPublic) {
+                this
+            } else {
+                when (kind) {
+                    ElementKind.FIELD -> {
+                        val getterName = MoreElements.asVariable(this).getGetterName()
+                        enclosingElement
+                                .findMethodNamed(getterName)
+                                ?: enclosingElement?.findClassNamed("Companion")?.findMethodNamed(getterName)
+                                ?: this
+                    }
+                    else -> this
+                }
+            }
+
+    private fun Element.findMethodNamed(name: String): Element? =
+            enclosedElements
+                    .asSequence()
+                    .filter { it.kind == ElementKind.METHOD }
+                    .firstOrNull { it.simpleName.contentEquals(name) }
+
+    private fun Element.findClassNamed(name: String): Element? =
+            enclosedElements
+                    .asSequence()
+                    .filter { it.kind == ElementKind.CLASS }
+                    .firstOrNull { it.simpleName.contentEquals(name) }
 }

@@ -65,6 +65,45 @@ the module wide setting).
 * `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on Kotlin data classes.
 * `@KotshiConstructor` should be used when there are multiple constructors in the class. Place it on the primary constructor.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
+* `@JsonDefaultValue` used for enabling default values (see [below](#default-values))
+
+### Default values
+You can use default values by first annotating a function, field, constructor or enum type with the annotation
+`@JsonDefaultValue`. This will be the provider of the default value.
+
+You then annotate a parameter of the same type (or a supertype) with the same annotation.
+
+If you need to have multiple default values of the same type you can create a custom default value annotation by
+annotating it with `@JsonDefaultValue`.
+
+```kotlin
+@Target(AnnotationTarget.VALUE_PARAMETER,
+        AnnotationTarget.FUNCTION,
+        AnnotationTarget.CONSTRUCTOR,
+        AnnotationTarget.FIELD,
+        AnnotationTarget.PROPERTY_GETTER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+annotation class StringWithNA
+
+@JsonSerializable
+data class MyClass(
+  @JsonDefaultValue
+  val name: String,
+  @StringWithNA
+  val address: String
+) {
+  companion object {
+    @JsonDefaultValue
+    @JvmField
+    val defaultString = ""
+
+    @StringWithNA
+    fun defaultStringWithNA() = "N/A"
+  }
+}
+```
+The default value provider is allowed to return `null` but only if it's annotated with `@Nullable`.
 
 Limitations
 ---
@@ -73,9 +112,6 @@ since some Kotlin features are not available in Java.
 
 Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
 you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
-
-Currently default values are not supported in Kotshi but will hopefully be added later through annotations or hopefully
-through Kotlin default values.
 
 Download
 ---

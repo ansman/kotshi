@@ -5,10 +5,7 @@ import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.WildcardTypeName
-import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.Modifier
-import javax.lang.model.element.TypeElement
+import javax.lang.model.element.*
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 
@@ -33,7 +30,18 @@ class DefaultValueProvider(
             ?: throw ProcessingError("Could not find a way to access this provider", element)
 
     val canReturnNull by lazy {
-        element.kind != ElementKind.CONSTRUCTOR && element.kind != ElementKind.ENUM_CONSTANT && !type.isPrimitive
+        if (type.isPrimitive) {
+            return@lazy false
+        }
+        when (element.kind) {
+            ElementKind.CONSTRUCTOR -> false
+            ElementKind.ENUM_CONSTANT -> false
+            ElementKind.FIELD -> {
+                val variable = element as VariableElement
+                Modifier.FINAL !in element.modifiers || variable.constantValue == null
+            }
+            else -> true
+        }
     }
 
     val isNullable by lazy { canReturnNull && element.hasAnnotation("Nullable") }
@@ -142,24 +150,3 @@ private fun TypeElement.findInstanceAccessor(types: Types): CodeBlock? =
                 } else {
                     null
                 }
-
-private val Element.isPublic: Boolean
-    get() = when (requireNotNull(kind)) {
-        ElementKind.ANNOTATION_TYPE,
-        ElementKind.PACKAGE,
-        ElementKind.INTERFACE -> true
-        ElementKind.CLASS,
-        ElementKind.ENUM,
-        ElementKind.ENUM_CONSTANT,
-        ElementKind.FIELD,
-        ElementKind.PARAMETER,
-        ElementKind.METHOD,
-        ElementKind.CONSTRUCTOR -> Modifier.PUBLIC in modifiers && enclosingElement.isPublic
-        ElementKind.LOCAL_VARIABLE,
-        ElementKind.EXCEPTION_PARAMETER,
-        ElementKind.STATIC_INIT,
-        ElementKind.INSTANCE_INIT,
-        ElementKind.TYPE_PARAMETER,
-        ElementKind.OTHER,
-        ElementKind.RESOURCE_VARIABLE -> throw IllegalArgumentException("isPublic is not applicable")
-    }
