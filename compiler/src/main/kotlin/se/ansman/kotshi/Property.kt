@@ -27,7 +27,7 @@ class Property(
 
     val defaultValueQualifiers = parameter.getDefaultValueQualifiers()
 
-    val shouldUseDefaultValue = defaultValueQualifiers.isNotEmpty() || parameter.hasAnnotation<UseJsonDefaultValue>()
+    val shouldUseDefaultValue = defaultValueQualifiers.isNotEmpty() || parameter.hasAnnotation<JsonDefaultValue>()
 
     val adapterKey: AdapterKey = AdapterKey(type, parameter.getJsonQualifiers())
 

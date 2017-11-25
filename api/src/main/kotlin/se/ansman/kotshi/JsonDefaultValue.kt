@@ -4,10 +4,10 @@ package se.ansman.kotshi
  * Tells Kotshi that you want this, non nullable, property to have a default value if the value is `null` or absent
  * in the Json.
  *
- * Simply annotate a property with `@UseJsonDefaultValue` and annotate a function or field with
- * [`@UseJsonDefaultValue`][UseJsonDefaultValue]:
+ * Simply annotate a property with `@JsonDefaultValue` and annotate a function or field with
+ * [`@JsonDefaultValue`][JsonDefaultValue]:
  * ```
- * data class MyClass(@UseJsonDefaultValue val myProperty: String)
+ * data class MyClass(@JsonDefaultValue val myProperty: String)
  *
  * @JsonDefaultValueProvider
  * fun provideDefaultJsonString() = "Some default value"
@@ -19,7 +19,7 @@ package se.ansman.kotshi
  * @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
  * @MustBeDocumented
  * @Retention(AnnotationRetention.SOURCE)
- * @UseJsonDefaultValue
+ * @JsonDefaultValue
  * annotation class UseOtherDefaultValue
  *
  * data class MyClass(@UseOtherDefaultValue val myProperty: String)
@@ -31,7 +31,11 @@ package se.ansman.kotshi
  * @see JsonDefaultValueProvider
  */
 @Target(AnnotationTarget.VALUE_PARAMETER,
-        AnnotationTarget.ANNOTATION_CLASS)
+        AnnotationTarget.ANNOTATION_CLASS,
+        AnnotationTarget.FUNCTION,
+        AnnotationTarget.CONSTRUCTOR,
+        AnnotationTarget.FIELD,
+        AnnotationTarget.PROPERTY_GETTER)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
-annotation class UseJsonDefaultValue
+annotation class JsonDefaultValue

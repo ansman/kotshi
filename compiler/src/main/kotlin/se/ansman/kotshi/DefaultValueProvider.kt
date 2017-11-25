@@ -20,8 +20,9 @@ class DefaultValueProvider(
     val typeMirror: TypeMirror = when (element.kind) {
         ElementKind.CONSTRUCTOR -> element.enclosingElement.asType()
         ElementKind.METHOD -> MoreTypes.asExecutable(element.asType()).returnType
-        ElementKind.FIELD -> element.asType()
-        else -> throw ProcessingError("Provider is of an unknown kind", element)
+        ElementKind.FIELD,
+        ElementKind.ENUM_CONSTANT -> element.asType()
+        else -> throw ProcessingError("The default value provider must be a constructor, method or field", element)
     }
 
     val type = typeMirror.asTypeName()
@@ -31,7 +32,9 @@ class DefaultValueProvider(
     val accessor: CodeBlock = element.findAccessor(types)
             ?: throw ProcessingError("Could not find a way to access this provider", element)
 
-    val canReturnNull by lazy { element.kind != ElementKind.CONSTRUCTOR && !type.isPrimitive }
+    val canReturnNull by lazy {
+        element.kind != ElementKind.CONSTRUCTOR && element.kind != ElementKind.ENUM_CONSTANT && !type.isPrimitive
+    }
 
     init {
         when (element.kind) {
@@ -41,7 +44,8 @@ class DefaultValueProvider(
                     throw ProcessingError("Default value provider cannot have arguments", element)
                 }
             }
-            else -> {}
+            else -> {
+            }
         }
 
         if (!element.isPublic) {
@@ -126,20 +130,18 @@ private fun TypeElement.findInstanceAccessor(types: Types): CodeBlock? =
                 .map { it.findAccessor(types) }
                 .firstOrNull()
                 ?:
-                run {
-                    if (simpleName.contentEquals("Companion")) {
-                        enclosingElement.enclosedElements
-                                .asSequence()
-                                .filter { it.isPublic }
-                                .filter { Modifier.STATIC in it.modifiers }
-                                .filter { it.kind == ElementKind.FIELD }
-                                .filter { types.isSameType(it.asType(), asType()) }
-                                .filter { it.simpleName.contentEquals("Companion") }
-                                .firstOrNull()
-                                ?.findAccessor(types)
-                    } else {
-                        null
-                    }
+                if (simpleName.contentEquals("Companion")) {
+                    enclosingElement.enclosedElements
+                            .asSequence()
+                            .filter { it.isPublic }
+                            .filter { Modifier.STATIC in it.modifiers }
+                            .filter { it.kind == ElementKind.FIELD }
+                            .filter { types.isSameType(it.asType(), asType()) }
+                            .filter { it.simpleName.contentEquals("Companion") }
+                            .firstOrNull()
+                            ?.findAccessor(types)
+                } else {
+                    null
                 }
 
 private val Element.isPublic: Boolean

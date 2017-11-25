@@ -1,6 +1,5 @@
 package se.ansman.kotshi
 
-import com.google.auto.common.BasicAnnotationProcessor
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
 import com.squareup.javapoet.*
@@ -13,6 +12,7 @@ import java.lang.reflect.Type
 import java.util.*
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -27,12 +27,11 @@ class AdaptersProcessingStep(
         private val filer: Filer,
         private val adapters: MutableMap<TypeName, TypeName>,
         private val defaultValueProviders: DefaultValueProviders
-) : BasicAnnotationProcessor.ProcessingStep {
-    override fun annotations(): Set<Class<out Annotation>> = setOf(
-            JsonSerializable::class.java,
-            KotshiJsonAdapterFactory::class.java)
+) : KotshiProcessor.ProcessingStep {
+    override val annotations: Set<Class<out Annotation>> =
+            setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
+    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         val globalConfig = (elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
                 .firstOrNull()
                 ?.getAnnotation(KotshiJsonAdapterFactory::class.java)
@@ -46,7 +45,6 @@ class AdaptersProcessingStep(
                 messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }
-        return emptySet()
     }
 
     private fun generateJsonAdapter(globalConfig: GlobalConfig, element: Element) {

@@ -1,6 +1,5 @@
 package se.ansman.kotshi
 
-import com.google.auto.common.BasicAnnotationProcessor
 import com.google.common.collect.SetMultimap
 import com.squareup.javapoet.*
 import com.squareup.javapoet.WildcardTypeName
@@ -10,6 +9,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -25,14 +25,14 @@ class FactoryProcessingStep(
         val types: Types,
         val elements: Elements,
         val adapters: Map<TypeName, TypeName>
-) : BasicAnnotationProcessor.ProcessingStep {
+) : KotshiProcessor.ProcessingStep {
 
     private fun TypeMirror.implements(someType: KClass<*>): Boolean =
             types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
 
-    override fun annotations(): Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
+    override val annotations: Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
+    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         val elements = elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
         if (elements.size > 1) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Multiple classes found with annotations KotshiJsonAdapterFactory")
@@ -41,7 +41,6 @@ class FactoryProcessingStep(
                 generateFactory(element)
             }
         }
-        return emptySet()
     }
 
     private fun generateFactory(element: Element) {

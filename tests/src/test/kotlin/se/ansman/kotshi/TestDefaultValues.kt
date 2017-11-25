@@ -62,7 +62,8 @@ class TestDefaultValues {
              |  "v13": {
              |    "v": "v13"
              |  },
-             |  "v14": 14
+             |  "v14": 14,
+             |  "v15": "VALUE4"
              |}""".trimMargin()
 
         val expected = ClassWithDefaultValues(
@@ -79,7 +80,8 @@ class TestDefaultValues {
                 v11 = WithCompanionFunction("v11"),
                 v12 = ClassWithConstructorAsDefault("v12"),
                 v13 = GenericClassWithConstructorAsDefault("v13"),
-                v14 = 14)
+                v14 = 14,
+                v15 = SomeEnum.VALUE4)
 
         expected.testFormatting(json)
     }
@@ -97,10 +99,11 @@ class TestDefaultValues {
                 v8 = LocalTime.MIN,
                 v9 = LocalDateTime.MIN,
                 v10 = WithCompanionFunction("v10"),
-                v11 = WithCompanionFunction("DefaultQualifier"),
+                v11 = WithCompanionFunction("OtherJsonDefaultValue"),
                 v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
                 v13 = GenericClassWithConstructorAsDefault(null),
-                v14 = 4711)
+                v14 = 4711,
+                v15 = SomeEnum.VALUE3)
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v1": null,
@@ -118,7 +121,8 @@ class TestDefaultValues {
              |  "v11": null,
              |  "v12": null,
              |  "v13": null,
-             |  "v14": null
+             |  "v14": null,
+             |  "v15": null
              |}""".trimMargin())
 
         assertEquals(expected, actual)
@@ -137,10 +141,11 @@ class TestDefaultValues {
                 v8 = LocalTime.MIN,
                 v9 = LocalDateTime.MIN,
                 v10 = WithCompanionFunction("v10"),
-                v11 = WithCompanionFunction("DefaultQualifier"),
+                v11 = WithCompanionFunction("OtherJsonDefaultValue"),
                 v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
                 v13 = GenericClassWithConstructorAsDefault(null),
-                v14 = 4711)
+                v14 = 4711,
+                v15 = SomeEnum.VALUE3)
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v10": {
@@ -155,7 +160,9 @@ class TestDefaultValues {
         try {
             moshi.adapter(ClassWithDefaultValues::class.java).fromJson("{}")
             fail()
-        } catch (e: NullPointerException) {}
+        } catch (e: NullPointerException) {
+            assertEquals("The following properties were null: v10", e.message)
+        }
     }
 
     private inline fun <reified T> T.testFormatting(json: String) {

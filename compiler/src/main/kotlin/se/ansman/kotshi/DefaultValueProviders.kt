@@ -30,7 +30,7 @@ class DefaultValueProviders(private val types: Types) {
                     }
 
                     if (grouped.size > 1) {
-                        throw ProcessingError("Multiple provides provide values for type $type with qualifiers $qualifiers: ${grouped.map { it.accessor }}", grouped.first().element)
+                        throw ProcessingError("Multiple providers provide values for type $type with qualifiers $qualifiers: ${grouped.map { it.accessor }}", grouped.first().element)
                     }
                 }
     }

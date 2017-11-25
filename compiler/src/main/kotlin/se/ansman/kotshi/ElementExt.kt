@@ -5,7 +5,7 @@ import javax.lang.model.element.Element
 
 inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::class.java) != null
 
-fun Element.getDefaultValueQualifiers(): List<Element> = getQualifiers<UseJsonDefaultValue>()
+fun Element.getDefaultValueQualifiers(): List<Element> = getQualifiers<JsonDefaultValue>()
 
 fun Element.getJsonQualifiers(): List<Element> = getQualifiers<JsonQualifier>()
 

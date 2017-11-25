@@ -6,51 +6,52 @@ import java.time.LocalTime
 
 @JsonSerializable
 data class ClassWithDefaultValues(
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v1: WithCompanionFunction,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v2: WithStaticFunction,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v3: WithCompanionProperty,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v4: WithStaticProperty,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v5: GenericClassWithDefault<String>,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v6: GenericClassWithDefault<Int>,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v7: LocalDate,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v8: LocalTime,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v9: LocalDateTime,
         val v10: WithCompanionFunction, // No annotations, should not get a default value
-        @DefaultQualifier
+        @OtherJsonDefaultValue
         val v11: WithCompanionFunction,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v12: ClassWithConstructorAsDefault,
-        @UseJsonDefaultValue
+        @JsonDefaultValue
         val v13: GenericClassWithConstructorAsDefault<String>,
-        @UseJsonDefaultValue
-        val v14: Int
+        @JsonDefaultValue
+        val v14: Int,
+        @JsonDefaultValue
+        val v15: SomeEnum
 )
 
 @JsonSerializable
 data class WithCompanionFunction(val v: String?) {
     companion object {
-        @JsonDefaultValueProvider
+        @JsonDefaultValue
         fun provideDefault(): WithCompanionFunction = WithCompanionFunction("WithCompanionFunction")
 
-        @JsonDefaultValueProvider
-        @DefaultQualifier
-        fun provideQualifiedDefault() = WithCompanionFunction("DefaultQualifier")
+        @OtherJsonDefaultValue
+        fun provideQualifiedDefault() = WithCompanionFunction("OtherJsonDefaultValue")
     }
 }
 
 @JsonSerializable
 data class WithStaticFunction(val v: String?) {
     companion object {
-        @JsonDefaultValueProvider
+        @JsonDefaultValue
         @JvmStatic
         fun provideDefault() = WithStaticFunction("WithStaticFunction")
     }
@@ -59,7 +60,7 @@ data class WithStaticFunction(val v: String?) {
 @JsonSerializable
 data class WithCompanionProperty(val v: String?) {
     companion object {
-        @get:JsonDefaultValueProvider
+        @get:JsonDefaultValue
         val defaultValue = WithCompanionProperty("WithCompanionProperty")
     }
 }
@@ -68,7 +69,7 @@ data class WithCompanionProperty(val v: String?) {
 data class WithStaticProperty(val v: String?) {
     companion object {
         @JvmField
-        @field:JsonDefaultValueProvider
+        @field:JsonDefaultValue
         val defaultValue = WithStaticProperty("WithStaticProperty")
     }
 }
@@ -76,25 +77,25 @@ data class WithStaticProperty(val v: String?) {
 @JsonSerializable
 data class GenericClassWithDefault<out T>(val v: T?) {
     companion object {
-        @JsonDefaultValueProvider
+        @JsonDefaultValue
         fun <T> provideDefault() = GenericClassWithDefault<T>(null)
 
-        @JsonDefaultValueProvider
+        @JsonDefaultValue
         fun provideIntDefault() = GenericClassWithDefault(4711)
     }
 }
 
 object DefaultProvider {
-    @JsonDefaultValueProvider
+    @JsonDefaultValue
     fun provideDefaultLocalDate(): LocalDate = LocalDate.MIN
 
-    @JsonDefaultValueProvider
+    @JsonDefaultValue
     @JvmStatic
     fun provideDefaultLocalTime(): LocalTime = LocalTime.MIN
 }
 
 class OtherDefaultProvider private constructor() {
-    @JsonDefaultValueProvider
+    @JsonDefaultValue
     fun provideDefaultLocalDateTime(): LocalDateTime = LocalDateTime.MIN
 
     companion object {
@@ -105,21 +106,21 @@ class OtherDefaultProvider private constructor() {
 
 @JsonSerializable
 data class ClassWithConstructorAsDefault(val v: String?) {
-    @JsonDefaultValueProvider
+    @JsonDefaultValue
     constructor() : this("ClassWithConstructorAsDefault")
 }
 
 @JsonSerializable
 data class GenericClassWithConstructorAsDefault<T : CharSequence>(val v: T?) {
-    @JsonDefaultValueProvider
+    @JsonDefaultValue
     constructor() : this(null)
 }
 
-@JsonDefaultValueProvider
+@JsonDefaultValue
 fun provideIntDefault() = 4711
 
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
-@UseJsonDefaultValue
-annotation class DefaultQualifier
+@JsonDefaultValue
+annotation class OtherJsonDefaultValue
