@@ -35,11 +35,14 @@ class DefaultValueProvider(
         }
         when (element.kind) {
             ElementKind.CONSTRUCTOR -> false
+
             ElementKind.ENUM_CONSTANT -> false
+
             ElementKind.FIELD -> {
                 val variable = element as VariableElement
                 Modifier.FINAL !in element.modifiers || variable.constantValue == null
             }
+
             else -> true
         }
     }
@@ -54,8 +57,8 @@ class DefaultValueProvider(
                     throw ProcessingError("Default value provider cannot have arguments", element)
                 }
             }
-            else -> {
-            }
+
+            else -> {}
         }
 
         if (!element.isPublic) {
@@ -78,6 +81,7 @@ private fun Element.findAccessor(types: Types): CodeBlock? =
                     .apply { enclosingElement.findAccessor(types)?.let { add(it).add(".") } }
                     .add("\$T", asType().asTypeName().rawType)
                     .build()
+
             ElementKind.ENUM_CONSTANT,
             ElementKind.FIELD -> {
                 CodeBlock.builder()
@@ -93,6 +97,7 @@ private fun Element.findAccessor(types: Types): CodeBlock? =
                         .add(".\$L", simpleName)
                         .build()
             }
+
             ElementKind.METHOD -> CodeBlock.builder()
                     .apply {
                         if (Modifier.STATIC in modifiers) {
@@ -105,6 +110,7 @@ private fun Element.findAccessor(types: Types): CodeBlock? =
                     }
                     .add(".\$L()", simpleName)
                     .build()
+
             ElementKind.CONSTRUCTOR -> CodeBlock.builder()
                     .apply {
                         add("new ")
@@ -115,6 +121,7 @@ private fun Element.findAccessor(types: Types): CodeBlock? =
                         add("()")
                     }
                     .build()
+
             else -> null
         }
 
@@ -127,10 +134,12 @@ private fun TypeElement.findInstanceAccessor(types: Types): CodeBlock? =
                         ElementKind.FIELD -> it.simpleName.toString().equals("instance", ignoreCase = true) &&
                                 Modifier.FINAL in it.modifiers &&
                                 types.isSameType(it.asType(), asType())
+
                         ElementKind.METHOD -> it.simpleName.contentEquals("getInstance") &&
                                 MoreElements.asExecutable(it).let {
                                     types.isSameType(asType(), it.returnType) && it.parameters.isEmpty()
                                 }
+
                         else -> false
                     }
                 }
