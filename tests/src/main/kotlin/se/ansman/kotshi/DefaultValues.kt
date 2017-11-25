@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-@JsonSerializable
+@JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
 data class ClassWithDefaultValues(
         @JsonDefaultValue
         val v1: WithCompanionFunction,
@@ -32,7 +32,7 @@ data class ClassWithDefaultValues(
         @JsonDefaultValue
         val v13: GenericClassWithConstructorAsDefault<String>,
         @JsonDefaultValue
-        val v14: Int,
+        val v14: Int?,
         @JsonDefaultValue
         val v15: SomeEnum
 )
@@ -117,7 +117,7 @@ data class GenericClassWithConstructorAsDefault<T : CharSequence>(val v: T?) {
 }
 
 @JsonDefaultValue
-fun provideIntDefault() = 4711
+fun provideIntDefault(): Int? = 4711
 
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @MustBeDocumented

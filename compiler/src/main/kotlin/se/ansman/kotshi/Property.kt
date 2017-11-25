@@ -37,8 +37,7 @@ class Property(
             ?: parameter.getAnnotation(Json::class.java)?.name
             ?: name
 
-    val isNullable: Boolean =
-            parameter.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("Nullable") }
+    val isNullable: Boolean = parameter.hasAnnotation("Nullable")
 
     private val useAdaptersForPrimitives: Boolean =
             when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
@@ -51,9 +50,6 @@ class Property(
 
     init {
         if (shouldUseDefaultValue) {
-            if (isNullable) {
-                throw ProcessingError("You cannot use default values on nullable properties", parameter)
-            }
             if (adapterKey.isGeneric) {
                 throw ProcessingError("You cannot use default values on a generic type", parameter)
             }

@@ -36,6 +36,8 @@ class DefaultValueProvider(
         element.kind != ElementKind.CONSTRUCTOR && element.kind != ElementKind.ENUM_CONSTANT && !type.isPrimitive
     }
 
+    val isNullable by lazy { canReturnNull && element.hasAnnotation("Nullable") }
+
     init {
         when (element.kind) {
             ElementKind.CONSTRUCTOR,
@@ -50,9 +52,6 @@ class DefaultValueProvider(
 
         if (!element.isPublic) {
             throw ProcessingError("The default value provider must be public", element)
-        }
-        if (element.annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals("Nullable") }) {
-            throw ProcessingError("Default value provider cannot be nullable", element)
         }
 
         (type as? ParameterizedTypeName)?.typeArguments?.forEach {

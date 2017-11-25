@@ -280,6 +280,8 @@ class AdaptersProcessingStep(
                                    optionsField: FieldSpec): MethodSpec {
         fun Property.helperBooleanName() = "${name}IsSet"
 
+        fun Property.variableType() = if (shouldUseAdapter) this.type.box() else this.type
+
         return MethodSpec.methodBuilder("fromJson")
                 .addAnnotation(Override::class.java)
                 .addModifiers(Modifier.PUBLIC)
@@ -291,13 +293,10 @@ class AdaptersProcessingStep(
                 }
                 .apply {
                     for (property in properties) {
-                        if (property.shouldUseAdapter) {
-                            addStatement("\$T \$N = null", property.type.box(), property.name)
-                        } else {
-                            addStatement("\$T \$N = \$L", property.type, property.name, property.type.jvmDefault)
-                            if (!property.isNullable) {
-                                addStatement("boolean \$L = false", property.helperBooleanName())
-                            }
+                        val variableType = property.variableType()
+                        addStatement("\$T \$N = \$L", variableType, property.name, variableType.jvmDefault)
+                        if (variableType.isPrimitive) {
+                            addStatement("boolean \$L = false", property.helperBooleanName())
                         }
                     }
                 }
@@ -359,37 +358,77 @@ class AdaptersProcessingStep(
                 }
                 .addStatement("reader.endObject()")
                 .apply {
-                    properties.filterNot { it.isNullable }.takeIf { it.isNotEmpty() }?.let {
-                        addStatement("\$T stringBuilder = null", StringBuilder::class.java)
-                        for (property in it) {
-                            val check = if (property.shouldUseAdapter || property.isNullable) {
-                                "${property.name} == null"
+                    var hasStringBuilder = false
+                    for (property in properties) {
+                        val check = if (property.shouldUseAdapter || property.isNullable) {
+                            "${property.name} == null"
+                        } else {
+                            "!${property.helperBooleanName()}"
+                        }
+
+                        val defaultValueProvider = if (property.shouldUseDefaultValue) {
+                            defaultValueProviders[property]
+                        } else {
+                            null
+                        }
+
+                        if (!hasStringBuilder) {
+                            val needsStringBuilder = if (defaultValueProvider != null) {
+                                !defaultValueProvider.type.isPrimitive && defaultValueProvider.isNullable
                             } else {
-                                "!${property.helperBooleanName()}"
+                                !property.isNullable
                             }
 
-                            addIf(check) {
-                                val defaultValueProvider = if (property.shouldUseDefaultValue) {
-                                    defaultValueProviders[property]
-                                } else {
-                                    null
-                                }
-                                if (defaultValueProvider == null) {
-                                    addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
-                                } else {
-                                    addCode("\$[")
-                                    addCode("${property.name} = ")
-                                    addCode(defaultValueProvider.accessor)
-                                    addCode(";\n\$]")
+                            if (needsStringBuilder) {
+                                addStatement("\$T stringBuilder = null", StringBuilder::class.java)
+                                hasStringBuilder = true
+                            }
+                        }
 
-                                    if (defaultValueProvider.canReturnNull) {
-                                        addIf("${property.name} == null") {
-                                            addStatement("throw new \$T(\"The default value provider returned null\")", java.lang.NullPointerException::class.java)
+                        fun appendError() {
+                            addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                        }
+
+                        addIf(check) {
+                            if (defaultValueProvider != null) {
+                                // We require a temp var is the variable is a primitive and we allow the provider to return null
+                                val requiresTmpVar = property.variableType().isPrimitive && defaultValueProvider.isNullable
+                                val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
+                                addCode("\$[")
+                                if (requiresTmpVar) {
+                                    addCode("\$T $variableName = ", defaultValueProvider.type)
+                                } else {
+                                    addCode("$variableName = ")
+                                }
+                                addCode(defaultValueProvider.accessor)
+                                addCode(";\n\$]")
+
+                                // If the variable we're assigning to is primitive we don't need any checks since java
+                                // throws and if the default value provider cannot return null we don't need a check
+                                if (!defaultValueProvider.type.isPrimitive && defaultValueProvider.canReturnNull) {
+                                    if (!defaultValueProvider.isNullable) { 
+                                        addIf("$variableName == null") {
+                                            addStatement("throw new \$T(\"The default value provider returned null\")",
+                                                    java.lang.NullPointerException::class.java)
+                                        }
+                                    } else if (!property.isNullable) {
+                                        addIf("$variableName == null") {
+                                            appendError()
                                         }
                                     }
                                 }
+
+                                // If we used a temp var we need to assign it to the real variable
+                                if (requiresTmpVar) {
+                                    addStatement("${property.name} = $variableName")
+                                }
+
+                            } else if (!property.isNullable) {
+                                appendError()
                             }
                         }
+                    }
+                    if (hasStringBuilder) {
                         addIf("stringBuilder != null") {
                             addStatement("throw new \$T(stringBuilder.toString())", NullPointerException::class.java)
                         }
