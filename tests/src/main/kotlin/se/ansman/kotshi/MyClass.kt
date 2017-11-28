@@ -8,7 +8,9 @@ data class MyClass(
         @JsonDefaultValue
         val name: String,
         @StringWithNA
-        val address: String
+        val address: String,
+        @JsonDefaultValueInt(-1)
+        val age: Int
 ) {
     companion object {
         @JsonDefaultValue

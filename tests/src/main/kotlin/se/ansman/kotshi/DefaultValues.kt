@@ -34,7 +34,9 @@ data class ClassWithDefaultValues(
         @JsonDefaultValue
         val v14: Int?,
         @JsonDefaultValue
-        val v15: SomeEnum
+        val v15: SomeEnum,
+        @JsonDefaultValue
+        val v16: Map<String, Int>
 )
 
 @JsonSerializable
@@ -118,6 +120,9 @@ data class GenericClassWithConstructorAsDefault<T : CharSequence>(val v: T?) {
 
 @JsonDefaultValue
 fun provideIntDefault(): Int? = 4711
+
+@JsonDefaultValue
+fun <K, V> provideDefaultMap() = emptyMap<K, V>()
 
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @MustBeDocumented

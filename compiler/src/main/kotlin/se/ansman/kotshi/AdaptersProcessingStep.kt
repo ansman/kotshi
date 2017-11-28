@@ -355,6 +355,7 @@ class AdaptersProcessingStep(
                 .apply {
                     var hasStringBuilder = false
                     for (property in properties) {
+                        val variableType = property.variableType()
                         val check = if (property.shouldUseAdapter || property.isNullable) {
                             "${property.name} == null"
                         } else {
@@ -369,7 +370,7 @@ class AdaptersProcessingStep(
 
                         if (!hasStringBuilder) {
                             val needsStringBuilder = if (defaultValueProvider != null) {
-                                !defaultValueProvider.type.isPrimitive && defaultValueProvider.isNullable
+                                !variableType.isPrimitive && defaultValueProvider.isNullable
                             } else {
                                 !property.isNullable
                             }
@@ -387,7 +388,7 @@ class AdaptersProcessingStep(
                         addIf(check) {
                             if (defaultValueProvider != null) {
                                 // We require a temp var is the variable is a primitive and we allow the provider to return null
-                                val requiresTmpVar = property.variableType().isPrimitive && defaultValueProvider.isNullable
+                                val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
                                 val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
                                 addCode("\$[")
                                 if (requiresTmpVar) {
@@ -400,7 +401,7 @@ class AdaptersProcessingStep(
 
                                 // If the variable we're assigning to is primitive we don't need any checks since java
                                 // throws and if the default value provider cannot return null we don't need a check
-                                if (!defaultValueProvider.type.isPrimitive && defaultValueProvider.canReturnNull) {
+                                if (!variableType.isPrimitive && defaultValueProvider.canReturnNull) {
                                     if (!defaultValueProvider.isNullable) {
                                         addIf("$variableName == null") {
                                             addStatement("throw new \$T(\"The default value provider returned null\")",

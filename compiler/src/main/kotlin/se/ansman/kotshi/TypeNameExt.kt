@@ -3,6 +3,8 @@ package se.ansman.kotshi
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 
+val TYPE_NAME_STRING = TypeName.get(String::class.java)
+
 val TypeName.jvmDefault: String
     get() {
         if (!isPrimitive) return "null"

@@ -38,13 +38,13 @@ class DefaultValuesProcessingStep(
                         when (e.kind) {
                             ElementKind.CONSTRUCTOR,
                             ElementKind.FIELD,
-                            ElementKind.METHOD -> defaultValueProviders.register(DefaultValueProvider(types, e.getProvider()))
+                            ElementKind.METHOD -> defaultValueProviders.register(ComplexDefaultValueProvider(types, e.getProvider()))
                             else -> {
                             }
                         }
                     }
                 }
-                else -> defaultValueProviders.register(DefaultValueProvider(types, element.getProvider()))
+                else -> defaultValueProviders.register(ComplexDefaultValueProvider(types, element.getProvider()))
             }
         } catch (e: ProcessingError) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)

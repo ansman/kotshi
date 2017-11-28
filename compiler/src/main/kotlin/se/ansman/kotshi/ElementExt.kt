@@ -10,15 +10,14 @@ inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::c
 fun Element.hasAnnotation(simpleName: String) =
         annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
 
-fun Element.getDefaultValueQualifiers(): List<Element> = getQualifiers<JsonDefaultValue>()
+fun Element.getDefaultValueQualifier(): Element? = getQualifiers<JsonDefaultValue>().firstOrNull()
 
-fun Element.getJsonQualifiers(): List<Element> = getQualifiers<JsonQualifier>()
+fun Element.getJsonQualifiers(): List<Element> = getQualifiers<JsonQualifier>().toList()
 
-inline fun <reified T : Annotation> Element.getQualifiers(): List<Element> = annotationMirrors
+inline fun <reified T : Annotation> Element.getQualifiers(): Sequence<Element> = annotationMirrors
         .asSequence()
         .map { it.annotationType.asElement() }
         .filter { it.getAnnotation(T::class.java) != null }
-        .toList()
 
 val Element.isPublic: Boolean
     get() = when (requireNotNull(kind)) {

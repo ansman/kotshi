@@ -63,7 +63,10 @@ class TestDefaultValues {
              |    "v": "v13"
              |  },
              |  "v14": 14,
-             |  "v15": "VALUE4"
+             |  "v15": "VALUE4",
+             |  "v16": {
+             |    "someKey": 4711
+             |  }
              |}""".trimMargin()
 
         val expected = ClassWithDefaultValues(
@@ -81,7 +84,8 @@ class TestDefaultValues {
                 v12 = ClassWithConstructorAsDefault("v12"),
                 v13 = GenericClassWithConstructorAsDefault("v13"),
                 v14 = 14,
-                v15 = SomeEnum.VALUE4)
+                v15 = SomeEnum.VALUE4,
+                v16 = mapOf("someKey" to 4711))
 
         expected.testFormatting(json)
     }
@@ -103,7 +107,8 @@ class TestDefaultValues {
                 v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
                 v13 = GenericClassWithConstructorAsDefault(null),
                 v14 = 4711,
-                v15 = SomeEnum.VALUE3)
+                v15 = SomeEnum.VALUE3,
+                v16 = emptyMap())
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v1": null,
@@ -122,7 +127,8 @@ class TestDefaultValues {
              |  "v12": null,
              |  "v13": null,
              |  "v14": null,
-             |  "v15": null
+             |  "v15": null,
+             |  "v16": null
              |}""".trimMargin())
 
         assertEquals(expected, actual)
@@ -145,7 +151,8 @@ class TestDefaultValues {
                 v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
                 v13 = GenericClassWithConstructorAsDefault(null),
                 v14 = 4711,
-                v15 = SomeEnum.VALUE3)
+                v15 = SomeEnum.VALUE3,
+                v16 = emptyMap())
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v10": {

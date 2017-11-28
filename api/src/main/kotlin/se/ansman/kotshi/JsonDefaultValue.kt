@@ -48,5 +48,104 @@ package se.ansman.kotshi
         AnnotationTarget.FIELD,
         AnnotationTarget.PROPERTY_GETTER)
 @MustBeDocumented
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 annotation class JsonDefaultValue
+
+/**
+ * An annotation used to specify the default value for a String property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueString(val value: String)
+
+/**
+ * An annotation used to specify the default value for a Boolean property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueBoolean(val value: Boolean)
+
+/**
+ * An annotation used to specify the default value for a Byte property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueByte(val value: Byte)
+
+/**
+ * An annotation used to specify the default value for a Char property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueChar(val value: Char)
+
+/**
+ * An annotation used to specify the default value for a Short property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueShort(val value: Short)
+
+/**
+ * An annotation used to specify the default value for a Int property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueInt(val value: Int)
+
+/**
+ * An annotation used to specify the default value for a Long property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueLong(val value: Long)
+
+/**
+ * An annotation used to specify the default value for a Float property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueFloat(val value: Float)
+
+/**
+ * An annotation used to specify the default value for a Double property inline.
+ *
+ * @param value The default value (required). Cannot be null.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue
+annotation class JsonDefaultValueDouble(val value: Double)

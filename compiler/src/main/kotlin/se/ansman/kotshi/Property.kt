@@ -25,9 +25,9 @@ class Property(
 
     val type: TypeName = typeMirror.asTypeName()
 
-    val defaultValueQualifiers = parameter.getDefaultValueQualifiers()
+    val defaultValueQualifier = parameter.getDefaultValueQualifier()
 
-    val shouldUseDefaultValue = defaultValueQualifiers.isNotEmpty() || parameter.hasAnnotation<JsonDefaultValue>()
+    val shouldUseDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
 
     val adapterKey: AdapterKey = AdapterKey(type, parameter.getJsonQualifiers())
 

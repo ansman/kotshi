@@ -66,6 +66,15 @@ the module wide setting).
 * `@KotshiConstructor` should be used when there are multiple constructors in the class. Place it on the primary constructor.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
 * `@JsonDefaultValue` used for enabling default values (see [below](#default-values))
+* `@JsonDefaultValueString` used for specifying default values for String properties inline
+* `@JsonDefaultValueBoolean` used for specifying default values for Boolean properties inline
+* `@JsonDefaultValueByte` used for specifying default values for Byte properties inline
+* `@JsonDefaultValueChar` used for specifying default values for Char properties inline
+* `@JsonDefaultValueShort` used for specifying default values for Short properties inline
+* `@JsonDefaultValueInt` used for specifying default values for Int properties inline
+* `@JsonDefaultValueLong` used for specifying default values for Long properties inline
+* `@JsonDefaultValueFloat` used for specifying default values for Float properties inline
+* `@JsonDefaultValueDouble` used for specifying default values for Double properties inline
 
 ### Default values
 You can use default values by first annotating a function, field, constructor or enum type with the annotation
@@ -75,6 +84,9 @@ You then annotate a parameter of the same type (or a supertype) with the same an
 
 If you need to have multiple default values of the same type you can create a custom default value annotation by
 annotating it with `@JsonDefaultValue`.
+
+If you don't want to define default value providers for primitivie and string properties you can use the specialized 
+default value annotations (`@JsonDefaultValueString`, `@JsonDefaultValueInt` etc).
 
 ```kotlin
 @Target(AnnotationTarget.VALUE_PARAMETER,
@@ -91,7 +103,9 @@ data class MyClass(
   @JsonDefaultValue
   val name: String,
   @StringWithNA
-  val address: String
+  val address: String,
+  @JsonDefaultValueInt(-1)
+  val age: Int
 ) {
   companion object {
     @JsonDefaultValue

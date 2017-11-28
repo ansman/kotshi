@@ -1,21 +1,23 @@
 package se.ansman.kotshi
 
+import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeVariable
 import javax.lang.model.util.Types
 
 class DefaultValueProviders(private val types: Types) {
-    private val providers: MutableList<DefaultValueProvider> = ArrayList()
+    private val providers: MutableList<ComplexDefaultValueProvider> = ArrayList()
 
-    fun register(provider: DefaultValueProvider) {
+    fun register(provider: ComplexDefaultValueProvider) {
         providers.add(provider)
     }
 
     fun validate() {
         providers
                 .asSequence()
-                .groupByTo(LinkedHashMap()) { it.type to it.qualifiers }
+                .groupByTo(LinkedHashMap()) { it.type to it.qualifier }
                 .forEach { (type, qualifiers), grouped ->
                     // This fix is needed because @JvmStatic causes a static function AND the companion function to be
                     // generated so we remove the companion function
@@ -30,20 +32,40 @@ class DefaultValueProviders(private val types: Types) {
                     }
 
                     if (grouped.size > 1) {
-                        throw ProcessingError("Multiple providers provide values for type $type with qualifiers $qualifiers: ${grouped.map { it.accessor }}", grouped.first().element)
+                        throw ProcessingError("Multiple providers provide values for type $type with qualifier $qualifiers: ${grouped.map { it.accessor }}", grouped.first().element)
                     }
                 }
     }
 
-    operator fun get(property: Property): DefaultValueProvider =
-            get(property, true)
-                    ?: get(property, false)
-                    ?: throw ProcessingError("No default value provider found", property.parameter)
+    operator fun get(property: Property): DefaultValueProvider {
+        return getPrimitiveAnnotation<String, JsonDefaultValueString>(property) { CodeBlock.of("\$S", it.value) }
+                ?: getPrimitiveAnnotation<Boolean, JsonDefaultValueBoolean>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Byte, JsonDefaultValueByte>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Char, JsonDefaultValueChar>(property) { CodeBlock.of("'${it.value.toString().replace("'", "\\'")}'") }
+                ?: getPrimitiveAnnotation<Short, JsonDefaultValueShort>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Int, JsonDefaultValueInt>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Long, JsonDefaultValueLong>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Float, JsonDefaultValueFloat>(property) { CodeBlock.of("${it.value}f") }
+                ?: getPrimitiveAnnotation<Double, JsonDefaultValueDouble>(property) { CodeBlock.of("${it.value}") }
+                ?: get(property, true)
+                ?: get(property, false)
+                ?: throw ProcessingError("No default value provider found", property.parameter)
+    }
 
-    private fun get(property: Property, onlyExactMatch: Boolean): DefaultValueProvider? {
+    private inline fun <reified T, reified A : Annotation> getPrimitiveAnnotation(property: Property, block: (A) -> CodeBlock): DefaultValueProvider? =
+            property.parameter.getAnnotation(A::class.java)?.let {
+                val type = if (property.type.isPrimitive) property.type.box() else property.type
+                if (type == TypeName.get(T::class.java)) {
+                    FixedDefaultValueProvider(TypeName.get(T::class.java), block(it))
+                } else {
+                    throw ProcessingError("${A::class.java.simpleName} is only applicable to ${T::class.java.simpleName}s", property.parameter)
+                }
+            }
+
+    private fun get(property: Property, onlyExactMatch: Boolean): ComplexDefaultValueProvider? {
         val applicable = providers
                 .asSequence()
-                .filter { property.defaultValueQualifiers == it.qualifiers }
+                .filter { property.defaultValueQualifier == it.qualifier }
                 .filter {
                     val rawProviderType = types.erasure(it.typeMirror)
                     val rawPropertyType = property.rawTypeMirror
