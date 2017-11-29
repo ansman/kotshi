@@ -1,6 +1,5 @@
 package se.ansman.kotshi
 
-import com.google.auto.common.BasicAnnotationProcessor
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
 import com.squareup.javapoet.*
@@ -13,23 +12,26 @@ import java.lang.reflect.Type
 import java.util.*
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
+import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
-        val messager: Messager,
-        val filer: Filer,
-        val adapters: MutableMap<TypeName, TypeName>
-) : BasicAnnotationProcessor.ProcessingStep {
-    override fun annotations(): Set<Class<out Annotation>> = setOf(
-            JsonSerializable::class.java,
-            KotshiJsonAdapterFactory::class.java)
+        private val messager: Messager,
+        private val types: Types,
+        private val filer: Filer,
+        private val adapters: MutableMap<TypeName, TypeName>,
+        private val defaultValueProviders: DefaultValueProviders
+) : KotshiProcessor.ProcessingStep {
+    override val annotations: Set<Class<out Annotation>> =
+            setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
+    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         val globalConfig = (elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
                 .firstOrNull()
                 ?.getAnnotation(KotshiJsonAdapterFactory::class.java)
@@ -40,10 +42,9 @@ class AdaptersProcessingStep(
             try {
                 generateJsonAdapter(globalConfig, element)
             } catch (e: ProcessingError) {
-                messager.printMessage(Diagnostic.Kind.ERROR, e.message, e.element)
+                messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }
-        return emptySet()
     }
 
     private fun generateJsonAdapter(globalConfig: GlobalConfig, element: Element) {
@@ -61,12 +62,7 @@ class AdaptersProcessingStep(
                     val field = fields[parameter.simpleName.toString()]
                             ?: throw ProcessingError("Could not find a field name ${parameter.simpleName}", parameter)
 
-                    val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: if (parameter.simpleName.startsWith("is")) {
-                        parameter.simpleName.toString()
-                    } else {
-                        "get${parameter.simpleName.toString().capitalize()}"
-                    }
-
+                    val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: parameter.getGetterName()
                     val getter = methods[getterName]
 
                     if (getter != null && Modifier.PRIVATE in getter.modifiers) {
@@ -77,7 +73,7 @@ class AdaptersProcessingStep(
                         throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
                     }
 
-                    Property(globalConfig, element, parameter, field, getter)
+                    Property(types, globalConfig, element, parameter, field, getter)
                 }
 
         val adapterKeys: Set<AdapterKey> = properties
@@ -279,6 +275,8 @@ class AdaptersProcessingStep(
                                    optionsField: FieldSpec): MethodSpec {
         fun Property.helperBooleanName() = "${name}IsSet"
 
+        fun Property.variableType() = if (shouldUseAdapter) this.type.box() else this.type
+
         return MethodSpec.methodBuilder("fromJson")
                 .addAnnotation(Override::class.java)
                 .addModifiers(Modifier.PUBLIC)
@@ -290,13 +288,10 @@ class AdaptersProcessingStep(
                 }
                 .apply {
                     for (property in properties) {
-                        if (property.shouldUseAdapter) {
-                            addStatement("\$T \$N = null", property.type.box(), property.name)
-                        } else {
-                            addStatement("\$T \$N = \$L", property.type, property.name, property.type.jvmDefault)
-                            if (!property.isNullable) {
-                                addStatement("boolean \$L = false", property.helperBooleanName())
-                            }
+                        val variableType = property.variableType()
+                        addStatement("\$T \$N = \$L", variableType, property.name, variableType.jvmDefault)
+                        if (variableType.isPrimitive) {
+                            addStatement("boolean \$L = false", property.helperBooleanName())
                         }
                     }
                 }
@@ -358,18 +353,78 @@ class AdaptersProcessingStep(
                 }
                 .addStatement("reader.endObject()")
                 .apply {
-                    properties.filterNot { it.isNullable }.takeIf { it.isNotEmpty() }?.let {
-                        addStatement("\$T stringBuilder = null", StringBuilder::class.java)
-                        for (property in it) {
-                            val check = if (property.shouldUseAdapter || property.isNullable) {
-                                "${property.name} == null"
+                    var hasStringBuilder = false
+                    for (property in properties) {
+                        val variableType = property.variableType()
+                        val check = if (property.shouldUseAdapter || property.isNullable) {
+                            "${property.name} == null"
+                        } else {
+                            "!${property.helperBooleanName()}"
+                        }
+
+                        val defaultValueProvider = if (property.shouldUseDefaultValue) {
+                            defaultValueProviders[property]
+                        } else {
+                            null
+                        }
+
+                        if (!hasStringBuilder) {
+                            val needsStringBuilder = if (defaultValueProvider != null) {
+                                !variableType.isPrimitive && defaultValueProvider.isNullable
                             } else {
-                                "!${property.helperBooleanName()}"
+                                !property.isNullable
                             }
-                            addIf(check) {
-                                addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+
+                            if (needsStringBuilder) {
+                                addStatement("\$T stringBuilder = null", StringBuilder::class.java)
+                                hasStringBuilder = true
                             }
                         }
+
+                        fun appendError() {
+                            addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                        }
+
+                        addIf(check) {
+                            if (defaultValueProvider != null) {
+                                // We require a temp var if the variable is a primitive and we allow the provider to return null
+                                val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
+                                val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
+                                addCode("\$[")
+                                if (requiresTmpVar) {
+                                    addCode("\$T $variableName = ", defaultValueProvider.type)
+                                } else {
+                                    addCode("$variableName = ")
+                                }
+                                addCode(defaultValueProvider.accessor)
+                                addCode(";\n\$]")
+
+                                // If the variable we're assigning to is primitive we don't need any checks since java
+                                // throws and if the default value provider cannot return null we don't need a check
+                                if (!variableType.isPrimitive && defaultValueProvider.canReturnNull) {
+                                    if (!defaultValueProvider.isNullable) {
+                                        addIf("$variableName == null") {
+                                            addStatement("throw new \$T(\"The default value provider returned null\")",
+                                                    java.lang.NullPointerException::class.java)
+                                        }
+                                    } else if (!property.isNullable) {
+                                        addIf("$variableName == null") {
+                                            appendError()
+                                        }
+                                    }
+                                }
+
+                                // If we used a temp var we need to assign it to the real variable
+                                if (requiresTmpVar) {
+                                    addStatement("${property.name} = $variableName")
+                                }
+
+                            } else if (!property.isNullable) {
+                                appendError()
+                            }
+                        }
+                    }
+                    if (hasStringBuilder) {
                         addIf("stringBuilder != null") {
                             addStatement("throw new \$T(stringBuilder.toString())", NullPointerException::class.java)
                         }
@@ -378,7 +433,6 @@ class AdaptersProcessingStep(
                 .addStatement("return new \$T(\n${properties.joinToString(", \n") { it.name }})", type)
                 .build()
     }
-
 }
 
 data class GlobalConfig(

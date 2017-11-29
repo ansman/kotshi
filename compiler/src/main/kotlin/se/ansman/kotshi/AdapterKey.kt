@@ -7,8 +7,10 @@ import com.squareup.javapoet.TypeVariableName
 import com.squareup.moshi.Types
 import javax.lang.model.element.Element
 
-data class AdapterKey(val type: TypeName,
-                      val jsonQualifiers: List<Element>) {
+data class AdapterKey(
+        val type: TypeName,
+        val jsonQualifiers: List<Element>
+) {
 
     val isGeneric: Boolean
         get() = type is TypeVariableName
