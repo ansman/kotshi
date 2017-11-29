@@ -85,7 +85,7 @@ You then annotate a parameter of the same type (or a supertype) with the same an
 If you need to have multiple default values of the same type you can create a custom default value annotation by
 annotating it with `@JsonDefaultValue`.
 
-If you don't want to define default value providers for primitive and string properties you can use the specialized 
+If you don't want to define default value providers for primitive and string properties you can use the specialized
 default value annotations (`@JsonDefaultValueString`, `@JsonDefaultValueInt` etc).
 
 ```kotlin
@@ -127,14 +127,14 @@ since some Kotlin features are not available in Java.
 Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
 you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
 
-Kotlin does not carry over annotations made to enum constants so you cannot annotate an enum constant with 
+Kotlin does not carry over annotations made to enum constants so you cannot annotate an enum constant with
 `@JsonDefaultValue`. This issue will hopefully be resolved in [Kotlin 1.2.20](https://youtrack.jetbrains.com/issue/KT-21433).
 
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:0.2.0'
-kapt 'se.ansman.kotshi:compiler:0.2.0'
+compile 'se.ansman.kotshi:api:0.3.0'
+kapt 'se.ansman.kotshi:compiler:0.3.0'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
