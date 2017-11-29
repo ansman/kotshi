@@ -387,7 +387,7 @@ class AdaptersProcessingStep(
 
                         addIf(check) {
                             if (defaultValueProvider != null) {
-                                // We require a temp var is the variable is a primitive and we allow the provider to return null
+                                // We require a temp var if the variable is a primitive and we allow the provider to return null
                                 val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
                                 val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
                                 addCode("\$[")

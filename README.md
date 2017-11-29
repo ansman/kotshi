@@ -85,7 +85,7 @@ You then annotate a parameter of the same type (or a supertype) with the same an
 If you need to have multiple default values of the same type you can create a custom default value annotation by
 annotating it with `@JsonDefaultValue`.
 
-If you don't want to define default value providers for primitivie and string properties you can use the specialized 
+If you don't want to define default value providers for primitive and string properties you can use the specialized 
 default value annotations (`@JsonDefaultValueString`, `@JsonDefaultValueInt` etc).
 
 ```kotlin
