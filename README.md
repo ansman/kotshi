@@ -127,6 +127,9 @@ since some Kotlin features are not available in Java.
 Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
 you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
 
+Kotlin does not carry over annotations made to enum constants so you cannot annotate an enum constant with 
+`@JsonDefaultValue`. This issue will hopefully be resolved in [Kotlin 1.2.20](https://youtrack.jetbrains.com/issue/KT-21433).
+
 Download
 ---
 ```groovy
