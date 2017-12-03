@@ -7,7 +7,7 @@ Moshi's default reflective adapters assume your classes are compiled from Java c
 data classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
-increase the binary size which in a constrained environment such as Android is something that has to be considered.
+increase the binary size which in a constrained environment such as Android is something is not preferable.
 
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
 hand written them yourself. It will automatically regenerate the adapters when you modify your class.
