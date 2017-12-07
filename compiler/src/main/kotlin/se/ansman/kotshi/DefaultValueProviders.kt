@@ -85,6 +85,10 @@ class DefaultValueProviders(private val types: Types) {
                         val prov = it.typeMirror as DeclaredType
                         val prop = property.typeMirror as DeclaredType
 
+                        if (prop.typeArguments.size != prov.typeArguments.size) {
+                            return@filter false
+                        }
+
                         // Then all type arguments must match
                         prop.typeArguments.zip(prov.typeArguments) { propTypeArg, provTypeArg ->
                             if (types.isAssignable(propTypeArg, provTypeArg)) {
