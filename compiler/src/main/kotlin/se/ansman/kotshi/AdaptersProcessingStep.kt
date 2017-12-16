@@ -252,17 +252,7 @@ class AdaptersProcessingStep(
                                             else -> throw AssertionError("Unknown type ${property.type}")
                                         }
 
-                                if (property.isNullable) {
-                                    addStatement("\$T ${property.name} = $getter", property.type)
-                                    addIfElse("${property.name} == null") {
-                                        addStatement("writer.nullValue()")
-                                    }
-                                    addElse {
-                                        writePrimitive("${property.name}")
-                                    }
-                                } else {
-                                    writePrimitive(getter)
-                                }
+                                writePrimitive(getter)
                             }
                         }
                         addStatement("writer.endObject()")
