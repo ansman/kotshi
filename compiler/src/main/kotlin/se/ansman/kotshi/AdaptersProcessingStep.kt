@@ -222,11 +222,12 @@ class AdaptersProcessingStep(
                     .addException(IOException::class.java)
                     .addParameter(JsonWriter::class.java, "writer")
                     .addParameter(TypeName.get(type), "value")
-                    .addIfElse("value == null") {
+                    .addIf("value == null") {
                         addStatement("writer.nullValue()")
+                        addStatement("return")
                     }
-                    .addElse {
-                        addStatement("writer.beginObject()")
+                    .addStatement("writer.beginObject()")
+                    .apply {
                         for (property in properties) {
                             addStatement("writer.name(\$S)", property.jsonName)
                             val getter = if (property.getter != null) {
