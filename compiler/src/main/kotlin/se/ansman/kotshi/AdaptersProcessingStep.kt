@@ -386,8 +386,8 @@ class AdaptersProcessingStep(
                             addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
                         }
 
-                        addIf(check) {
-                            if (defaultValueProvider != null) {
+                        if (defaultValueProvider != null) {
+                            addIf(check) {
                                 // We require a temp var if the variable is a primitive and we allow the provider to return null
                                 val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
                                 val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
@@ -420,7 +420,9 @@ class AdaptersProcessingStep(
                                     addStatement("${property.name} = $variableName")
                                 }
 
-                            } else if (!property.isNullable) {
+                            }
+                        } else if (!property.isNullable) {
+                            addIf(check) {
                                 appendError()
                             }
                         }
