@@ -288,6 +288,7 @@ class AdaptersProcessingStep(
                 .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
                     addStatement("return reader.nextNull()")
                 }
+                .addStatement("reader.beginObject()")
                 .apply {
                     for (property in properties) {
                         val variableType = property.variableType()
@@ -297,7 +298,6 @@ class AdaptersProcessingStep(
                         }
                     }
                 }
-                .addStatement("reader.beginObject()")
                 .addWhile("reader.hasNext()") {
                     addSwitch("reader.selectName(\$N)", optionsField) {
                         properties.forEachIndexed { index, property ->
