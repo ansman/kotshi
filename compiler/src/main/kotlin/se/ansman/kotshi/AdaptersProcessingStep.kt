@@ -188,7 +188,7 @@ class AdaptersProcessingStep(
                             .apply {
                                 jsonQualifiers.forEachIndexed { index, qualifier ->
                                     if (index > 0) add(", ")
-                                    add("\$T.createJsonQualifierImplementation(\$T.class)", KotshiUtils::class.java, qualifier)
+                                    add("\$T.createJsonQualifierImplementation(\$T.class)", KOTSHI_UTILS, qualifier)
                                 }
                             }
                             .add("))")
@@ -260,8 +260,8 @@ class AdaptersProcessingStep(
                                             TypeName.DOUBLE,
                                             TypeName.SHORT,
                                             TypeName.BOOLEAN -> addStatement("writer.value($getter)")
-                                            TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
-                                            TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
+                                            TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KOTSHI_UTILS)
+                                            TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KOTSHI_UTILS)
                                             else -> throw AssertionError("Unknown type ${property.type}")
                                         }
 
@@ -332,10 +332,10 @@ class AdaptersProcessingStep(
                                             addStatement("\$L = reader.nextBoolean()", property.variableName())
                                         }
                                         TypeName.BYTE -> readPrimitive {
-                                            addStatement("\$L = \$T.nextByte(reader)", property.variableName(), KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextByte(reader)", property.variableName(), KOTSHI_UTILS)
                                         }
                                         TypeName.SHORT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextShort(reader)", property.variableName(), KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextShort(reader)", property.variableName(), KOTSHI_UTILS)
                                         }
                                         TypeName.INT -> readPrimitive {
                                             addStatement("\$L = reader.nextInt()", property.variableName())
@@ -344,10 +344,10 @@ class AdaptersProcessingStep(
                                             addStatement("\$L = reader.nextLong()", property.variableName())
                                         }
                                         TypeName.CHAR -> readPrimitive {
-                                            addStatement("\$L = \$T.nextChar(reader)", property.variableName(), KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextChar(reader)", property.variableName(), KOTSHI_UTILS)
                                         }
                                         TypeName.FLOAT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextFloat(reader)", property.variableName(), KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextFloat(reader)", property.variableName(), KOTSHI_UTILS)
                                         }
                                         TypeName.DOUBLE -> readPrimitive {
                                             addStatement("\$L = reader.nextDouble()", property.variableName())
@@ -393,7 +393,7 @@ class AdaptersProcessingStep(
                         }
 
                         fun appendError() {
-                            addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                            addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KOTSHI_UTILS, property.name)
                         }
 
                         if (defaultValueProvider != null) {

@@ -1,9 +1,11 @@
 package se.ansman.kotshi
 
+import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 
 val TYPE_NAME_STRING = TypeName.get(String::class.java)
+val KOTSHI_UTILS = ClassName.get("se.ansman.kotshi", "KotshiUtils")
 
 val TypeName.jvmDefault: String
     get() {
