@@ -74,7 +74,13 @@ object KotshiUtils {
     fun JsonWriter.byteValue(byte: Byte): JsonWriter = value(byte.toInt() and 0xff)
 
     @JvmStatic
+    fun JsonWriter.byteValue(byte: Byte?): JsonWriter = if (byte == null) nullValue() else byteValue(byte)
+
+    @JvmStatic
     fun JsonWriter.value(char: Char): JsonWriter = value(char.toString())
+
+    @JvmStatic
+    fun JsonWriter.value(char: Char?): JsonWriter = if (char == null) nullValue() else value(char)
 
     @JvmStatic
     private fun JsonReader.nextIntInRange(typeMessage: String, min: Int, max: Int): Int {
