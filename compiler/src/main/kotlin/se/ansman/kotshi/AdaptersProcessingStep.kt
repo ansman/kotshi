@@ -222,11 +222,12 @@ class AdaptersProcessingStep(
                     .addException(IOException::class.java)
                     .addParameter(JsonWriter::class.java, "writer")
                     .addParameter(TypeName.get(type), "value")
-                    .addIfElse("value == null") {
+                    .addIf("value == null") {
                         addStatement("writer.nullValue()")
+                        addStatement("return")
                     }
-                    .addElse {
-                        addStatement("writer.beginObject()")
+                    .addStatement("writer.beginObject()")
+                    .apply {
                         for (property in properties) {
                             addStatement("writer.name(\$S)", property.jsonName)
                             val getter = if (property.getter != null) {
@@ -375,8 +376,8 @@ class AdaptersProcessingStep(
                             addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
                         }
 
-                        addIf(check) {
-                            if (defaultValueProvider != null) {
+                        if (defaultValueProvider != null) {
+                            addIf(check) {
                                 // We require a temp var if the variable is a primitive and we allow the provider to return null
                                 val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
                                 val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
@@ -409,7 +410,9 @@ class AdaptersProcessingStep(
                                     addStatement("${property.name} = $variableName")
                                 }
 
-                            } else if (!property.isNullable) {
+                            }
+                        } else if (!property.isNullable) {
+                            addIf(check) {
                                 appendError()
                             }
                         }
