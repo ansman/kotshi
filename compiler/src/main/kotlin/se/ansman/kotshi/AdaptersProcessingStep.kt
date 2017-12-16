@@ -48,6 +48,7 @@ class AdaptersProcessingStep(
     }
 
     private fun generateJsonAdapter(globalConfig: GlobalConfig, element: Element) {
+        val nameAllocator = NameAllocator()
         val typeElement = MoreElements.asType(element)
         val typeMirror = typeElement.asType()
         val typeName = TypeName.get(typeMirror)
@@ -91,6 +92,15 @@ class AdaptersProcessingStep(
                 ?.map { it as TypeVariableName }
                 ?: emptyList()
 
+        nameAllocator.newName("OPTIONS")
+        nameAllocator.newName("value")
+        nameAllocator.newName("writer")
+        nameAllocator.newName("reader")
+        nameAllocator.newName("types")
+        nameAllocator.newName("moshi")
+        nameAllocator.newName("stringBuilder")
+        (0 until adapterKeys.size).forEach { nameAllocator.newName(generateAdapterFieldName(it)) }
+
         val stringArguments = Collections.nCopies(properties.size, "\$S").joinToString(",\n")
         val jsonNames = properties.map { it.jsonName }
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
@@ -104,7 +114,7 @@ class AdaptersProcessingStep(
                 .addFields(generateFields(adapterKeys))
                 .addMethod(generateConstructor(adapterKeys, genericTypes))
                 .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
-                .addMethod(generateReadMethod(typeMirror, properties, adapterKeys, optionsField))
+                .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
                 .build()
 
         val output = JavaFile.builder(adapter.packageName(), typeSpec).build()
@@ -262,11 +272,19 @@ class AdaptersProcessingStep(
                     }
                     .build()
 
-    private fun generateReadMethod(type: TypeMirror,
+    private fun generateReadMethod(nameAllocator: NameAllocator,
+                                   type: TypeMirror,
                                    properties: Iterable<Property>,
                                    adapters: Set<AdapterKey>,
                                    optionsField: FieldSpec): MethodSpec {
-        fun Property.helperBooleanName() = "${name}IsSet"
+        val helperNames = mutableMapOf<Property, String>()
+        val variableNames = mutableMapOf<Property, String>()
+        fun Property.helperBooleanName() = helperNames.getOrPut(this) {
+            nameAllocator.newName("${name}IsSet", "${name}IsSet")
+        }
+        fun Property.variableName() = variableNames.getOrPut(this) {
+            nameAllocator.newName(name.toString(), this)
+        }
 
         fun Property.variableType() = if (shouldUseAdapter) this.type.box() else this.type
 
@@ -283,7 +301,7 @@ class AdaptersProcessingStep(
                 .apply {
                     for (property in properties) {
                         val variableType = property.variableType()
-                        addStatement("\$T \$N = \$L", variableType, property.name, variableType.jvmDefault)
+                        addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
                         if (variableType.isPrimitive) {
                             addStatement("boolean \$L = false", property.helperBooleanName())
                         }
@@ -295,7 +313,7 @@ class AdaptersProcessingStep(
                             addSwitchBranch("case \$L", index) {
                                 if (property.shouldUseAdapter) {
                                     val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))
-                                    addStatement("\$L = \$L.fromJson(reader)", property.name, adapterFieldName)
+                                    addStatement("\$L = \$L.fromJson(reader)", property.variableName(), adapterFieldName)
                                 } else {
                                     fun MethodSpec.Builder.readPrimitive(reader: () -> Unit) {
                                         addIfElse("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
@@ -311,28 +329,28 @@ class AdaptersProcessingStep(
 
                                     when (property.type.unbox()) {
                                         TypeName.BOOLEAN -> readPrimitive {
-                                            addStatement("\$L = reader.nextBoolean()", property.name)
+                                            addStatement("\$L = reader.nextBoolean()", property.variableName())
                                         }
                                         TypeName.BYTE -> readPrimitive {
-                                            addStatement("\$L = \$T.nextByte(reader)", property.name, KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextByte(reader)", property.variableName(), KotshiUtils::class.java)
                                         }
                                         TypeName.SHORT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextShort(reader)", property.name, KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextShort(reader)", property.variableName(), KotshiUtils::class.java)
                                         }
                                         TypeName.INT -> readPrimitive {
-                                            addStatement("\$L = reader.nextInt()", property.name)
+                                            addStatement("\$L = reader.nextInt()", property.variableName())
                                         }
                                         TypeName.LONG -> readPrimitive {
-                                            addStatement("\$L = reader.nextLong()", property.name)
+                                            addStatement("\$L = reader.nextLong()", property.variableName())
                                         }
                                         TypeName.CHAR -> readPrimitive {
-                                            addStatement("\$L = \$T.nextChar(reader)", property.name, KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextChar(reader)", property.variableName(), KotshiUtils::class.java)
                                         }
                                         TypeName.FLOAT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextFloat(reader)", property.name, KotshiUtils::class.java)
+                                            addStatement("\$L = \$T.nextFloat(reader)", property.variableName(), KotshiUtils::class.java)
                                         }
                                         TypeName.DOUBLE -> readPrimitive {
-                                            addStatement("\$L = reader.nextDouble()", property.name)
+                                            addStatement("\$L = reader.nextDouble()", property.variableName())
                                         }
                                     }
                                 }
@@ -350,7 +368,7 @@ class AdaptersProcessingStep(
                     for (property in properties) {
                         val variableType = property.variableType()
                         val check = if (property.shouldUseAdapter || property.isNullable) {
-                            "${property.name} == null"
+                            "${property.variableName()} == null"
                         } else {
                             "!${property.helperBooleanName()}"
                         }
@@ -382,7 +400,11 @@ class AdaptersProcessingStep(
                             addIf(check) {
                                 // We require a temp var if the variable is a primitive and we allow the provider to return null
                                 val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
-                                val variableName = if (requiresTmpVar) "${property.name}Default" else property.name
+                                val variableName = if (requiresTmpVar) {
+                                    nameAllocator.newName("${property.variableName()}Default")
+                                } else {
+                                    property.variableName()
+                                }
                                 addCode("\$[")
                                 if (requiresTmpVar) {
                                     addCode("\$T $variableName = ", defaultValueProvider.type)
@@ -409,7 +431,7 @@ class AdaptersProcessingStep(
 
                                 // If we used a temp var we need to assign it to the real variable
                                 if (requiresTmpVar) {
-                                    addStatement("${property.name} = $variableName")
+                                    addStatement("${property.variableName()} = $variableName")
                                 }
 
                             }
@@ -425,7 +447,7 @@ class AdaptersProcessingStep(
                         }
                     }
                 }
-                .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.name }})", type)
+                .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.variableName() }})", type)
                 .build()
     }
 }
