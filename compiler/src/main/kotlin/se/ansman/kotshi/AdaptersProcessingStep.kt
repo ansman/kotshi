@@ -91,8 +91,10 @@ class AdaptersProcessingStep(
                 ?.map { it as TypeVariableName }
                 ?: emptyList()
 
+        val stringArguments = Collections.nCopies(properties.size, "\$S").joinToString(",\n")
+        val jsonNames = properties.map { it.jsonName }
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
-                .initializer("\$T.of(${properties.joinToString(", ") { "\"${it.jsonName}\"" }})", JsonReader.Options::class.java)
+                .initializer("\$[\$T.of(\n$stringArguments)\$]", JsonReader.Options::class.java, *jsonNames.toTypedArray())
                 .build()
         val typeSpec = TypeSpec.classBuilder(adapter)
                 .addTypeVariables(genericTypes)
@@ -430,7 +432,7 @@ class AdaptersProcessingStep(
                         }
                     }
                 }
-                .addStatement("return new \$T(\n${properties.joinToString(", \n") { it.name }})", type)
+                .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.name }})", type)
                 .build()
     }
 }
