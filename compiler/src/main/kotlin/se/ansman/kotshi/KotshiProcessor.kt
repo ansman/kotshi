@@ -24,7 +24,7 @@ class KotshiProcessor : AbstractProcessor() {
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latestSupported()
 
     private fun initSteps(): Iterable<ProcessingStep> {
-        val adapters: MutableMap<TypeName, TypeName> = mutableMapOf()
+        val adapters: MutableMap<TypeName, GeneratedAdapter> = mutableMapOf()
         val defaultValueProviders = DefaultValueProviders(processingEnv.typeUtils)
         return listOf(
                 DefaultValuesProcessingStep(
