@@ -101,21 +101,21 @@ annotation class StringWithNA
 
 @JsonSerializable
 data class MyClass(
-  @JsonDefaultValue
-  val name: String,
-  @StringWithNA
-  val address: String,
-  @JsonDefaultValueInt(-1)
-  val age: Int
-) {
-  companion object {
     @JsonDefaultValue
-    @JvmField
-    val defaultString = ""
-
+    val name: String,
     @StringWithNA
-    fun defaultStringWithNA() = "N/A"
-  }
+    val address: String,
+    @JsonDefaultValueInt(-1)
+    val age: Int
+) {
+    companion object {
+        @JsonDefaultValue
+        @JvmField
+        val defaultString = ""
+
+        @StringWithNA
+        fun defaultStringWithNA() = "N/A"
+    }
 }
 ```
 The default value provider is allowed to return `null` but only if it's annotated with `@Nullable`.
