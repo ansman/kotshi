@@ -46,7 +46,9 @@ class Property(
                 PrimitiveAdapters.DISABLED -> false
             }
 
-    val shouldUseAdapter: Boolean = !(type.isPrimitive || type.isBoxedPrimitive) || useAdaptersForPrimitives
+    val shouldUseAdapter: Boolean = useAdaptersForPrimitives ||
+            adapterKey.jsonQualifiers.isNotEmpty() ||
+            !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
 
     init {
         if (shouldUseDefaultValue) {
