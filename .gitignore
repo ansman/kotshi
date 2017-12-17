@@ -1,5 +1,11 @@
+# Gradle
 .gradle
-local.properties
 build
+/reports
+
+# IntelliJ / Android Studio
 .idea
+*.iml
+local.properties
+
 hs_err*
