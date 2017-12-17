@@ -29,10 +29,12 @@ inline fun MethodSpec.Builder.addNextControlFlow(controlFlow: String,
  */
 inline fun MethodSpec.Builder.addSwitchBranch(branch: String,
                                               vararg args: Any,
+                                              /** Terminating statement. Pass null for fall-through. */
+                                              terminator: String? = "break",
                                               block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder {
-    beginControlFlow("$branch:", *args)
+    beginControlFlow("case $branch:", *args)
     block()
-    addStatement("break")
+    terminator?.let { addStatement(it) }
     return endControlFlow()
 }
 
