@@ -171,15 +171,11 @@ class AdaptersProcessingStep(
     private fun generateConstructor(adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
-            .apply {
-                if (adapters.isNotEmpty()) {
-                    addParameter(Moshi::class.java, "moshi")
-                }
+            .applyIf(adapters.isNotEmpty()) {
+                addParameter(Moshi::class.java, "moshi")
             }
-            .apply {
-                if (genericTypes.isNotEmpty()) {
-                    addParameter(Array<Type>::class.java, "types")
-                }
+            .applyIf(genericTypes.isNotEmpty()) {
+                addParameter(Array<Type>::class.java, "types")
             }
             .apply {
                 fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
@@ -241,37 +237,35 @@ class AdaptersProcessingStep(
                         addStatement("return")
                     }
                     .addStatement("writer.beginObject()")
-                    .apply {
-                        for (property in properties) {
-                            addStatement("writer.name(\$S)", property.jsonName)
-                            val getter = if (property.getter != null) {
-                                "value.${property.getter.simpleName}()"
-                            } else {
-                                "value.${property.field.simpleName}"
-                            }
-
-                            if (property.shouldUseAdapter) {
-                                val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
-                                addStatement("$adapterName.toJson(writer, $getter)")
-                            } else {
-                                fun MethodSpec.Builder.writePrimitive(getter: String) =
-                                        when (property.type.unbox()) {
-                                            TypeName.INT,
-                                            TypeName.LONG,
-                                            TypeName.FLOAT,
-                                            TypeName.DOUBLE,
-                                            TypeName.SHORT,
-                                            TypeName.BOOLEAN -> addStatement("writer.value($getter)")
-                                            TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
-                                            TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
-                                            else -> throw AssertionError("Unknown type ${property.type}")
-                                        }
-
-                                writePrimitive(getter)
-                            }
+                    .applyEach(properties) { property ->
+                        addStatement("writer.name(\$S)", property.jsonName)
+                        val getter = if (property.getter != null) {
+                            "value.${property.getter.simpleName}()"
+                        } else {
+                            "value.${property.field.simpleName}"
                         }
-                        addStatement("writer.endObject()")
+
+                        if (property.shouldUseAdapter) {
+                            val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
+                            addStatement("$adapterName.toJson(writer, $getter)")
+                        } else {
+                            fun MethodSpec.Builder.writePrimitive(getter: String) =
+                                    when (property.type.unbox()) {
+                                        TypeName.INT,
+                                        TypeName.LONG,
+                                        TypeName.FLOAT,
+                                        TypeName.DOUBLE,
+                                        TypeName.SHORT,
+                                        TypeName.BOOLEAN -> addStatement("writer.value($getter)")
+                                        TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
+                                        TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
+                                        else -> throw AssertionError("Unknown type ${property.type}")
+                                    }
+
+                            writePrimitive(getter)
+                        }
                     }
+                    .apply { addStatement("writer.endObject()") }
                     .build()
 
     private fun generateReadMethod(nameAllocator: NameAllocator,
@@ -284,6 +278,7 @@ class AdaptersProcessingStep(
         fun Property.helperBooleanName() = helperNames.getOrPut(this) {
             nameAllocator.newName("${name}IsSet", "${name}IsSet")
         }
+
         fun Property.variableName() = variableNames.getOrPut(this) {
             nameAllocator.newName(name.toString(), this)
         }
@@ -300,13 +295,11 @@ class AdaptersProcessingStep(
                     addStatement("return reader.nextNull()")
                 }
                 .addStatement("reader.beginObject()")
-                .apply {
-                    for (property in properties) {
-                        val variableType = property.variableType()
-                        addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
-                        if (variableType.isPrimitive) {
-                            addStatement("boolean \$L = false", property.helperBooleanName())
-                        }
+                .applyEach(properties) { property ->
+                    val variableType = property.variableType()
+                    addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
+                    if (variableType.isPrimitive) {
+                        addStatement("boolean \$L = false", property.helperBooleanName())
                     }
                 }
                 .addWhile("reader.hasNext()") {
