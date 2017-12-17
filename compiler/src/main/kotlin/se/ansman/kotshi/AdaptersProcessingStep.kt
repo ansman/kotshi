@@ -25,7 +25,7 @@ class AdaptersProcessingStep(
         private val messager: Messager,
         private val types: Types,
         private val filer: Filer,
-        private val adapters: MutableMap<TypeName, TypeName>,
+        private val adapters: MutableMap<TypeName, GeneratedAdapter>,
         private val defaultValueProviders: DefaultValueProviders
 ) : KotshiProcessor.ProcessingStep {
     override val annotations: Set<Class<out Annotation>> =
@@ -96,8 +96,6 @@ class AdaptersProcessingStep(
         nameAllocator.newName("value")
         nameAllocator.newName("writer")
         nameAllocator.newName("reader")
-        nameAllocator.newName("types")
-        nameAllocator.newName("moshi")
         nameAllocator.newName("stringBuilder")
         (0 until adapterKeys.size).forEach { nameAllocator.newName(generateAdapterFieldName(it)) }
 
@@ -120,10 +118,10 @@ class AdaptersProcessingStep(
         val output = JavaFile.builder(adapter.packageName(), typeSpec).build()
 
         output.writeTo(filer)
-        adapters[TypeName.get(element.asType())] = if (genericTypes.isEmpty()) {
-            adapter
-        } else {
-            ParameterizedTypeName.get(adapter, *(genericTypes as List<TypeName>).toTypedArray())
+        adapters[TypeName.get(element.asType())] = when {
+            adapterKeys.isEmpty() -> GeneratedAdapter(adapter, requiresMoshi = false)
+            genericTypes.isNotEmpty() -> GeneratedAdapter(adapter, requiresTypes = true)
+            else -> GeneratedAdapter(adapter)
         }
     }
 
@@ -173,7 +171,11 @@ class AdaptersProcessingStep(
     private fun generateConstructor(adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
-            .addParameter(Moshi::class.java, "moshi")
+            .apply {
+                if (adapters.isNotEmpty()) {
+                    addParameter(Moshi::class.java, "moshi")
+                }
+            }
             .apply {
                 if (genericTypes.isNotEmpty()) {
                     addParameter(Array<Type>::class.java, "types")
