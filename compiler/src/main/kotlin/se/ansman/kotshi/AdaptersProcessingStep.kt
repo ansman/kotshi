@@ -250,7 +250,8 @@ class AdaptersProcessingStep(
                             addStatement("$adapterName.toJson(writer, $getter)")
                         } else {
                             fun MethodSpec.Builder.writePrimitive(getter: String) =
-                                    when (property.type.unbox()) {
+                                    when (if (property.type.isBoxedPrimitive) property.type.unbox() else property.type) {
+                                        TYPE_NAME_STRING,
                                         TypeName.INT,
                                         TypeName.LONG,
                                         TypeName.FLOAT,
@@ -283,7 +284,7 @@ class AdaptersProcessingStep(
             nameAllocator.newName(name.toString(), this)
         }
 
-        fun Property.variableType() = if (shouldUseAdapter) this.type.box() else this.type
+        fun Property.variableType() = if (shouldUseAdapter && this.type.isPrimitive) this.type.box() else this.type
 
         return MethodSpec.methodBuilder("fromJson")
                 .addAnnotation(Override::class.java)
@@ -316,13 +317,16 @@ class AdaptersProcessingStep(
                                         }
                                         addElse {
                                             reader()
-                                            if (!property.isNullable) {
+                                            if (property.variableType().isPrimitive) {
                                                 addStatement("\$L = true", property.helperBooleanName())
                                             }
                                         }
                                     }
 
-                                    when (property.type.unbox()) {
+                                    when (if (property.type.isBoxedPrimitive) property.type.unbox() else property.type) {
+                                        TYPE_NAME_STRING -> readPrimitive {
+                                            addStatement("\$L = reader.nextString()", property.variableName())
+                                        }
                                         TypeName.BOOLEAN -> readPrimitive {
                                             addStatement("\$L = reader.nextBoolean()", property.variableName())
                                         }
@@ -362,10 +366,10 @@ class AdaptersProcessingStep(
                     var hasStringBuilder = false
                     for (property in properties) {
                         val variableType = property.variableType()
-                        val check = if (property.shouldUseAdapter || property.isNullable) {
-                            "${property.variableName()} == null"
-                        } else {
+                        val check = if (variableType.isPrimitive) {
                             "!${property.helperBooleanName()}"
+                        } else {
+                            "${property.variableName()} == null"
                         }
 
                         val defaultValueProvider = if (property.shouldUseDefaultValue) {

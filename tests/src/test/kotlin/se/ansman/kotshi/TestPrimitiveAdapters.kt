@@ -11,6 +11,7 @@ import kotlin.test.assertEquals
 
 class TestPrimitiveAdapters {
     private lateinit var moshi: Moshi
+    private lateinit var stringAdapter: DelegateAdapter<String>
     private lateinit var booleanAdapter: DelegateAdapter<Boolean>
     private lateinit var byteAdapter: DelegateAdapter<Byte>
     private lateinit var charAdapter: DelegateAdapter<Char>
@@ -23,6 +24,7 @@ class TestPrimitiveAdapters {
     @Before
     fun setup() {
         val basicMoshi = Moshi.Builder().build()
+        stringAdapter = DelegateAdapter(basicMoshi.adapter(String::class.java))
         booleanAdapter = DelegateAdapter(basicMoshi.adapter(Boolean::class.java))
         byteAdapter = DelegateAdapter(basicMoshi.adapter(Byte::class.java))
         charAdapter = DelegateAdapter(basicMoshi.adapter(Char::class.java))
@@ -33,6 +35,7 @@ class TestPrimitiveAdapters {
         doubleAdapter = DelegateAdapter(basicMoshi.adapter(Double::class.java))
         moshi = Moshi.Builder()
                 .add(TestFactory.INSTANCE)
+                .add(String::class.java, stringAdapter)
                 .add(Boolean::class.javaPrimitiveType!!, booleanAdapter)
                 .add(Boolean::class.javaObjectType, booleanAdapter)
                 .add(Byte::class.javaPrimitiveType!!, byteAdapter)
@@ -55,6 +58,7 @@ class TestPrimitiveAdapters {
     @Test
     fun testDoesntCallAdapter() {
         testFormatting(json, NotUsingPrimitiveAdapterTestClass(
+                aString = "hello",
                 aBoolean = true,
                 aNullableBoolean = false,
                 aByte = -1,
@@ -71,6 +75,8 @@ class TestPrimitiveAdapters {
                 nullableFloat = 1337.5f,
                 aDouble = 4711.5,
                 nullableDouble = 1337.5))
+        assertEquals(0, stringAdapter.readCount)
+        assertEquals(0, stringAdapter.writeCount)
         assertEquals(0, booleanAdapter.readCount)
         assertEquals(0, booleanAdapter.writeCount)
         assertEquals(0, byteAdapter.readCount)
@@ -92,6 +98,7 @@ class TestPrimitiveAdapters {
     @Test
     fun testCallsAdapter() {
         testFormatting(json, UsingPrimitiveAdapterTestClass(
+                aString = "hello",
                 aBoolean = true,
                 aNullableBoolean = false,
                 aByte = -1,
@@ -108,6 +115,8 @@ class TestPrimitiveAdapters {
                 nullableFloat = 1337.5f,
                 aDouble = 4711.5,
                 nullableDouble = 1337.5))
+        assertEquals(1, stringAdapter.readCount)
+        assertEquals(1, stringAdapter.writeCount)
         assertEquals(2, booleanAdapter.readCount)
         assertEquals(2, booleanAdapter.writeCount)
         assertEquals(2, byteAdapter.readCount)
@@ -142,6 +151,7 @@ class TestPrimitiveAdapters {
 
     companion object {
         val json = """{
+            |  "aString": "hello",
             |  "aBoolean": true,
             |  "aNullableBoolean": false,
             |  "aByte": 255,

@@ -2,6 +2,7 @@ package se.ansman.kotshi
 
 @JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
 data class UsingPrimitiveAdapterTestClass(
+        val aString: String,
         val aBoolean: Boolean,
         val aNullableBoolean: Boolean?,
         val aByte: Byte,
@@ -22,6 +23,7 @@ data class UsingPrimitiveAdapterTestClass(
 
 @JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.DISABLED)
 data class NotUsingPrimitiveAdapterTestClass(
+        val aString: String,
         val aBoolean: Boolean,
         val aNullableBoolean: Boolean?,
         val aByte: Byte,
