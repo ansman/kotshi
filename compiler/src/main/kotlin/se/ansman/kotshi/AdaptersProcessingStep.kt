@@ -308,7 +308,7 @@ class AdaptersProcessingStep(
                 .addWhile("reader.hasNext()") {
                     addSwitch("reader.selectName(\$N)", optionsField) {
                         properties.forEachIndexed { index, property ->
-                            addSwitchBranch("case \$L", index) {
+                            addSwitchBranch("\$L", index, terminator = "continue") {
                                 if (property.shouldUseAdapter) {
                                     val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))
                                     addStatement("\$L = \$L.fromJson(reader)", property.variableName(), adapterFieldName)
@@ -357,7 +357,7 @@ class AdaptersProcessingStep(
                                 }
                             }
                         }
-                        addSwitchBranch("case -1") {
+                        addSwitchBranch("-1", terminator = "continue") {
                             addStatement("reader.nextName()")
                             addStatement("reader.skipValue()")
                         }
