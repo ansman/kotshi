@@ -223,6 +223,8 @@ class AdaptersProcessingStep(
 
     private fun generateAdapterFieldName(index: Int): String = "adapter$index"
 
+    private val Property.jsonType get() = if (this.type.isBoxedPrimitive) this.type.unbox() else this.type
+
     private fun generateWriteMethod(type: TypeMirror,
                                     properties: Iterable<Property>,
                                     adapterKeys: Set<AdapterKey>): MethodSpec =
@@ -250,7 +252,7 @@ class AdaptersProcessingStep(
                             addStatement("$adapterName.toJson(writer, $getter)")
                         } else {
                             fun MethodSpec.Builder.writePrimitive(getter: String) =
-                                    when (if (property.type.isBoxedPrimitive) property.type.unbox() else property.type) {
+                                    when (property.jsonType) {
                                         TYPE_NAME_STRING,
                                         TypeName.INT,
                                         TypeName.LONG,
@@ -323,7 +325,7 @@ class AdaptersProcessingStep(
                                         }
                                     }
 
-                                    when (if (property.type.isBoxedPrimitive) property.type.unbox() else property.type) {
+                                    when (property.jsonType) {
                                         TYPE_NAME_STRING -> readPrimitive {
                                             addStatement("\$L = reader.nextString()", property.variableName())
                                         }
