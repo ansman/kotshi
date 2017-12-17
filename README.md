@@ -96,6 +96,7 @@ default value annotations (`@JsonDefaultValueString`, `@JsonDefaultValueInt` etc
         AnnotationTarget.PROPERTY_GETTER)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
+@JsonDefaultValue // Makes this annotation a custom default value annotation
 annotation class StringWithNA
 
 @JsonSerializable
