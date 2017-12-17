@@ -52,6 +52,7 @@ class TestPrimitiveAdapters {
                 .add(Float::class.javaObjectType, floatAdapter)
                 .add(Double::class.javaPrimitiveType!!, doubleAdapter)
                 .add(Double::class.javaObjectType, doubleAdapter)
+                .add(Int::class.javaPrimitiveType!!, Hello::class.java, intAdapter)
                 .build()
     }
 
@@ -133,6 +134,15 @@ class TestPrimitiveAdapters {
         assertEquals(2, floatAdapter.writeCount)
         assertEquals(2, doubleAdapter.readCount)
         assertEquals(2, doubleAdapter.writeCount)
+    }
+
+    @Test
+    fun callsAdapterWhenQualifiersPresent() {
+        testFormatting("""{
+          |  "greetingInt": 1
+          |}""".trimMargin(), PrimitiveWithJsonQualifierTestClass(1))
+        assertEquals(1, intAdapter.readCount)
+        assertEquals(1, intAdapter.writeCount)
     }
 
     private inline fun <reified T> testFormatting(json: String, expected: T) {

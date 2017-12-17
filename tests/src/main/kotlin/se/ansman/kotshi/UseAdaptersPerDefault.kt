@@ -41,3 +41,8 @@ data class NotUsingPrimitiveAdapterTestClass(
         val aDouble: Double,
         val nullableDouble: Double?
 )
+
+@JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.DISABLED)
+data class PrimitiveWithJsonQualifierTestClass(
+    @Hello val greetingInt: Int
+)
