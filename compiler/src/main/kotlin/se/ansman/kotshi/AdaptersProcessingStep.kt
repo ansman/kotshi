@@ -268,7 +268,7 @@ class AdaptersProcessingStep(
                             writePrimitive(getter)
                         }
                     }
-                    .apply { addStatement("writer.endObject()") }
+                    .addStatement("writer.endObject()")
                     .build()
 
     private fun generateReadMethod(nameAllocator: NameAllocator,
