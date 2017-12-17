@@ -60,7 +60,7 @@ class FactoryProcessingStep(
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
         val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addModifiers(Modifier.FINAL)
                 .superclass(TypeName.get(factoryType.asType()))
                 .addMethod(MethodSpec.methodBuilder("create")
                         .addModifiers(Modifier.PUBLIC)
