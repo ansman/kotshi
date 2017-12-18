@@ -110,7 +110,9 @@ class AdaptersProcessingStep(
                 .superclass(getAdapterType(typeName))
                 .addField(optionsField)
                 .addFields(generateFields(adapterKeys))
-                .addMethod(generateConstructor(adapterKeys, genericTypes))
+                .applyIf(adapterKeys.isNotEmpty()) {
+                    addMethod(generateConstructor(adapterKeys, genericTypes))
+                }
                 .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
                 .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
                 .build()
@@ -171,9 +173,7 @@ class AdaptersProcessingStep(
     private fun generateConstructor(adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
-            .applyIf(adapters.isNotEmpty()) {
-                addParameter(Moshi::class.java, "moshi")
-            }
+            .addParameter(Moshi::class.java, "moshi")
             .applyIf(genericTypes.isNotEmpty()) {
                 addParameter(Array<Type>::class.java, "types")
             }
