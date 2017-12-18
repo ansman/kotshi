@@ -1,7 +1,7 @@
 Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
 ===
 
-An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin data classes.
+An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from immutable Kotlin data classes.
 
 Moshi's default reflective adapters assume your classes are compiled from Java code which causes problem for Kotlin
 data classes.
@@ -130,6 +130,11 @@ you to annotate the parameter with `@Getter`. This limitation will be removed wh
 
 Kotlin does not carry over annotations made to enum constants so you cannot annotate an enum constant with
 `@JsonDefaultValue`. This issue will hopefully be resolved in [Kotlin 1.2.20](https://youtrack.jetbrains.com/issue/KT-21433).
+
+Even though Kotlin nor Moshi prevents having mutable objects Kotshi tries to enforce that for the reason of promoting a good 
+design as well as avoiding complexity in the generated code. This means that all the properties that you want serialized must
+be declared in the primary constructor of the class. This means that `var` properties declared outside the constructor will
+not be serialized.
 
 Download
 ---
