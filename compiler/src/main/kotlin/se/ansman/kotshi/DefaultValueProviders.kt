@@ -111,7 +111,7 @@ class DefaultValueProviders(private val types: Types) {
             0 -> null
             1 -> applicable.first()
             else ->
-                throw ProcessingError("Multiple providers matches: ${applicable.map { it.accessor }}", property.field)
+                throw ProcessingError("Multiple providers matches: ${applicable.map { it.accessor }}", property.field ?: property.parameter)
         }
     }
 }
