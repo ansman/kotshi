@@ -61,17 +61,22 @@ class AdaptersProcessingStep(
         val properties = constructor.parameters
                 .map { parameter ->
                     val field = fields[parameter.simpleName.toString()]
-                            ?: throw ProcessingError("Could not find a field name ${parameter.simpleName}", parameter)
 
                     val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: parameter.getGetterName()
+
                     val getter = methods[getterName]
 
                     if (getter != null && Modifier.PRIVATE in getter.modifiers) {
                         throw ProcessingError("Getter must not be private", getter)
                     }
 
-                    if (getter == null && Modifier.PRIVATE in field.modifiers) {
-                        throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
+                    if (getter == null) {
+                        if (field == null) {
+                            throw ProcessingError("Could not find a field named ${parameter.simpleName} or a getter named $getterName", parameter)
+                        }
+                        if (Modifier.PRIVATE in field.modifiers) {
+                            throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
+                        }
                     }
 
                     Property(types, globalConfig, element, parameter, field, getter)
@@ -244,7 +249,7 @@ class AdaptersProcessingStep(
                         val getter = if (property.getter != null) {
                             "value.${property.getter.simpleName}()"
                         } else {
-                            "value.${property.field.simpleName}"
+                            "value.${property.field!!.simpleName}"
                         }
 
                         if (property.shouldUseAdapter) {

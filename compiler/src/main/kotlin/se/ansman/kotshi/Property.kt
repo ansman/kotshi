@@ -15,11 +15,11 @@ class Property(
         globalConfig: GlobalConfig,
         enclosingClass: Element,
         val parameter: VariableElement,
-        val field: VariableElement,
+        val field: VariableElement?,
         val getter: ExecutableElement?
 ) {
 
-    val typeMirror: TypeMirror = field.asType()
+    val typeMirror: TypeMirror = field?.asType() ?: parameter.asType()
 
     val rawTypeMirror: TypeMirror by lazy { types.erasure(typeMirror) }
 
@@ -31,9 +31,9 @@ class Property(
 
     val adapterKey: AdapterKey = AdapterKey(type, parameter.getJsonQualifiers())
 
-    val name: CharSequence = field.simpleName
+    val name: CharSequence = field?.simpleName ?: parameter.simpleName
 
-    val jsonName: CharSequence = field.getAnnotation(Json::class.java)?.name
+    val jsonName: CharSequence = field?.getAnnotation(Json::class.java)?.name
             ?: parameter.getAnnotation(Json::class.java)?.name
             ?: name
 
@@ -51,6 +51,8 @@ class Property(
             !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
 
     init {
+        require(getter != null || field != null)
+
         if (shouldUseDefaultValue) {
             if (adapterKey.isGeneric) {
                 throw ProcessingError("You cannot use default values on a generic type", parameter)
