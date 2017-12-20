@@ -22,5 +22,5 @@ dependencies {
 
 
 apply from: rootProject.file("gradle/maven-push.gradle")
-//apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
 apply from: rootProject.file('gradle/snapshots.gradle')

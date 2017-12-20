@@ -17,6 +17,6 @@ dependencies {
     testCompile libraries.moshi
 }
 
-//apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
 apply from: rootProject.file('gradle/snapshots.gradle')
 apply from: rootProject.file("gradle/maven-push.gradle")
