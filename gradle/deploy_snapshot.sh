@@ -7,7 +7,7 @@
 
 SLUG="ansman/kotshi"
 JDK="oraclejdk8"
-BRANCH="feature/rx2"
+BRANCH="master"
 
 set -e
 
