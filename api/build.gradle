@@ -1,5 +1,9 @@
 apply plugin: 'org.jetbrains.dokka-android'
 
+group = GROUP
+version = VERSION_NAME
+
+
 dokka {
     outputFormat = 'javadoc'
     outputDirectory = "$buildDir/javadoc"
@@ -16,5 +20,7 @@ dependencies {
     compile libraries.moshi
 }
 
+
+apply from: rootProject.file("gradle/maven-push.gradle")
 apply from: rootProject.file('gradle/bintray.gradle')
 apply from: rootProject.file('gradle/snapshots.gradle')
