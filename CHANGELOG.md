@@ -1,6 +1,14 @@
 Change Log
 ===
 
+Version 0.3.0-beta3 (2017-12-22)
+---
+Changes since beta2:
+* Skip emitting constructor when no adapters are needed. (#36)
+* Handle properties names as java keywords such as default better (#37)
+* Update to Kotlin 1.2.10 (#38)
+* Fix an issue with generics being used as generic type arguments (#42)
+
 Version 0.3.0-beta2 (2017-12-18)
 ---
 General changes (since beta1):

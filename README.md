@@ -131,7 +131,7 @@ you to annotate the parameter with `@Getter`. This limitation will be removed wh
 Kotlin does not carry over annotations made to enum constants so you cannot annotate an enum constant with
 `@JsonDefaultValue`. This issue will hopefully be resolved in [Kotlin 1.2.20](https://youtrack.jetbrains.com/issue/KT-21433).
 
-Even though Kotlin nor Moshi prevents having mutable objects Kotshi tries to enforce that for the reason of promoting a good 
+Even though Kotlin nor Moshi prevents having mutable objects Kotshi tries to enforce that for the reason of promoting a good
 design as well as avoiding complexity in the generated code. This means that all the properties that you want serialized must
 be declared in the primary constructor of the class. This means that `var` properties declared outside the constructor will
 not be serialized.
@@ -139,8 +139,8 @@ not be serialized.
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:0.3.0-beta2'
-kapt 'se.ansman.kotshi:compiler:0.3.0-beta2'
+compile 'se.ansman.kotshi:api:0.3.0-beta3'
+kapt 'se.ansman.kotshi:compiler:0.3.0-beta3'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
