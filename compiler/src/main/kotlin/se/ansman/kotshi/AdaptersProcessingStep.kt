@@ -116,7 +116,7 @@ class AdaptersProcessingStep(
                 .addField(optionsField)
                 .addFields(generateFields(adapterKeys))
                 .applyIf(adapterKeys.isNotEmpty()) {
-                    addMethod(generateConstructor(adapterKeys, genericTypes))
+                    addMethod(generateConstructor(element, adapterKeys, genericTypes))
                 }
                 .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
                 .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
@@ -175,7 +175,8 @@ class AdaptersProcessingStep(
                         .build()
             }
 
-    private fun generateConstructor(adapters: Set<AdapterKey>,
+    private fun generateConstructor(element: Element,
+                                    adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
             .addParameter(Moshi::class.java, "moshi")
@@ -200,25 +201,20 @@ class AdaptersProcessingStep(
 
                 adapters.forEachIndexed { index, adapterKey ->
                     val fieldName = generateAdapterFieldName(index)
-                    if (adapterKey.isGeneric) {
-                        val genericIndex = genericTypes.indexOf(adapterKey.type)
-                        if (genericIndex == -1) {
-                            messager.printMessage(Diagnostic.Kind.ERROR, "Element is generic but if an unknown type")
-                            return@forEachIndexed
-                        }
-                        addCode(CodeBlock.builder()
-                                .add("\$[\$L = moshi.adapter(types[$genericIndex]", fieldName)
-                                .add(adapterKey.annotations())
-                                .add(");\$]\n")
-                                .build())
-                    } else {
-                        addCode(CodeBlock.builder()
-                                .add("\$[\$L = moshi.adapter(", fieldName)
-                                .add(adapterKey.asRuntimeType())
-                                .add(adapterKey.annotations())
-                                .add(");\$]\n")
-                                .build())
-                    }
+
+                    addCode(CodeBlock.builder()
+                            .add("\$[\$L = moshi.adapter(", fieldName)
+                            .add(adapterKey.asRuntimeType { typeVariableName ->
+                                val genericIndex = genericTypes.indexOf(typeVariableName)
+                                if (genericIndex == -1) {
+                                    throw ProcessingError("Element is generic but if an unknown type", element)
+                                } else {
+                                    CodeBlock.of("types[$genericIndex]")
+                                }
+                            })
+                            .add(adapterKey.annotations())
+                            .add(");\$]\n")
+                            .build())
                 }
             }
             .build()
