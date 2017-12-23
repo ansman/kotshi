@@ -89,6 +89,11 @@ afterEvaluate { project ->
         }
     }
 
+    signing {
+        required { false }
+        sign configurations.archives
+    }
+
     if (project.getPlugins().hasPlugin('com.android.application') ||
             project.getPlugins().hasPlugin('com.android.library')) {
         task install(type: Upload, dependsOn: assemble) {
