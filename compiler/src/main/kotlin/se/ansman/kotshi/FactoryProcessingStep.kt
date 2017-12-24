@@ -70,6 +70,7 @@ class FactoryProcessingStep(
                         .addParameter(ParameterizedTypeName.get(ClassName.get(Set::class.java), WildcardTypeName.subtypeOf(Annotation::class.java)), "annotations")
                         .addParameter(TypeName.get(Moshi::class.java), "moshi")
                         .addStatement("if (!annotations.isEmpty()) return null")
+                        .addCode("\n")
                         .apply {
                             when {
                                 genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
