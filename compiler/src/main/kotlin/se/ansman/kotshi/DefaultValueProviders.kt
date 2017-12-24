@@ -44,7 +44,7 @@ class DefaultValueProviders(private val types: Types) {
                 ?: getPrimitiveAnnotation<Char, JsonDefaultValueChar>(property) { CodeBlock.of("'${it.value.toString().replace("'", "\\'")}'") }
                 ?: getPrimitiveAnnotation<Short, JsonDefaultValueShort>(property) { CodeBlock.of("${it.value}") }
                 ?: getPrimitiveAnnotation<Int, JsonDefaultValueInt>(property) { CodeBlock.of("${it.value}") }
-                ?: getPrimitiveAnnotation<Long, JsonDefaultValueLong>(property) { CodeBlock.of("${it.value}") }
+                ?: getPrimitiveAnnotation<Long, JsonDefaultValueLong>(property) { CodeBlock.of("${it.value}L") }
                 ?: getPrimitiveAnnotation<Float, JsonDefaultValueFloat>(property) { CodeBlock.of("${it.value}f") }
                 ?: getPrimitiveAnnotation<Double, JsonDefaultValueDouble>(property) { CodeBlock.of("${it.value}") }
                 ?: get(property, true)
