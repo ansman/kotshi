@@ -2,7 +2,16 @@ package se.ansman.kotshi
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import com.squareup.javapoet.*
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.NameAllocator
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.TypeVariableName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
@@ -79,7 +88,7 @@ class AdaptersProcessingStep(
                         }
                     }
 
-                    Property(types, globalConfig, element, parameter, field, getter)
+                    Property(defaultValueProviders, types, globalConfig, element, parameter, field, getter)
                 }
 
         val adapterKeys: Set<AdapterKey> = properties
@@ -289,6 +298,11 @@ class AdaptersProcessingStep(
 
         fun Property.variableType() = if (shouldUseAdapter && this.type.isPrimitive) this.type.box() else this.type
 
+        fun Property.useStaticDefault() = defaultValueProvider?.isStatic == true && !shouldUseAdapter
+
+        fun Property.requiresHelper() = !useStaticDefault() && variableType().isPrimitive
+
+
         return MethodSpec.methodBuilder("fromJson")
                 .addAnnotation(Override::class.java)
                 .addModifiers(Modifier.PUBLIC)
@@ -301,9 +315,18 @@ class AdaptersProcessingStep(
                 .addStatement("reader.beginObject()")
                 .applyEach(properties) { property ->
                     val variableType = property.variableType()
-                    addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
-                    if (variableType.isPrimitive) {
+                    if (property.requiresHelper()) {
                         addStatement("boolean \$L = false", property.helperBooleanName())
+                    }
+                    if (property.useStaticDefault()) {
+                        addCode(CodeBlock.builder()
+                                .add("$[")
+                                .add("\$T \$N = ", variableType, property.variableName())
+                                .add(property.defaultValueProvider!!.accessor)
+                                .add(";\n$]")
+                                .build())
+                    } else {
+                        addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
                     }
                 }
                 .addWhile("reader.hasNext()") {
@@ -320,7 +343,7 @@ class AdaptersProcessingStep(
                                         }
                                         addElse {
                                             reader()
-                                            if (property.variableType().isPrimitive) {
+                                            if (property.requiresHelper()) {
                                                 addStatement("\$L = true", property.helperBooleanName())
                                             }
                                         }
@@ -375,15 +398,9 @@ class AdaptersProcessingStep(
                             "${property.variableName()} == null"
                         }
 
-                        val defaultValueProvider = if (property.shouldUseDefaultValue) {
-                            defaultValueProviders[property]
-                        } else {
-                            null
-                        }
-
                         if (!hasStringBuilder) {
-                            val needsStringBuilder = if (defaultValueProvider != null) {
-                                !variableType.isPrimitive && defaultValueProvider.isNullable
+                            val needsStringBuilder = if (property.defaultValueProvider != null) {
+                                !variableType.isPrimitive && property.defaultValueProvider.isNullable && !property.defaultValueProvider.isStatic
                             } else {
                                 !property.isNullable
                             }
@@ -398,10 +415,12 @@ class AdaptersProcessingStep(
                             addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
                         }
 
-                        if (defaultValueProvider != null) {
+                        if (property.useStaticDefault()) {
+                            // Empty
+                        } else if (property.defaultValueProvider != null) {
                             addIf(check) {
                                 // We require a temp var if the variable is a primitive and we allow the provider to return null
-                                val requiresTmpVar = variableType.isPrimitive && defaultValueProvider.isNullable
+                                val requiresTmpVar = variableType.isPrimitive && property.defaultValueProvider.isNullable
                                 val variableName = if (requiresTmpVar) {
                                     nameAllocator.newName("${property.variableName()}Default")
                                 } else {
@@ -409,17 +428,17 @@ class AdaptersProcessingStep(
                                 }
                                 addCode("\$[")
                                 if (requiresTmpVar) {
-                                    addCode("\$T $variableName = ", defaultValueProvider.type)
+                                    addCode("\$T $variableName = ", property.defaultValueProvider.type)
                                 } else {
                                     addCode("$variableName = ")
                                 }
-                                addCode(defaultValueProvider.accessor)
+                                addCode(property.defaultValueProvider.accessor)
                                 addCode(";\n\$]")
 
                                 // If the variable we're assigning to is primitive we don't need any checks since java
                                 // throws and if the default value provider cannot return null we don't need a check
-                                if (!variableType.isPrimitive && defaultValueProvider.canReturnNull) {
-                                    if (!defaultValueProvider.isNullable) {
+                                if (!variableType.isPrimitive && property.defaultValueProvider.canReturnNull) {
+                                    if (!property.defaultValueProvider.isNullable) {
                                         addIf("$variableName == null") {
                                             addStatement("throw new \$T(\"The default value provider returned null\")",
                                                     java.lang.NullPointerException::class.java)
