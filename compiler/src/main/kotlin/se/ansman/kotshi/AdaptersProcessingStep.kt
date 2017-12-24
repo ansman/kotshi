@@ -249,6 +249,7 @@ class AdaptersProcessingStep(
                         addStatement("return")
                     }
                     .addStatement("writer.beginObject()")
+                    .addCode("\n")
                     .applyEach(properties) { property ->
                         addStatement("writer.name(\$S)", property.jsonName)
                         val getter = if (property.getter != null) {
@@ -278,6 +279,7 @@ class AdaptersProcessingStep(
                             writePrimitive(getter)
                         }
                     }
+                    .addCode("\n")
                     .addStatement("writer.endObject()")
                     .build()
 
@@ -312,7 +314,9 @@ class AdaptersProcessingStep(
                 .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
                     addStatement("return reader.nextNull()")
                 }
+                .addCode("\n")
                 .addStatement("reader.beginObject()")
+                .addCode("\n")
                 .applyEach(properties) { property ->
                     val variableType = property.variableType()
                     if (property.requiresHelper()) {
@@ -387,6 +391,7 @@ class AdaptersProcessingStep(
                         }
                     }
                 }
+                .addCode("\n")
                 .addStatement("reader.endObject()")
                 .apply {
                     var hasStringBuilder = false
@@ -466,6 +471,7 @@ class AdaptersProcessingStep(
                         addIf("stringBuilder != null") {
                             addStatement("throw new \$T(stringBuilder.toString())", NullPointerException::class.java)
                         }
+                        addCode("\n")
                     }
                 }
                 .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.variableName() }})", type)
