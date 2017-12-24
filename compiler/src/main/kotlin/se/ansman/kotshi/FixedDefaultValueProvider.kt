@@ -12,4 +12,7 @@ class FixedDefaultValueProvider(
 
     override val isNullable: Boolean
         get() = false
+
+    override val isStatic: Boolean
+        get() = true
 }

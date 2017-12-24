@@ -5,7 +5,11 @@ import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.WildcardTypeName
-import javax.lang.model.element.*
+import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 
@@ -48,6 +52,13 @@ class ComplexDefaultValueProvider(
     }
 
     override val isNullable by lazy { canReturnNull && element.hasAnnotation("Nullable") }
+
+    override val isStatic: Boolean
+        get() = when (element.kind) {
+            ElementKind.FIELD,
+            ElementKind.ENUM_CONSTANT -> true
+            else -> false
+        }
 
     init {
         when (element.kind) {
