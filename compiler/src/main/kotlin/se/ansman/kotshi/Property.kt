@@ -11,6 +11,7 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 
 class Property(
+        defaultValueProviders: DefaultValueProviders,
         types: Types,
         globalConfig: GlobalConfig,
         enclosingClass: Element,
@@ -18,7 +19,6 @@ class Property(
         val field: VariableElement?,
         val getter: ExecutableElement?
 ) {
-
     val typeMirror: TypeMirror = field?.asType() ?: parameter.asType()
 
     val rawTypeMirror: TypeMirror by lazy { types.erasure(typeMirror) }
@@ -26,8 +26,6 @@ class Property(
     val type: TypeName = typeMirror.asTypeName()
 
     val defaultValueQualifier = parameter.getDefaultValueQualifier()
-
-    val shouldUseDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
 
     val adapterKey: AdapterKey = AdapterKey(type, parameter.getJsonQualifiers())
 
@@ -50,10 +48,12 @@ class Property(
             adapterKey.jsonQualifiers.isNotEmpty() ||
             !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
 
+    val defaultValueProvider: DefaultValueProvider?
+
     init {
         require(getter != null || field != null)
 
-        if (shouldUseDefaultValue) {
+        defaultValueProvider = if (defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()) {
             if (adapterKey.isGeneric) {
                 throw ProcessingError("You cannot use default values on a generic type", parameter)
             }
@@ -62,6 +62,10 @@ class Property(
                     throw ProcessingError("Generic classes must not have wildcard types if you want to use default values", parameter)
                 }
             }
+            defaultValueProviders[this]
+        } else {
+            null
         }
+
     }
 }

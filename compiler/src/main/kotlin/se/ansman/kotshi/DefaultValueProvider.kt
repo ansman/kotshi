@@ -8,4 +8,5 @@ interface DefaultValueProvider {
     val accessor: CodeBlock
     val canReturnNull: Boolean
     val isNullable: Boolean
+    val isStatic: Boolean
 }
