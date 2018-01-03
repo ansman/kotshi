@@ -147,7 +147,7 @@ Snapshots of the development version are available in [Sonatype's snapshots repo
 License
 ---
 ```text
-Copyright 2017 Nicklas Ansman Giertz.
+Copyright 2017-2018 Nicklas Ansman Giertz.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
