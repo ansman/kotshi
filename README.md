@@ -139,8 +139,8 @@ not be serialized.
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:0.3.0-beta3'
-kapt 'se.ansman.kotshi:compiler:0.3.0-beta3'
+compile 'se.ansman.kotshi:api:0.3.0'
+kapt 'se.ansman.kotshi:compiler:0.3.0'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 
