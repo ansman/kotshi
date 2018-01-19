@@ -197,14 +197,15 @@ class AdaptersProcessingStep(
                     0 -> CodeBlock.of("")
                     1 -> CodeBlock.of(", \$T.class", jsonQualifiers.first())
                     else -> CodeBlock.builder()
-                            .add(", new \$T(\$T.asList(", LinkedHashSet::class.java, Arrays::class.java)
+                            .add(", \$T.unmodifiableSet(new \$T(\$T.asList(",
+                                Collections::class.java, LinkedHashSet::class.java, Arrays::class.java)
                             .apply {
                                 jsonQualifiers.forEachIndexed { index, qualifier ->
                                     if (index > 0) add(", ")
                                     add("\$T.createJsonQualifierImplementation(\$T.class)", KotshiUtils::class.java, qualifier)
                                 }
                             }
-                            .add("))")
+                            .add(")))")
                             .build()
                 }
 
