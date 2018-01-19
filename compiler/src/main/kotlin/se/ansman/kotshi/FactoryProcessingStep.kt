@@ -96,7 +96,7 @@ class FactoryProcessingStep(
             .apply {
                 for ((type, adapter) in adapters) {
                     addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
-                        addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
+                        addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments()).nullSafe()",
                                 adapter.className)
                     }
                 }
@@ -108,9 +108,9 @@ class FactoryProcessingStep(
                 for ((type, adapter) in adapters) {
                     addIf("type.equals(\$T.class)", type) {
                         if (adapter.requiresMoshi) {
-                            addStatement("return new \$T(moshi)", adapter.className)
+                            addStatement("return new \$T(moshi).nullSafe()", adapter.className)
                         } else {
-                            addStatement("return new \$T()", adapter.className)
+                            addStatement("return new \$T().nullSafe()", adapter.className)
                         }
                     }
                 }
