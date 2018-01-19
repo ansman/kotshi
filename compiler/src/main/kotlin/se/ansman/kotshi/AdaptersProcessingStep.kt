@@ -245,10 +245,6 @@ class AdaptersProcessingStep(
                     .addException(IOException::class.java)
                     .addParameter(JsonWriter::class.java, "writer")
                     .addParameter(TypeName.get(type), "value")
-                    .addIf("value == null") {
-                        addStatement("writer.nullValue()")
-                        addStatement("return")
-                    }
                     .addStatement("writer.beginObject()")
                     .addCode("\n")
                     .applyEach(properties) { property ->
@@ -312,10 +308,6 @@ class AdaptersProcessingStep(
                 .addException(IOException::class.java)
                 .addParameter(JsonReader::class.java, "reader")
                 .returns(TypeName.get(type))
-                .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
-                    addStatement("return reader.nextNull()")
-                }
-                .addCode("\n")
                 .addStatement("reader.beginObject()")
                 .addCode("\n")
                 .applyEach(properties) { property ->
