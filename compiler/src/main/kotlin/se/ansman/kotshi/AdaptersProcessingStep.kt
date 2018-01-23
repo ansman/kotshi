@@ -25,6 +25,7 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Types
@@ -121,12 +122,10 @@ class AdaptersProcessingStep(
         val typeSpec = TypeSpec.classBuilder(adapter)
                 .addTypeVariables(genericTypes)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .superclass(getAdapterType(typeName))
+                .superclass(getAdapterType(NamedJsonAdapter::class.java, typeName))
                 .addField(optionsField)
                 .addFields(generateFields(adapterKeys))
-                .applyIf(adapterKeys.isNotEmpty()) {
-                    addMethod(generateConstructor(element, adapterKeys, genericTypes))
-                }
+                .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
                 .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
                 .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
                 .build()
@@ -177,7 +176,7 @@ class AdaptersProcessingStep(
     private fun generateFields(properties: Set<AdapterKey>): List<FieldSpec> =
             properties.mapIndexed { index, (type) ->
                 FieldSpec
-                        .builder(getAdapterType(type),
+                        .builder(getAdapterType(JsonAdapter::class.java, type),
                                 generateAdapterFieldName(index),
                                 Modifier.PRIVATE,
                                 Modifier.FINAL)
@@ -185,13 +184,20 @@ class AdaptersProcessingStep(
             }
 
     private fun generateConstructor(element: Element,
+                                    typeElement: TypeElement,
                                     adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
-            .addParameter(Moshi::class.java, "moshi")
+            .applyIf(adapters.isNotEmpty()) {
+                addParameter(Moshi::class.java, "moshi")
+            }
             .applyIf(genericTypes.isNotEmpty()) {
                 addParameter(Array<Type>::class.java, "types")
             }
+            .addStatement("super(\$S)", ClassName.bestGuess(typeElement.toString())
+                    .simpleNames()
+                    .joinToString(".")
+                    .let { "KotshiJsonAdapter($it)" })
             .apply {
                 fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
                     0 -> CodeBlock.of("")
@@ -229,8 +235,8 @@ class AdaptersProcessingStep(
             }
             .build()
 
-    private fun getAdapterType(typeName: TypeName): ParameterizedTypeName =
-            ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), typeName.box())
+    private fun getAdapterType(superClass: Class<*>, typeName: TypeName): ParameterizedTypeName =
+            ParameterizedTypeName.get(ClassName.get(superClass), typeName.box())
 
     private fun generateAdapterFieldName(index: Int): String = "adapter$index"
 
