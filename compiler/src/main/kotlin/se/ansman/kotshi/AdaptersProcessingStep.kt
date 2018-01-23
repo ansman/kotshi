@@ -16,6 +16,9 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
+import kotlinx.reflect.lite.ClassMetadata
+import kotlinx.reflect.lite.impl.ClassMetadataImpl
+import org.jetbrains.kotlin.serialization.jvm.JvmProtoBufUtil
 import java.io.IOException
 import java.lang.reflect.Type
 import java.util.*
@@ -57,11 +60,36 @@ class AdaptersProcessingStep(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun generateJsonAdapter(globalConfig: GlobalConfig, element: Element) {
         val nameAllocator = NameAllocator()
         val typeElement = MoreElements.asType(element)
         val typeMirror = typeElement.asType()
         val typeName = TypeName.get(typeMirror)
+
+        val metadata = typeElement.annotationMirrors
+                .first { MoreElements.asType(it.annotationType.asElement()).qualifiedName.contentEquals("kotlin.Metadata") }
+
+        val d1Key = metadata.elementValues.keys
+                .first { it.simpleName.contentEquals("d1") }
+        val d1 = metadata.elementValues[d1Key]!!.accept(KotshiAnnotationValueVisitor, null) as List<String>
+        val d2Key = metadata.elementValues.keys
+                .first { it.simpleName.contentEquals("d2") }
+        val d2 = metadata.elementValues[d2Key]!!.accept(KotshiAnnotationValueVisitor, null) as List<String>
+
+        val (nameResolver, classProto) = JvmProtoBufUtil.readClassDataFrom(d1.toTypedArray(), d2.toTypedArray())
+        val classMetadata: ClassMetadata = ClassMetadataImpl(classProto, nameResolver)
+
+        for ((name, constructor) in classMetadata.constructors) {
+            messager.printMessage(Diagnostic.Kind.WARNING, "name = $name", element)
+            messager.printMessage(Diagnostic.Kind.WARNING, "isSecondary = %s".format((constructor.flags and (1 shl 4)) != 0), element)
+            for (valueParameter in constructor.valueParameterList) {
+                messager.printMessage(Diagnostic.Kind.WARNING, "valueParameter.name = ${valueParameter.name}", element)
+                messager.printMessage(Diagnostic.Kind.WARNING, "resolve(valueParameter.name) = ${nameResolver.getString(valueParameter.name)}", element)
+            }
+        }
+
+
 
         val constructor = findConstructor(element)
 
