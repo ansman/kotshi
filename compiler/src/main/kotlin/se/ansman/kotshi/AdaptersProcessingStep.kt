@@ -122,7 +122,7 @@ class AdaptersProcessingStep(
         val typeSpec = TypeSpec.classBuilder(adapter)
                 .addTypeVariables(genericTypes)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .superclass(getAdapterType(NullSafeJsonAdapter::class.java, typeName))
+                .superclass(getAdapterType(NamedJsonAdapter::class.java, typeName))
                 .addField(optionsField)
                 .addFields(generateFields(adapterKeys))
                 .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
