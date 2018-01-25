@@ -133,6 +133,13 @@ design as well as avoiding complexity in the generated code. This means that all
 be declared in the primary constructor of the class. This means that `var` properties declared outside the constructor will
 not be serialized.
 
+F.A.Q.
+---
+
+*Q: I can't generate `KotshiJsonAdapterFactory`-annotated class*
+
+**A: make sure to add the `kotlin-kapt` plugin in the `build.gradle` file of your project.**
+
 Download
 ---
 ```groovy
