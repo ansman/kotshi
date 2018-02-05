@@ -37,6 +37,7 @@ data class Person(
 
 Then create a class that will be your factory:
 ```kotlin
+@KotshiJsonAdapterFactory
 object ApplicationJsonAdapterFactory : KotshiApplicationJsonAdapterFactory()
 ```
 
