@@ -58,7 +58,7 @@ class FactoryProcessingStep(
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
         val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
-                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(JsonAdapter.Factory::class.java)
                 .addMethod(MethodSpec.methodBuilder("create")
                         .addModifiers(Modifier.PUBLIC)
