@@ -60,6 +60,9 @@ class FactoryProcessingStep(
         val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(JsonAdapter.Factory::class.java)
+                // Package private constructor
+                .addMethod(MethodSpec.constructorBuilder()
+                        .build())
                 .addMethod(MethodSpec.methodBuilder("create")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override::class.java)
