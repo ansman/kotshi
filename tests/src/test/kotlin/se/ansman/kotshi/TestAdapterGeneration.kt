@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 
 class TestAdapterGeneration {
     private val moshi: Moshi = Moshi.Builder()
-            .add(TestFactory.INSTANCE)
+            .add(TestFactory)
             .add(String::class.java, Hello::class.java, HelloJsonAdapter())
             .build()
 

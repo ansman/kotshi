@@ -34,7 +34,7 @@ class TestPrimitiveAdapters {
         floatAdapter = DelegateAdapter(basicMoshi.adapter(Float::class.java))
         doubleAdapter = DelegateAdapter(basicMoshi.adapter(Double::class.java))
         moshi = Moshi.Builder()
-                .add(TestFactory.INSTANCE)
+                .add(TestFactory)
                 .add(String::class.java, stringAdapter)
                 .add(Boolean::class.javaPrimitiveType!!, booleanAdapter)
                 .add(Boolean::class.javaObjectType, booleanAdapter)

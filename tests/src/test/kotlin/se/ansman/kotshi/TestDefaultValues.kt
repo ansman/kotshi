@@ -19,7 +19,7 @@ class TestDefaultValues {
     @Before
     fun setup() {
         moshi = Moshi.Builder()
-                .add(TestFactory.INSTANCE)
+                .add(TestFactory)
                 .add(LocalDate::class.java, LocalDateAdapter)
                 .add(LocalTime::class.java, LocalTimeAdapter)
                 .add(LocalDateTime::class.java, LocalDateTimeAdapter)
