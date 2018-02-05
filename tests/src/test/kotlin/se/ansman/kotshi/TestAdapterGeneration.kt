@@ -190,7 +190,7 @@ class TestAdapterGeneration {
                         writer.endObject()
                     }
                 })
-                .add(KotshiTestFactory())
+                .add(TestFactory)
                 .build()
                 .adapter(MultipleJsonQualifiers::class.java)
         val json = """{"string":{"name":["Hello, world!"]}}"""
