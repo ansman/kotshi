@@ -1,7 +1,13 @@
 package se.ansman.kotshi
 
 import com.google.common.collect.SetMultimap
-import com.squareup.javapoet.*
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import com.squareup.javapoet.WildcardTypeName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
@@ -44,14 +50,6 @@ class FactoryProcessingStep(
     }
 
     private fun generateFactory(element: Element) {
-        if (Modifier.ABSTRACT !in element.modifiers) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "Must be abstract", element)
-        }
-
-        if (!element.asType().implements(JsonAdapter.Factory::class)) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "Must implement JsonAdapter.Factory", element)
-        }
-
         val factoryType = element as TypeElement
         val generatedName = ClassName.get(factoryType).let {
             ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}")
@@ -60,8 +58,11 @@ class FactoryProcessingStep(
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
         val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
-                .addModifiers(Modifier.FINAL)
-                .superclass(TypeName.get(factoryType.asType()))
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addSuperinterface(JsonAdapter.Factory::class.java)
+                // Package private constructor
+                .addMethod(MethodSpec.constructorBuilder()
+                        .build())
                 .addMethod(MethodSpec.methodBuilder("create")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override::class.java)
