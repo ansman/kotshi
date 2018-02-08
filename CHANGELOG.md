@@ -1,6 +1,13 @@
 Change Log
 ===
 
+Version 1.0.0 (2018-02-08)
+---
+Changes:
+* Let the generated adapters implement toString ([#52](https://github.com/ansman/kotshi/pull/52))
+* Update to Kotlin 1.2.21 ([#55](https://github.com/ansman/kotshi/pull/55))
+* Change how you implement the adapter factory ([#56](https://github.com/ansman/kotshi/pull/56))
+
 Version 0.3.0 (2018-01-03)
 ---
 General changes:
