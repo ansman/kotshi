@@ -44,7 +44,7 @@ object ApplicationJsonAdapterFactory : KotshiApplicationJsonAdapterFactory()
 Lastly just add the factory to your Moshi instance and you're all set:
 ```kotlin
 val moshi = Moshi.Builder()
-    .add(ApplicationJsonAdapterFactory.INSTANCE)
+    .add(ApplicationJsonAdapterFactory)
     .build()
 ```
 
