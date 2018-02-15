@@ -1,6 +1,10 @@
 package se.ansman.kotshi
 
-import com.squareup.javapoet.*
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeVariableName
+import com.squareup.javapoet.WildcardTypeName
 import com.squareup.moshi.Types
 import javax.lang.model.element.Element
 
@@ -32,6 +36,11 @@ data class AdapterKey(
                             }
                             .add(")")
                             .build()
+                is WildcardTypeName -> when {
+                    lowerBounds.size == 1 -> lowerBounds[0].asRuntimeType(typeVariableAccessor)
+                    upperBounds[0] == TypeName.OBJECT -> throw AssertionError()
+                    else -> upperBounds[0].asRuntimeType(typeVariableAccessor)
+                }
                 is TypeVariableName -> typeVariableAccessor(this)
                 else -> CodeBlock.of("\$T.class", this)
             }
