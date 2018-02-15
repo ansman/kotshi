@@ -57,9 +57,22 @@ class FactoryProcessingStep(
 
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
-        val typeSpec = TypeSpec.classBuilder(generatedName.simpleName())
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addSuperinterface(JsonAdapter.Factory::class.java)
+        val typeSpecBuilder = TypeSpec.classBuilder(generatedName.simpleName())
+
+        if (element.asType().implements(JsonAdapter.Factory::class)) {
+            if (Modifier.ABSTRACT !in element.modifiers) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "Must be abstract", element)
+            }
+            typeSpecBuilder
+                    .addModifiers(Modifier.FINAL)
+                    .superclass(TypeName.get(factoryType.asType()))
+        } else {
+            typeSpecBuilder
+                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                    .addSuperinterface(JsonAdapter.Factory::class.java)
+        }
+
+        typeSpecBuilder
                 // Package private constructor
                 .addMethod(MethodSpec.constructorBuilder()
                         .build())
@@ -86,9 +99,8 @@ class FactoryProcessingStep(
                         }
                         .addStatement("return null")
                         .build())
-                .build()
 
-        JavaFile.builder(generatedName.packageName(), typeSpec).build().writeTo(filer)
+        JavaFile.builder(generatedName.packageName(), typeSpecBuilder.build()).build().writeTo(filer)
     }
 
     private fun handleGenericAdapters(adapters: List<Map.Entry<TypeName, GeneratedAdapter>>): CodeBlock = CodeBlock.builder()
