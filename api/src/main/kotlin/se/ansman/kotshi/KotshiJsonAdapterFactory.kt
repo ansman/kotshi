@@ -8,7 +8,11 @@ package se.ansman.kotshi
  * Example:
  * ```kotlin
  * @KotshiJsonAdapterFactory
- * object ApplicationJsonAdapterFactory : KotshiApplicationJsonAdapterFactory()
+ * abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
+ *     companion object {
+ *         val INSTANCE = KotshiApplicationJsonAdapterFactory()
+ *     }
+ * }
  * ```
  *
  * @param useAdaptersForPrimitives A flag to enable or disable the use of adapters on a module basis. Since using
