@@ -1,5 +1,15 @@
 Change Log
 ===
+Version 1.0.1 (2018-02-20)
+---
+Due to what seems to be a bug in kapt the 1.0.0 way of implementing the factory
+seems to have some issues. This releases also allows, and recommends, the pre
+1.0.0 way of implementing the factory until the kapt issue has been resolved.
+If the 1.0.0 way has worked for you it can be used in future releases too.
+
+Changes:
+* Fix a bug when using generics with wildcards ([#64](https://github.com/ansman/kotshi/pull/64))
+* Allow the pre 1.0 way of implementing the factory ([#63](https://github.com/ansman/kotshi/pull/63))
 
 Version 1.0.0 (2018-02-08)
 ---
