@@ -30,7 +30,6 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.ArrayType
-import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
@@ -220,49 +219,11 @@ class AdaptersProcessingStep(
                                                 KotshiUtils::class.java, qualifier.annotationType.asElement(),
                                                 Collections::class.java)
                                     } else {
-                                        fun addAnnotationElements(
-                                                size: Int,
-                                                iterator: Iterator<Map.Entry<ExecutableElement, AnnotationValue>>,
-                                                index: Int,
-                                                elementNameToArgs: CodeBlock.Builder
-                                        ) {
-                                            fun addAnnotationElementValue(
-                                                    elementNameToArgs: CodeBlock.Builder,
-                                                    annotationValue: AnnotationValue,
-                                                    typeMirror: TypeMirror
-                                            ) {
-                                                if (typeMirror.kind == TypeKind.ARRAY) {
-                                                    val componentType = (typeMirror as ArrayType).componentType
-                                                    elementNameToArgs.add("new \$T[] \$L",
-                                                            componentType, annotationValue)
-                                                } else {
-                                                    elementNameToArgs.add("\$L", annotationValue)
-                                                }
-                                            }
-
-                                            val entry = iterator.next()
-                                            if (index == size - 1) {
-                                                elementNameToArgs.add("\$T.putInMap(new \$T<>(), \"\$L\", ",
-                                                        KotshiUtils::class.java, LinkedHashMap::class.java,
-                                                        entry.key.simpleName)
-                                                addAnnotationElementValue(
-                                                        elementNameToArgs, entry.value, entry.key.returnType)
-                                                elementNameToArgs.add(")")
-                                                return
-                                            }
-                                            elementNameToArgs.add("\$T.putInMap(", KotshiUtils::class.java)
-                                            addAnnotationElements(size, iterator, index + 1, elementNameToArgs)
-                                            elementNameToArgs.add(", \"\$L\", ", entry.key.simpleName)
-                                            addAnnotationElementValue(
-                                                    elementNameToArgs, entry.value, entry.key.returnType)
-                                            elementNameToArgs.add(")")
-                                        }
-
                                         val elementNameToArgs = CodeBlock.builder()
                                         val entries = elementValuesWithDefaults.entries
 
-                                        addAnnotationElements(
-                                                entries.size, entries.iterator(), 0, elementNameToArgs)
+                                        elementNameToArgs.addAnnotationElements(
+                                                entries.size, entries.iterator(), 0)
 
                                         add("\$T.createJsonQualifierImplementation(\$T.class, \$T.unmodifiableMap(",
                                                 KotshiUtils::class.java, qualifier.annotationType.asElement(),
@@ -544,6 +505,34 @@ class AdaptersProcessingStep(
                 }
                 .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.variableName() }})", type)
                 .build()
+    }
+
+    private fun CodeBlock.Builder.addAnnotationElementValue(
+            annotationValue: AnnotationValue,
+            typeMirror: TypeMirror
+    ) {
+        if (typeMirror is ArrayType) {
+            add("new \$T[] ", typeMirror.componentType)
+        }
+        add("\$L", annotationValue)
+    }
+
+    private fun CodeBlock.Builder.addAnnotationElements(
+            size: Int,
+            iterator: Iterator<Map.Entry<ExecutableElement, AnnotationValue>>,
+            index: Int
+    ) {
+        add("\$T.putInMap(", KotshiUtils::class.java)
+
+        val entry = iterator.next()
+        if (index == size - 1) {
+            add("new \$T<>(), \"\$L\", ", LinkedHashMap::class.java, entry.key.simpleName)
+        } else {
+            addAnnotationElements(size, iterator, index + 1)
+            add(", \"\$L\", ", entry.key.simpleName)
+        }
+        addAnnotationElementValue(entry.value, entry.key.returnType)
+        add(")")
     }
 }
 
