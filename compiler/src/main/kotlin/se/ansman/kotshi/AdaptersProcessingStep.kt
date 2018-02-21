@@ -219,16 +219,11 @@ class AdaptersProcessingStep(
                                                 KotshiUtils::class.java, qualifier.annotationType.asElement(),
                                                 Collections::class.java)
                                     } else {
-                                        val elementNameToArgs = CodeBlock.builder()
-                                        val entries = elementValuesWithDefaults.entries
-
-                                        elementNameToArgs.addAnnotationElements(
-                                                entries.size, entries.iterator(), 0)
-
                                         add("\$T.createJsonQualifierImplementation(\$T.class, \$T.unmodifiableMap(",
                                                 KotshiUtils::class.java, qualifier.annotationType.asElement(),
                                                 Collections::class.java)
-                                        add(elementNameToArgs.build())
+                                        val entries = elementValuesWithDefaults.entries
+                                        addAnnotationElements(entries.size, entries.iterator(), 0)
                                         add("))")
                                     }
                                 }
