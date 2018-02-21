@@ -502,16 +502,6 @@ class AdaptersProcessingStep(
                 .build()
     }
 
-    private fun CodeBlock.Builder.addAnnotationElementValue(
-            annotationValue: AnnotationValue,
-            typeMirror: TypeMirror
-    ) {
-        if (typeMirror is ArrayType) {
-            add("new \$T[] ", typeMirror.componentType)
-        }
-        add("\$L", annotationValue)
-    }
-
     private fun CodeBlock.Builder.addAnnotationElements(
             size: Int,
             iterator: Iterator<Map.Entry<ExecutableElement, AnnotationValue>>,
@@ -528,6 +518,16 @@ class AdaptersProcessingStep(
         }
         addAnnotationElementValue(entry.value, entry.key.returnType)
         add(")")
+    }
+
+    private fun CodeBlock.Builder.addAnnotationElementValue(
+            annotationValue: AnnotationValue,
+            typeMirror: TypeMirror
+    ) {
+        if (typeMirror is ArrayType) {
+            add("new \$T[] ", typeMirror.componentType)
+        }
+        add("\$L", annotationValue)
     }
 }
 
