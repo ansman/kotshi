@@ -23,15 +23,14 @@ object KotshiUtils {
             }.append(propertyName)
 
     @JvmStatic
-    fun <T : Annotation> createJsonQualifierImplementation(annotationType: Class<T>): T {
+    fun <T : Annotation> createJsonQualifierImplementation(
+            annotationType: Class<T>, elementNameToArg: Map<String, Any>
+    ): T {
         if (!annotationType.isAnnotation) {
             throw IllegalArgumentException("$annotationType must be an annotation.")
         }
         if (!annotationType.isAnnotationPresent(JsonQualifier::class.java)) {
             throw IllegalArgumentException("$annotationType must have @JsonQualifier.")
-        }
-        if (annotationType.declaredMethods.isNotEmpty()) {
-            throw IllegalArgumentException("$annotationType must not declare methods.")
         }
         @Suppress("UNCHECKED_CAST")
         return Proxy.newProxyInstance(annotationType.classLoader, arrayOf<Class<*>>(annotationType)) { proxy, method, args ->
@@ -40,9 +39,16 @@ object KotshiUtils {
                 "equals" -> annotationType.isInstance(args[0])
                 "hashCode" -> 0
                 "toString" -> "@${annotationType.name}()"
-                else -> method.invoke(proxy, *args)
+                else -> elementNameToArg[method.name] ?: method.invoke(proxy, args)
             }
         } as T
+    }
+
+    @JvmStatic
+    fun putInMap(map: MutableMap<String, Any>, key: String, value: Any): MutableMap<String, Any> = map.apply {
+        if (map.put(key, value) != null) {
+            throw AssertionError("Already had value '$value' for $key")
+        }
     }
 
     @JvmStatic

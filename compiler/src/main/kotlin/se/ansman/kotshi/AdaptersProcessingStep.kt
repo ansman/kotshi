@@ -18,16 +18,22 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import java.io.IOException
 import java.lang.reflect.Type
-import java.util.*
+import java.util.Arrays
+import java.util.Collections
+import java.util.LinkedHashSet
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
+import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.ArrayType
+import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
+import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
@@ -36,7 +42,8 @@ class AdaptersProcessingStep(
         private val types: Types,
         private val filer: Filer,
         private val adapters: MutableMap<TypeName, GeneratedAdapter>,
-        private val defaultValueProviders: DefaultValueProviders
+        private val defaultValueProviders: DefaultValueProviders,
+        private val elements: Elements
 ) : KotshiProcessor.ProcessingStep {
     override val annotations: Set<Class<out Annotation>> =
             setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
@@ -201,14 +208,68 @@ class AdaptersProcessingStep(
             .apply {
                 fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
                     0 -> CodeBlock.of("")
-                    1 -> CodeBlock.of(", \$T.class", jsonQualifiers.first())
                     else -> CodeBlock.builder()
                             .add(", \$T.unmodifiableSet(new \$T<>(\$T.asList(",
-                                Collections::class.java, LinkedHashSet::class.java, Arrays::class.java)
+                                    Collections::class.java, LinkedHashSet::class.java, Arrays::class.java)
                             .apply {
                                 jsonQualifiers.forEachIndexed { index, qualifier ->
                                     if (index > 0) add(", ")
-                                    add("\$T.createJsonQualifierImplementation(\$T.class)", KotshiUtils::class.java, qualifier)
+                                    val elementValuesWithDefaults = elements.getElementValuesWithDefaults(qualifier)
+                                    if (elementValuesWithDefaults.isEmpty()) {
+                                        add("\$T.createJsonQualifierImplementation(\$T.class, \$T.emptyMap())",
+                                                KotshiUtils::class.java, qualifier.annotationType.asElement(),
+                                                Collections::class.java)
+                                    } else {
+                                        fun addAnnotationElements(
+                                                size: Int,
+                                                iterator: Iterator<Map.Entry<ExecutableElement, AnnotationValue>>,
+                                                index: Int,
+                                                elementNameToArgs: CodeBlock.Builder
+                                        ) {
+                                            fun addAnnotationElementValue(
+                                                    elementNameToArgs: CodeBlock.Builder,
+                                                    annotationValue: AnnotationValue,
+                                                    typeMirror: TypeMirror
+                                            ) {
+                                                if (typeMirror.kind == TypeKind.ARRAY) {
+                                                    val componentType = (typeMirror as ArrayType).componentType
+                                                    elementNameToArgs.add("new \$T[] \$L",
+                                                            componentType, annotationValue)
+                                                } else {
+                                                    elementNameToArgs.add("\$L", annotationValue)
+                                                }
+                                            }
+
+                                            val entry = iterator.next()
+                                            if (index == size - 1) {
+                                                elementNameToArgs.add("\$T.putInMap(new \$T<>(), \"\$L\", ",
+                                                        KotshiUtils::class.java, LinkedHashMap::class.java,
+                                                        entry.key.simpleName)
+                                                addAnnotationElementValue(
+                                                        elementNameToArgs, entry.value, entry.key.returnType)
+                                                elementNameToArgs.add(")")
+                                                return
+                                            }
+                                            elementNameToArgs.add("\$T.putInMap(", KotshiUtils::class.java)
+                                            addAnnotationElements(size, iterator, index + 1, elementNameToArgs)
+                                            elementNameToArgs.add(", \"\$L\", ", entry.key.simpleName)
+                                            addAnnotationElementValue(
+                                                    elementNameToArgs, entry.value, entry.key.returnType)
+                                            elementNameToArgs.add(")")
+                                        }
+
+                                        val elementNameToArgs = CodeBlock.builder()
+                                        val entries = elementValuesWithDefaults.entries
+
+                                        addAnnotationElements(
+                                                entries.size, entries.iterator(), 0, elementNameToArgs)
+
+                                        add("\$T.createJsonQualifierImplementation(\$T.class, \$T.unmodifiableMap(",
+                                                KotshiUtils::class.java, qualifier.annotationType.asElement(),
+                                                Collections::class.java)
+                                        add(elementNameToArgs.build())
+                                        add("))")
+                                    }
                                 }
                             }
                             .add(")))")
@@ -223,7 +284,7 @@ class AdaptersProcessingStep(
                             .add(adapterKey.asRuntimeType { typeVariableName ->
                                 val genericIndex = genericTypes.indexOf(typeVariableName)
                                 if (genericIndex == -1) {
-                                    throw ProcessingError("Element is generic but if an unknown type", element)
+                                    throw ProcessingError("Element is generic but of an unknown type", element)
                                 } else {
                                     CodeBlock.of("types[$genericIndex]")
                                 }

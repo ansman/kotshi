@@ -1,6 +1,7 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.JsonQualifier
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
@@ -10,14 +11,15 @@ inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::c
 fun Element.hasAnnotation(simpleName: String) =
         annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
 
-fun Element.getDefaultValueQualifier(): Element? = getQualifiers<JsonDefaultValue>().firstOrNull()
+fun Element.getDefaultValueQualifier(): Element? =
+        getQualifiers<JsonDefaultValue>().firstOrNull()?.annotationType?.asElement()
 
-fun Element.getJsonQualifiers(): List<Element> = getQualifiers<JsonQualifier>().toList()
+fun Element.getJsonQualifiers(): List<AnnotationMirror> = getQualifiers<JsonQualifier>().toList()
 
-inline fun <reified T : Annotation> Element.getQualifiers(): Sequence<Element> = annotationMirrors
-        .asSequence()
-        .map { it.annotationType.asElement() }
-        .filter { it.getAnnotation(T::class.java) != null }
+private inline fun <reified T : Annotation> Element.getQualifiers(): Sequence<AnnotationMirror> =
+        annotationMirrors
+                .asSequence()
+                .filter { it.annotationType.asElement().getAnnotation(T::class.java) != null }
 
 val Element.isPublic: Boolean
     get() = when (requireNotNull(kind)) {

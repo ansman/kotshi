@@ -1,7 +1,9 @@
 package se.ansman.kotshi
 
+import com.google.common.truth.Truth.assertThat
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonQualifier
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
@@ -9,6 +11,12 @@ import com.squareup.moshi.ToJson
 import com.squareup.moshi.Types
 import okio.Buffer
 import org.junit.Test
+import se.ansman.kotshi.SomeEnum.VALUE5
+import java.lang.reflect.Type
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 
 
@@ -203,5 +211,43 @@ class TestAdapterGeneration {
     fun testToString() {
         assertEquals("KotshiJsonAdapter(NestedClasses)", moshi.adapter(NestedClasses::class.java).toString())
         assertEquals("KotshiJsonAdapter(NestedClasses.Inner)", moshi.adapter(NestedClasses.Inner::class.java).toString())
+    }
+
+    @Test
+    fun testQualifiersWithElements() {
+        val factoryCallCount = AtomicInteger()
+        Moshi.Builder()
+                .add(ComplexlyQualifiedStringJsonAdapterFactory(factoryCallCount))
+                .add(TestFactory.INSTANCE)
+                .build()
+                .adapter(ContainsComplexlyQualifiedString::class.java)
+        assertThat(factoryCallCount.get()).isEqualTo(1)
+    }
+
+    private class ComplexlyQualifiedStringJsonAdapterFactory(private val callCount: AtomicInteger) : JsonAdapter.Factory {
+        override fun create(type: Type, annotations: Set<Annotation>, moshi: Moshi): JsonAdapter<*>? {
+            if (annotations.isEmpty()) {
+                return null
+            }
+            callCount.getAndIncrement()
+            assertThat(annotations).hasSize(7)
+            for (annotation in annotations) {
+                when (annotation) {
+                    is WithStringElement -> assertThat(annotation.string).isEqualTo("\\\$Hello, ")
+                    is WithNumberElement -> assertThat(annotation.number).isEqualTo(4)
+                    is WithBooleanElement -> assertThat(annotation.bool).isEqualTo(true)
+                    is WithClassElement -> assertThat(annotation.cls).isEqualTo(ContainsComplexlyQualifiedString::class)
+                    is WithEnumElement -> assertThat(annotation.someEnum).isEqualTo(VALUE5)
+                    is WithArrayElements -> {
+                        assertThat(annotation.stringArray).asList().containsExactly("one", "", "three")
+                        assertThat(annotation.byteArray.size).isEqualTo(1)
+                        assertThat(annotation.byteArray[0] == 5.toByte()).isTrue()
+                        assertThat(annotation.byteArray[0]).isEqualTo(5)
+                    }
+                    is WithDefaultStringElement -> assertThat(annotation.string).isEqualTo("default")
+                }
+            }
+            return moshi.adapter(String::class.java)
+        }
     }
 }

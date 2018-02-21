@@ -6,11 +6,11 @@ import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeVariableName
 import com.squareup.javapoet.WildcardTypeName
 import com.squareup.moshi.Types
-import javax.lang.model.element.Element
+import javax.lang.model.element.AnnotationMirror
 
 data class AdapterKey(
         val type: TypeName,
-        val jsonQualifiers: List<Element>
+        val jsonQualifiers: List<AnnotationMirror>
 ) {
 
     val isGeneric: Boolean
