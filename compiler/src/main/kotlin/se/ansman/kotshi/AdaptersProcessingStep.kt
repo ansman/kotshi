@@ -216,11 +216,13 @@ class AdaptersProcessingStep(
                                     val elementValuesWithDefaults = elements.getElementValuesWithDefaults(qualifier)
                                     if (elementValuesWithDefaults.isEmpty()) {
                                         add("\$T.createJsonQualifierImplementation(\$T.class, \$T.emptyMap())",
-                                                KotshiUtils::class.java, qualifier.annotationType.asElement(),
+                                                KotshiUtils::class.java,
+                                                qualifier.annotationType.asElement(),
                                                 Collections::class.java)
                                     } else {
                                         add("\$T.createJsonQualifierImplementation(\$T.class, \$T.unmodifiableMap(",
-                                                KotshiUtils::class.java, qualifier.annotationType.asElement(),
+                                                KotshiUtils::class.java,
+                                                qualifier.annotationType.asElement(),
                                                 Collections::class.java)
                                         val entries = elementValuesWithDefaults.entries
                                         addAnnotationElements(entries.size, entries.iterator(), 0)
@@ -507,7 +509,7 @@ class AdaptersProcessingStep(
             iterator: Iterator<Map.Entry<ExecutableElement, AnnotationValue>>,
             index: Int
     ) {
-        add("\$T.putInMap(", KotshiUtils::class.java)
+        add("\$T.putWithoutConflict(", KotshiUtils::class.java)
 
         val entry = iterator.next()
         if (index == size - 1) {

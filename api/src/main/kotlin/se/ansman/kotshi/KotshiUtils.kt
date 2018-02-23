@@ -24,7 +24,8 @@ object KotshiUtils {
 
     @JvmStatic
     fun <T : Annotation> createJsonQualifierImplementation(
-            annotationType: Class<T>, elementNameToArg: Map<String, Any>
+            annotationType: Class<T>,
+            elementNameToArg: Map<String, Any>
     ): T {
         if (!annotationType.isAnnotation) {
             throw IllegalArgumentException("$annotationType must be an annotation.")
@@ -45,8 +46,8 @@ object KotshiUtils {
     }
 
     @JvmStatic
-    fun putInMap(map: MutableMap<String, Any>, key: String, value: Any): MutableMap<String, Any> = map.apply {
-        if (map.put(key, value) != null) {
+    fun MutableMap<String, Any>.putWithoutConflict(key: String, value: Any): MutableMap<String, Any> = apply {
+        if (put(key, value) != null) {
             throw AssertionError("Already had value '$value' for $key")
         }
     }
