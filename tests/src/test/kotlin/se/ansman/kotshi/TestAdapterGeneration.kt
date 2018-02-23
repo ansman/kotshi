@@ -241,8 +241,8 @@ class TestAdapterGeneration {
                     is WithArrayElements -> {
                         assertThat(annotation.stringArray).asList().containsExactly("one", "", "three")
                         assertThat(annotation.byteArray.size).isEqualTo(1)
-                        assertThat(annotation.byteArray[0] == 5.toByte()).isTrue()
                         assertThat(annotation.byteArray[0]).isEqualTo(5)
+                        assertThat(annotation.classArray).asList().isEmpty()
                     }
                     is WithDefaultStringElement -> assertThat(annotation.string).isEqualTo("default")
                 }
