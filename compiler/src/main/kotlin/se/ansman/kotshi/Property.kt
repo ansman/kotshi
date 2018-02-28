@@ -53,10 +53,6 @@ class Property(
     init {
         require(getter != null || field != null)
 
-        if (type.containsUnboundWildcards()) {
-            throw ProcessingError("Properties cannot contain wildcard types", parameter)
-        }
-
         defaultValueProvider = if (defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()) {
             if (adapterKey.isGeneric) {
                 throw ProcessingError("You cannot use default values on a generic type", parameter)
