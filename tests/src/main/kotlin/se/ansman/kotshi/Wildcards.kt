@@ -1,7 +1,7 @@
 package se.ansman.kotshi
 
 @JsonSerializable
-data class Wildcards(val list: List<CharSequence>) {
+data class Wildcards(var list: List<CharSequence>) {
     @JsonSerializable
-    data class AnyBound(val keys: List<Map<String, Any>>)
+    data class AnyBound(var keys: List<Map<String, Any>>)
 }

@@ -2,10 +2,8 @@ package se.ansman.kotshi
 
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeVariableName
-import com.squareup.javapoet.WildcardTypeName
 
-val TYPE_NAME_STRING = TypeName.get(String::class.java)
+val TYPE_NAME_STRING: TypeName = TypeName.get(String::class.java)
 
 val TypeName.jvmDefault: String
     get() {
@@ -28,15 +26,3 @@ val TypeName.rawType: TypeName
         is ParameterizedTypeName -> this.rawType
         else -> this
     }
-
-fun TypeName.containsUnboundWildcards(): Boolean =
-        when (this) {
-            is ParameterizedTypeName -> typeArguments.any { it.containsUnboundWildcards() }
-            is WildcardTypeName -> when {
-                lowerBounds.size == 1 -> lowerBounds[0].containsUnboundWildcards()
-                upperBounds[0] == TypeName.OBJECT -> true
-                else -> upperBounds[0].containsUnboundWildcards()
-            }
-            is TypeVariableName -> false
-            else -> false
-        }

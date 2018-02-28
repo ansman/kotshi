@@ -38,7 +38,7 @@ data class AdapterKey(
                             .build()
                 is WildcardTypeName -> when {
                     lowerBounds.size == 1 -> lowerBounds[0].asRuntimeType(typeVariableAccessor)
-                    upperBounds[0] == TypeName.OBJECT -> throw AssertionError()
+                    upperBounds[0] == TypeName.OBJECT -> TypeName.OBJECT.asRuntimeType(typeVariableAccessor)
                     else -> upperBounds[0].asRuntimeType(typeVariableAccessor)
                 }
                 is TypeVariableName -> typeVariableAccessor(this)
