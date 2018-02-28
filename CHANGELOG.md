@@ -1,5 +1,13 @@
 Change Log
 ===
+Version 1.0.2 (2018-02-28)
+---
+This version fixes some problems with wildcards when using `Any` or `Object` as
+the upper or lower bound.
+
+Changes:
+* Treat wildcards as the upper/lower bound ([#68](https://github.com/ansman/kotshi/pull/68))
+
 Version 1.0.1 (2018-02-20)
 ---
 Due to what seems to be a bug in kapt the 1.0.0 way of implementing the factory
