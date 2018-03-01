@@ -16,11 +16,11 @@ object KotshiUtils {
 
     @JvmStatic
     fun appendNullableError(stringBuilder: StringBuilder?, propertyName: String): StringBuilder =
-            if (stringBuilder == null) {
-                StringBuilder("The following properties were null: ")
-            } else {
-                stringBuilder.append(", ")
-            }.append(propertyName)
+        if (stringBuilder == null) {
+            StringBuilder("The following properties were null: ")
+        } else {
+            stringBuilder.append(", ")
+        }.append(propertyName)
 
     @JvmStatic
     fun <T : Annotation> createJsonQualifierImplementation(annotationType: Class<T>): T {

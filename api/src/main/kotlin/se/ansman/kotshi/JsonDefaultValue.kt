@@ -14,11 +14,13 @@ package se.ansman.kotshi
  *
  * Example:
  * ```
- * @Target(AnnotationTarget.VALUE_PARAMETER,
- *         AnnotationTarget.FUNCTION,
- *         AnnotationTarget.CONSTRUCTOR,
- *         AnnotationTarget.FIELD,
- *         AnnotationTarget.PROPERTY_GETTER)
+ * @Target(
+ *     AnnotationTarget.VALUE_PARAMETER,
+ *     AnnotationTarget.FUNCTION,
+ *     AnnotationTarget.CONSTRUCTOR,
+ *     AnnotationTarget.FIELD,
+ *     AnnotationTarget.PROPERTY_GETTER
+ * )
  * @MustBeDocumented
  * @Retention(AnnotationRetention.SOURCE)
  * annotation class StringWithNA
@@ -41,12 +43,14 @@ package se.ansman.kotshi
  * }
  * ```
  */
-@Target(AnnotationTarget.VALUE_PARAMETER,
-        AnnotationTarget.ANNOTATION_CLASS,
-        AnnotationTarget.FUNCTION,
-        AnnotationTarget.CONSTRUCTOR,
-        AnnotationTarget.FIELD,
-        AnnotationTarget.PROPERTY_GETTER)
+@Target(
+    AnnotationTarget.VALUE_PARAMETER,
+    AnnotationTarget.ANNOTATION_CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.CONSTRUCTOR,
+    AnnotationTarget.FIELD,
+    AnnotationTarget.PROPERTY_GETTER
+)
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
 annotation class JsonDefaultValue

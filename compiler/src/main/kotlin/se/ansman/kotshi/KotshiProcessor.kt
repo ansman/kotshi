@@ -7,7 +7,11 @@ import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
 import com.squareup.javapoet.TypeName
-import javax.annotation.processing.*
+import javax.annotation.processing.AbstractProcessor
+import javax.annotation.processing.Messager
+import javax.annotation.processing.ProcessingEnvironment
+import javax.annotation.processing.Processor
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -27,24 +31,24 @@ class KotshiProcessor : AbstractProcessor() {
         val adapters: MutableMap<TypeName, GeneratedAdapter> = mutableMapOf()
         val defaultValueProviders = DefaultValueProviders(processingEnv.typeUtils)
         return listOf(
-                DefaultValuesProcessingStep(
-                        messager = processingEnv.messager,
-                        types = processingEnv.typeUtils,
-                        defaultValueProviders = defaultValueProviders
-                ),
-                AdaptersProcessingStep(
-                        messager = processingEnv.messager,
-                        types = processingEnv.typeUtils,
-                        filer = processingEnv.filer,
-                        adapters = adapters,
-                        defaultValueProviders = defaultValueProviders
-                ),
-                FactoryProcessingStep(
-                        messager = processingEnv.messager,
-                        filer = processingEnv.filer,
-                        types = processingEnv.typeUtils,
-                        elements = processingEnv.elementUtils,
-                        adapters = adapters))
+            DefaultValuesProcessingStep(
+                messager = processingEnv.messager,
+                types = processingEnv.typeUtils,
+                defaultValueProviders = defaultValueProviders
+            ),
+            AdaptersProcessingStep(
+                messager = processingEnv.messager,
+                types = processingEnv.typeUtils,
+                filer = processingEnv.filer,
+                adapters = adapters,
+                defaultValueProviders = defaultValueProviders
+            ),
+            FactoryProcessingStep(
+                messager = processingEnv.messager,
+                filer = processingEnv.filer,
+                types = processingEnv.typeUtils,
+                elements = processingEnv.elementUtils,
+                adapters = adapters))
     }
 
     @Synchronized
@@ -56,14 +60,14 @@ class KotshiProcessor : AbstractProcessor() {
     }
 
     private fun getSupportedAnnotationClasses(): Set<Class<out Annotation>> =
-            steps.flatMapTo(mutableSetOf()) { it.annotations }
+        steps.flatMapTo(mutableSetOf()) { it.annotations }
 
     /**
      * Returns the set of supported annotation types as a  collected from registered
      * [processing steps][ProcessingStep].
      */
     override fun getSupportedAnnotationTypes(): Set<String> =
-            getSupportedAnnotationClasses().mapTo(mutableSetOf()) { it.canonicalName }
+        getSupportedAnnotationClasses().mapTo(mutableSetOf()) { it.canonicalName }
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         if (!roundEnv.processingOver()) {

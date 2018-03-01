@@ -14,8 +14,8 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 
 class ComplexDefaultValueProvider(
-        types: Types,
-        val element: Element
+    types: Types,
+    val element: Element
 ) : DefaultValueProvider {
 
     val typeMirror: TypeMirror = when (element.kind) {
@@ -31,7 +31,7 @@ class ComplexDefaultValueProvider(
     val qualifier by lazy { element.getDefaultValueQualifier() }
 
     override val accessor: CodeBlock = element.findAccessor(types)
-            ?: throw ProcessingError("Could not find a way to access this provider", element)
+        ?: throw ProcessingError("Could not find a way to access this provider", element)
 
     override val canReturnNull by lazy {
         if (type.isPrimitive) {
@@ -69,7 +69,8 @@ class ComplexDefaultValueProvider(
                 }
             }
 
-            else -> {}
+            else -> {
+            }
         }
 
         if (!element.isPublic) {
@@ -85,88 +86,87 @@ class ComplexDefaultValueProvider(
 }
 
 private fun Element.findAccessor(types: Types): CodeBlock? =
-        when (requireNotNull(kind)) {
-            ElementKind.ENUM,
-            ElementKind.CLASS,
-            ElementKind.INTERFACE -> CodeBlock.builder()
-                    .apply { enclosingElement.findAccessor(types)?.let { add(it).add(".") } }
-                    .add("\$T", asType().asTypeName().rawType)
-                    .build()
+    when (requireNotNull(kind)) {
+        ElementKind.ENUM,
+        ElementKind.CLASS,
+        ElementKind.INTERFACE -> CodeBlock.builder()
+            .apply { enclosingElement.findAccessor(types)?.let { add(it).add(".") } }
+            .add("\$T", asType().asTypeName().rawType)
+            .build()
 
-            ElementKind.ENUM_CONSTANT,
-            ElementKind.FIELD -> {
-                CodeBlock.builder()
-                        .apply {
-                            if (Modifier.STATIC in modifiers) {
-                                add(enclosingElement.findAccessor(types))
-                            } else {
-                                add(MoreElements.asType(enclosingElement).findInstanceAccessor(types) ?:
-                                        throw ProcessingError("Could not find a way to access this class. " +
-                                                "Does it have a static getInstance() method or INSTANCE field?", enclosingElement))
-                            }
-                        }
-                        .add(".\$L", simpleName)
-                        .build()
-            }
-
-            ElementKind.METHOD -> CodeBlock.builder()
-                    .apply {
-                        if (Modifier.STATIC in modifiers) {
-                            add(enclosingElement.findAccessor(types))
-                        } else {
-                            add(MoreElements.asType(enclosingElement).findInstanceAccessor(types) ?:
-                                    throw ProcessingError("Could not find a way to access this class. " +
-                                            "Does it have a static getInstance() method or INSTANCE field?", enclosingElement))
-                        }
-                    }
-                    .add(".\$L()", simpleName)
-                    .build()
-
-            ElementKind.CONSTRUCTOR -> CodeBlock.builder()
-                    .apply {
-                        add("new ")
+        ElementKind.ENUM_CONSTANT,
+        ElementKind.FIELD -> {
+            CodeBlock.builder()
+                .apply {
+                    if (Modifier.STATIC in modifiers) {
                         add(enclosingElement.findAccessor(types))
-                        if ((enclosingElement as TypeElement).typeParameters.isNotEmpty()) {
-                            add("<>")
-                        }
-                        add("()")
+                    } else {
+                        add(MoreElements.asType(enclosingElement).findInstanceAccessor(types)
+                            ?: throw ProcessingError("Could not find a way to access this class. " +
+                                "Does it have a static getInstance() method or INSTANCE field?", enclosingElement))
                     }
-                    .build()
-
-            else -> null
+                }
+                .add(".\$L", simpleName)
+                .build()
         }
 
-private fun TypeElement.findInstanceAccessor(types: Types): CodeBlock? =
-        enclosedElements
-                .asSequence()
-                .filter { it.isPublic && Modifier.STATIC in it.modifiers }
-                .filter {
-                    when (it.kind) {
-                        ElementKind.FIELD -> it.simpleName.toString().equals("instance", ignoreCase = true) &&
-                                Modifier.FINAL in it.modifiers &&
-                                types.isSameType(it.asType(), asType())
-
-                        ElementKind.METHOD -> it.simpleName.contentEquals("getInstance") &&
-                                MoreElements.asExecutable(it).let {
-                                    types.isSameType(asType(), it.returnType) && it.parameters.isEmpty()
-                                }
-
-                        else -> false
-                    }
-                }
-                .map { it.findAccessor(types) }
-                .firstOrNull()
-                ?:
-                if (simpleName.contentEquals("Companion")) {
-                    enclosingElement.enclosedElements
-                            .asSequence()
-                            .filter { it.isPublic }
-                            .filter { Modifier.STATIC in it.modifiers }
-                            .filter { it.kind == ElementKind.FIELD }
-                            .filter { types.isSameType(it.asType(), asType()) }
-                            .filter { it.simpleName.contentEquals("Companion") }
-                            .firstOrNull()
-                            ?.findAccessor(types)
+        ElementKind.METHOD -> CodeBlock.builder()
+            .apply {
+                if (Modifier.STATIC in modifiers) {
+                    add(enclosingElement.findAccessor(types))
                 } else {
-                    null
+                    add(MoreElements.asType(enclosingElement).findInstanceAccessor(types)
+                        ?: throw ProcessingError("Could not find a way to access this class. " +
+                            "Does it have a static getInstance() method or INSTANCE field?", enclosingElement))
                 }
+            }
+            .add(".\$L()", simpleName)
+            .build()
+
+        ElementKind.CONSTRUCTOR -> CodeBlock.builder()
+            .apply {
+                add("new ")
+                add(enclosingElement.findAccessor(types))
+                if ((enclosingElement as TypeElement).typeParameters.isNotEmpty()) {
+                    add("<>")
+                }
+                add("()")
+            }
+            .build()
+
+        else -> null
+    }
+
+private fun TypeElement.findInstanceAccessor(types: Types): CodeBlock? =
+    enclosedElements
+        .asSequence()
+        .filter { it.isPublic && Modifier.STATIC in it.modifiers }
+        .filter {
+            when (it.kind) {
+                ElementKind.FIELD -> it.simpleName.toString().equals("instance", ignoreCase = true) &&
+                    Modifier.FINAL in it.modifiers &&
+                    types.isSameType(it.asType(), asType())
+
+                ElementKind.METHOD -> it.simpleName.contentEquals("getInstance") &&
+                    MoreElements.asExecutable(it).let {
+                        types.isSameType(asType(), it.returnType) && it.parameters.isEmpty()
+                    }
+
+                else -> false
+            }
+        }
+        .map { it.findAccessor(types) }
+        .firstOrNull()
+        ?: if (simpleName.contentEquals("Companion")) {
+            enclosingElement.enclosedElements
+                .asSequence()
+                .filter { it.isPublic }
+                .filter { Modifier.STATIC in it.modifiers }
+                .filter { it.kind == ElementKind.FIELD }
+                .filter { types.isSameType(it.asType(), asType()) }
+                .filter { it.simpleName.contentEquals("Companion") }
+                .firstOrNull()
+                ?.findAccessor(types)
+        } else {
+            null
+        }

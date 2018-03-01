@@ -26,15 +26,15 @@ import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
 class FactoryProcessingStep(
-        val messager: Messager,
-        val filer: Filer,
-        val types: Types,
-        val elements: Elements,
-        val adapters: Map<TypeName, GeneratedAdapter>
+    val messager: Messager,
+    val filer: Filer,
+    val types: Types,
+    val elements: Elements,
+    val adapters: Map<TypeName, GeneratedAdapter>
 ) : KotshiProcessor.ProcessingStep {
 
     private fun TypeMirror.implements(someType: KClass<*>): Boolean =
-            types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
+        types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
 
     override val annotations: Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
 
@@ -64,70 +64,70 @@ class FactoryProcessingStep(
                 messager.printMessage(Diagnostic.Kind.ERROR, "Must be abstract", element)
             }
             typeSpecBuilder
-                    .addModifiers(Modifier.FINAL)
-                    .superclass(TypeName.get(factoryType.asType()))
+                .addModifiers(Modifier.FINAL)
+                .superclass(TypeName.get(factoryType.asType()))
         } else {
             typeSpecBuilder
-                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                    .addSuperinterface(JsonAdapter.Factory::class.java)
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addSuperinterface(JsonAdapter.Factory::class.java)
         }
 
         typeSpecBuilder
-                // Package private constructor
-                .addMethod(MethodSpec.constructorBuilder()
-                        .build())
-                .addMethod(MethodSpec.methodBuilder("create")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override::class.java)
-                        .returns(ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), WildcardTypeName.subtypeOf(TypeName.OBJECT)))
-                        .addParameter(Type::class.java, "type")
-                        .addParameter(ParameterizedTypeName.get(ClassName.get(Set::class.java), WildcardTypeName.subtypeOf(Annotation::class.java)), "annotations")
-                        .addParameter(TypeName.get(Moshi::class.java), "moshi")
-                        .addStatement("if (!annotations.isEmpty()) return null")
-                        .addCode("\n")
-                        .apply {
-                            when {
-                                genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
-                                regularAdapters.isEmpty() -> addCode(handleGenericAdapters(genericAdapters))
-                                else -> {
-                                    addIf("type instanceof \$T", ParameterizedType::class.java) {
-                                        addCode(handleGenericAdapters(genericAdapters))
-                                    }
-                                    addCode(handleRegularAdapters(regularAdapters))
-                                }
+            // Package private constructor
+            .addMethod(MethodSpec.constructorBuilder()
+                .build())
+            .addMethod(MethodSpec.methodBuilder("create")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override::class.java)
+                .returns(ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), WildcardTypeName.subtypeOf(TypeName.OBJECT)))
+                .addParameter(Type::class.java, "type")
+                .addParameter(ParameterizedTypeName.get(ClassName.get(Set::class.java), WildcardTypeName.subtypeOf(Annotation::class.java)), "annotations")
+                .addParameter(TypeName.get(Moshi::class.java), "moshi")
+                .addStatement("if (!annotations.isEmpty()) return null")
+                .addCode("\n")
+                .apply {
+                    when {
+                        genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
+                        regularAdapters.isEmpty() -> addCode(handleGenericAdapters(genericAdapters))
+                        else -> {
+                            addIf("type instanceof \$T", ParameterizedType::class.java) {
+                                addCode(handleGenericAdapters(genericAdapters))
                             }
+                            addCode(handleRegularAdapters(regularAdapters))
                         }
-                        .addStatement("return null")
-                        .build())
+                    }
+                }
+                .addStatement("return null")
+                .build())
 
         JavaFile.builder(generatedName.packageName(), typeSpecBuilder.build()).build().writeTo(filer)
     }
 
     private fun handleGenericAdapters(adapters: List<Map.Entry<TypeName, GeneratedAdapter>>): CodeBlock = CodeBlock.builder()
-            .addStatement("\$1T parameterized = (\$1T) type", ParameterizedType::class.java)
-            .addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
-            .apply {
-                for ((type, adapter) in adapters) {
-                    addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
-                        addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
-                                adapter.className)
-                    }
+        .addStatement("\$1T parameterized = (\$1T) type", ParameterizedType::class.java)
+        .addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
+        .apply {
+            for ((type, adapter) in adapters) {
+                addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
+                    addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
+                        adapter.className)
                 }
             }
-            .build()
+        }
+        .build()
 
     private fun handleRegularAdapters(adapters: List<Map.Entry<TypeName, GeneratedAdapter>>): CodeBlock = CodeBlock.builder()
-            .apply {
-                for ((type, adapter) in adapters) {
-                    addIf("type.equals(\$T.class)", type) {
-                        if (adapter.requiresMoshi) {
-                            addStatement("return new \$T(moshi)", adapter.className)
-                        } else {
-                            addStatement("return new \$T()", adapter.className)
-                        }
+        .apply {
+            for ((type, adapter) in adapters) {
+                addIf("type.equals(\$T.class)", type) {
+                    if (adapter.requiresMoshi) {
+                        addStatement("return new \$T(moshi)", adapter.className)
+                    } else {
+                        addStatement("return new \$T()", adapter.className)
                     }
                 }
             }
-            .build()
+        }
+        .build()
 
 }

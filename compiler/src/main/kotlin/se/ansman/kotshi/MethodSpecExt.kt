@@ -41,28 +41,28 @@ inline fun MethodSpec.Builder.addSwitchBranch(branch: String,
 inline fun MethodSpec.Builder.addIf(predicate: String,
                                     vararg args: Any,
                                     block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addControlFlow("if ($predicate)", *args) { block() }
+    addControlFlow("if ($predicate)", *args) { block() }
 
 inline fun MethodSpec.Builder.addIfElse(predicate: String,
                                         vararg args: Any,
                                         block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addControlFlow("if ($predicate)", *args, close = false) { block() }
+    addControlFlow("if ($predicate)", *args, close = false) { block() }
 
 inline fun MethodSpec.Builder.addElseIf(predicate: String,
                                         vararg args: Any,
                                         block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addNextControlFlow("else if ($predicate)", *args, close = false) { block() }
+    addNextControlFlow("else if ($predicate)", *args, close = false) { block() }
 
 inline fun MethodSpec.Builder.addElse(block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addNextControlFlow("else") { block() }
+    addNextControlFlow("else") { block() }
 
 inline fun MethodSpec.Builder.addWhile(predicate: String,
                                        vararg args: Any,
                                        block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addControlFlow("while ($predicate)", *args) { block() }
+    addControlFlow("while ($predicate)", *args) { block() }
 
 inline fun MethodSpec.Builder.addSwitch(predicate: String,
                                         vararg args: Any,
                                         block: MethodSpec.Builder.() -> Unit): MethodSpec.Builder =
-        addControlFlow("switch ($predicate)", *args) { block() }
+    addControlFlow("switch ($predicate)", *args) { block() }
 

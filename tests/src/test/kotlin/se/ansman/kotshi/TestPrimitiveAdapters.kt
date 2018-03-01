@@ -34,48 +34,48 @@ class TestPrimitiveAdapters {
         floatAdapter = DelegateAdapter(basicMoshi.adapter(Float::class.java))
         doubleAdapter = DelegateAdapter(basicMoshi.adapter(Double::class.java))
         moshi = Moshi.Builder()
-                .add(TestFactory.INSTANCE)
-                .add(String::class.java, stringAdapter)
-                .add(Boolean::class.javaPrimitiveType!!, booleanAdapter)
-                .add(Boolean::class.javaObjectType, booleanAdapter)
-                .add(Byte::class.javaPrimitiveType!!, byteAdapter)
-                .add(Byte::class.javaObjectType, byteAdapter)
-                .add(Char::class.javaPrimitiveType!!, charAdapter)
-                .add(Char::class.javaObjectType, charAdapter)
-                .add(Short::class.javaPrimitiveType!!, shortAdapter)
-                .add(Short::class.javaObjectType, shortAdapter)
-                .add(Int::class.javaPrimitiveType!!, intAdapter)
-                .add(Int::class.javaObjectType, intAdapter)
-                .add(Long::class.javaPrimitiveType!!, longAdapter)
-                .add(Long::class.javaObjectType, longAdapter)
-                .add(Float::class.javaPrimitiveType!!, floatAdapter)
-                .add(Float::class.javaObjectType, floatAdapter)
-                .add(Double::class.javaPrimitiveType!!, doubleAdapter)
-                .add(Double::class.javaObjectType, doubleAdapter)
-                .add(Int::class.javaPrimitiveType!!, Hello::class.java, intAdapter)
-                .build()
+            .add(TestFactory.INSTANCE)
+            .add(String::class.java, stringAdapter)
+            .add(Boolean::class.javaPrimitiveType!!, booleanAdapter)
+            .add(Boolean::class.javaObjectType, booleanAdapter)
+            .add(Byte::class.javaPrimitiveType!!, byteAdapter)
+            .add(Byte::class.javaObjectType, byteAdapter)
+            .add(Char::class.javaPrimitiveType!!, charAdapter)
+            .add(Char::class.javaObjectType, charAdapter)
+            .add(Short::class.javaPrimitiveType!!, shortAdapter)
+            .add(Short::class.javaObjectType, shortAdapter)
+            .add(Int::class.javaPrimitiveType!!, intAdapter)
+            .add(Int::class.javaObjectType, intAdapter)
+            .add(Long::class.javaPrimitiveType!!, longAdapter)
+            .add(Long::class.javaObjectType, longAdapter)
+            .add(Float::class.javaPrimitiveType!!, floatAdapter)
+            .add(Float::class.javaObjectType, floatAdapter)
+            .add(Double::class.javaPrimitiveType!!, doubleAdapter)
+            .add(Double::class.javaObjectType, doubleAdapter)
+            .add(Int::class.javaPrimitiveType!!, Hello::class.java, intAdapter)
+            .build()
     }
 
     @Test
     fun testDoesntCallAdapter() {
         testFormatting(json, NotUsingPrimitiveAdapterTestClass(
-                aString = "hello",
-                aBoolean = true,
-                aNullableBoolean = false,
-                aByte = -1,
-                nullableByte = Byte.MIN_VALUE,
-                aChar = 'c',
-                nullableChar = 'n',
-                aShort = 32767,
-                nullableShort = -32768,
-                integer = 4711,
-                nullableInteger = 1337,
-                aLong = 4711,
-                nullableLong = 1337,
-                aFloat = 4711.5f,
-                nullableFloat = 1337.5f,
-                aDouble = 4711.5,
-                nullableDouble = 1337.5))
+            aString = "hello",
+            aBoolean = true,
+            aNullableBoolean = false,
+            aByte = -1,
+            nullableByte = Byte.MIN_VALUE,
+            aChar = 'c',
+            nullableChar = 'n',
+            aShort = 32767,
+            nullableShort = -32768,
+            integer = 4711,
+            nullableInteger = 1337,
+            aLong = 4711,
+            nullableLong = 1337,
+            aFloat = 4711.5f,
+            nullableFloat = 1337.5f,
+            aDouble = 4711.5,
+            nullableDouble = 1337.5))
         assertEquals(0, stringAdapter.readCount)
         assertEquals(0, stringAdapter.writeCount)
         assertEquals(0, booleanAdapter.readCount)
@@ -99,23 +99,23 @@ class TestPrimitiveAdapters {
     @Test
     fun testCallsAdapter() {
         testFormatting(json, UsingPrimitiveAdapterTestClass(
-                aString = "hello",
-                aBoolean = true,
-                aNullableBoolean = false,
-                aByte = -1,
-                nullableByte = Byte.MIN_VALUE,
-                aChar = 'c',
-                nullableChar = 'n',
-                aShort = 32767,
-                nullableShort = -32768,
-                integer = 4711,
-                nullableInteger = 1337,
-                aLong = 4711,
-                nullableLong = 1337,
-                aFloat = 4711.5f,
-                nullableFloat = 1337.5f,
-                aDouble = 4711.5,
-                nullableDouble = 1337.5))
+            aString = "hello",
+            aBoolean = true,
+            aNullableBoolean = false,
+            aByte = -1,
+            nullableByte = Byte.MIN_VALUE,
+            aChar = 'c',
+            nullableChar = 'n',
+            aShort = 32767,
+            nullableShort = -32768,
+            integer = 4711,
+            nullableInteger = 1337,
+            aLong = 4711,
+            nullableLong = 1337,
+            aFloat = 4711.5f,
+            nullableFloat = 1337.5f,
+            aDouble = 4711.5,
+            nullableDouble = 1337.5))
         assertEquals(1, stringAdapter.readCount)
         assertEquals(1, stringAdapter.writeCount)
         assertEquals(2, booleanAdapter.readCount)
@@ -150,13 +150,13 @@ class TestPrimitiveAdapters {
         val actual = adapter.fromJson(json)
         assertEquals(expected, actual)
         assertEquals(json, Buffer()
-                .apply {
-                    JsonWriter.of(this).run {
-                        indent = "  "
-                        adapter.toJson(this, actual)
-                    }
+            .apply {
+                JsonWriter.of(this).run {
+                    indent = "  "
+                    adapter.toJson(this, actual)
                 }
-                .readUtf8())
+            }
+            .readUtf8())
     }
 
     companion object {

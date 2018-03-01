@@ -13,8 +13,8 @@ class TestPrimitiveDefaultValues {
     @Before
     fun setup() {
         moshi = Moshi.Builder()
-                .add(TestFactory.INSTANCE)
-                .build()
+            .add(TestFactory.INSTANCE)
+            .build()
     }
 
     @Test
@@ -32,15 +32,15 @@ class TestPrimitiveDefaultValues {
              |}""".trimMargin()
 
         val expected = ClassWithPrimitiveDefaults(
-                someString = "someString",
-                someBoolean = false,
-                someByte = -1,
-                someChar = 'X',
-                someShort = 1337,
-                someInt = 1337,
-                someLong = 1337,
-                someFloat = 0f,
-                someDouble = 0.0)
+            someString = "someString",
+            someBoolean = false,
+            someByte = -1,
+            someChar = 'X',
+            someShort = 1337,
+            someInt = 1337,
+            someLong = 1337,
+            someFloat = 0f,
+            someDouble = 0.0)
 
         expected.testFormatting(json)
     }
@@ -48,15 +48,15 @@ class TestPrimitiveDefaultValues {
     @Test
     fun withNullValues() {
         val expected = ClassWithPrimitiveDefaults(
-                someString = "default",
-                someBoolean = true,
-                someByte = 66,
-                someChar = 'N',
-                someShort = 4711,
-                someInt = 4711,
-                someLong = 4711,
-                someFloat = 0.4711f,
-                someDouble = 0.4711)
+            someString = "default",
+            someBoolean = true,
+            someByte = 66,
+            someChar = 'N',
+            someShort = 4711,
+            someInt = 4711,
+            someLong = 4711,
+            someFloat = 0.4711f,
+            someDouble = 0.4711)
 
         val actual = moshi.adapter(ClassWithPrimitiveDefaults::class.java).fromJson("""{
              |  "someString": null,
@@ -76,15 +76,15 @@ class TestPrimitiveDefaultValues {
     @Test
     fun withAbsentValues() {
         val expected = ClassWithPrimitiveDefaults(
-                someString = "default",
-                someBoolean = true,
-                someByte = 66,
-                someChar = 'N',
-                someShort = 4711,
-                someInt = 4711,
-                someLong = 4711,
-                someFloat = 0.4711f,
-                someDouble = 0.4711)
+            someString = "default",
+            someBoolean = true,
+            someByte = 66,
+            someChar = 'N',
+            someShort = 4711,
+            someInt = 4711,
+            someLong = 4711,
+            someFloat = 0.4711f,
+            someDouble = 0.4711)
 
         val actual = moshi.adapter(ClassWithPrimitiveDefaults::class.java).fromJson("{}")
         assertEquals(expected, actual)
@@ -95,12 +95,12 @@ class TestPrimitiveDefaultValues {
         val actual = adapter.fromJson(json)
         assertEquals(this, actual)
         assertEquals(json, Buffer()
-                .apply {
-                    JsonWriter.of(this).run {
-                        indent = "  "
-                        adapter.toJson(this, actual)
-                    }
+            .apply {
+                JsonWriter.of(this).run {
+                    indent = "  "
+                    adapter.toJson(this, actual)
                 }
-                .readUtf8())
+            }
+            .readUtf8())
     }
 }

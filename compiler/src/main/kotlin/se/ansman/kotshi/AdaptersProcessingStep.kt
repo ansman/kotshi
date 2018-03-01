@@ -32,21 +32,21 @@ import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
-        private val messager: Messager,
-        private val types: Types,
-        private val filer: Filer,
-        private val adapters: MutableMap<TypeName, GeneratedAdapter>,
-        private val defaultValueProviders: DefaultValueProviders
+    private val messager: Messager,
+    private val types: Types,
+    private val filer: Filer,
+    private val adapters: MutableMap<TypeName, GeneratedAdapter>,
+    private val defaultValueProviders: DefaultValueProviders
 ) : KotshiProcessor.ProcessingStep {
     override val annotations: Set<Class<out Annotation>> =
-            setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
+        setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
 
     override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         val globalConfig = (elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
-                .firstOrNull()
-                ?.getAnnotation(KotshiJsonAdapterFactory::class.java)
-                ?.let { GlobalConfig(it) }
-                ?: GlobalConfig.DEFAULT)
+            .firstOrNull()
+            ?.getAnnotation(KotshiJsonAdapterFactory::class.java)
+            ?.let { GlobalConfig(it) }
+            ?: GlobalConfig.DEFAULT)
 
         for (element in elementsByAnnotation[JsonSerializable::class.java]) {
             try {
@@ -69,43 +69,43 @@ class AdaptersProcessingStep(
         val methods = ElementFilter.methodsIn(element.enclosedElements).associateBy { it.simpleName.toString() }
 
         val properties = constructor.parameters
-                .map { parameter ->
-                    val field = fields[parameter.simpleName.toString()]
+            .map { parameter ->
+                val field = fields[parameter.simpleName.toString()]
 
-                    val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: parameter.getGetterName()
+                val getterName = parameter.getAnnotation(GetterName::class.java)?.value ?: parameter.getGetterName()
 
-                    val getter = methods[getterName]
+                val getter = methods[getterName]
 
-                    if (getter != null && Modifier.PRIVATE in getter.modifiers) {
-                        throw ProcessingError("Getter must not be private", getter)
-                    }
-
-                    if (getter == null) {
-                        if (field == null) {
-                            throw ProcessingError("Could not find a field named ${parameter.simpleName} or a getter named $getterName", parameter)
-                        }
-                        if (Modifier.PRIVATE in field.modifiers) {
-                            throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
-                        }
-                    }
-
-                    Property(defaultValueProviders, types, globalConfig, element, parameter, field, getter)
+                if (getter != null && Modifier.PRIVATE in getter.modifiers) {
+                    throw ProcessingError("Getter must not be private", getter)
                 }
 
+                if (getter == null) {
+                    if (field == null) {
+                        throw ProcessingError("Could not find a field named ${parameter.simpleName} or a getter named $getterName", parameter)
+                    }
+                    if (Modifier.PRIVATE in field.modifiers) {
+                        throw ProcessingError("Could not find a getter named $getterName, annotate the parameter with @GetterName if you use @JvmName", parameter)
+                    }
+                }
+
+                Property(defaultValueProviders, types, globalConfig, element, parameter, field, getter)
+            }
+
         val adapterKeys: Set<AdapterKey> = properties
-                .asSequence()
-                .filter { it.shouldUseAdapter }
-                .map { it.adapterKey }
-                .toSet()
+            .asSequence()
+            .filter { it.shouldUseAdapter }
+            .map { it.adapterKey }
+            .toSet()
 
         val adapter = ClassName.bestGuess(typeElement.toString()).let {
             ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}JsonAdapter")
         }
 
         val genericTypes: List<TypeVariableName> = (typeName as? ParameterizedTypeName)
-                ?.typeArguments
-                ?.map { it as TypeVariableName }
-                ?: emptyList()
+            ?.typeArguments
+            ?.map { it as TypeVariableName }
+            ?: emptyList()
 
         nameAllocator.newName("OPTIONS")
         nameAllocator.newName("value")
@@ -117,18 +117,18 @@ class AdaptersProcessingStep(
         val stringArguments = Collections.nCopies(properties.size, "\$S").joinToString(",\n")
         val jsonNames = properties.map { it.jsonName }
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
-                .initializer("\$[\$T.of(\n$stringArguments)\$]", JsonReader.Options::class.java, *jsonNames.toTypedArray())
-                .build()
+            .initializer("\$[\$T.of(\n$stringArguments)\$]", JsonReader.Options::class.java, *jsonNames.toTypedArray())
+            .build()
         val typeSpec = TypeSpec.classBuilder(adapter)
-                .addTypeVariables(genericTypes)
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .superclass(getAdapterType(NamedJsonAdapter::class.java, typeName))
-                .addField(optionsField)
-                .addFields(generateFields(adapterKeys))
-                .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
-                .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
-                .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
-                .build()
+            .addTypeVariables(genericTypes)
+            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+            .superclass(getAdapterType(NamedJsonAdapter::class.java, typeName))
+            .addField(optionsField)
+            .addFields(generateFields(adapterKeys))
+            .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
+            .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
+            .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
+            .build()
 
         val output = JavaFile.builder(adapter.packageName(), typeSpec).build()
 
@@ -142,7 +142,7 @@ class AdaptersProcessingStep(
 
     private fun findConstructor(element: Element): ExecutableElement {
         val constructors = ElementFilter.constructorsIn(element.enclosedElements)
-                .filter { it.parameters.isNotEmpty() }
+            .filter { it.parameters.isNotEmpty() }
 
         if (constructors.isEmpty()) {
             throw ProcessingError("No non empty constructor found", element)
@@ -161,82 +161,82 @@ class AdaptersProcessingStep(
             constructors.first()
         } else {
             constructors
-                    .filter { it.getAnnotation(KotshiConstructor::class.java) != null }
-                    .also {
-                        if (it.isEmpty()) {
-                            throw ProcessingError("Multiple constructors found, please annotate the primary one with @KotshiConstructor", element)
-                        } else if (it.size > 1) {
-                            throw ProcessingError("Multiple constructors annotated with @KotshiConstructor", element)
-                        }
+                .filter { it.getAnnotation(KotshiConstructor::class.java) != null }
+                .also {
+                    if (it.isEmpty()) {
+                        throw ProcessingError("Multiple constructors found, please annotate the primary one with @KotshiConstructor", element)
+                    } else if (it.size > 1) {
+                        throw ProcessingError("Multiple constructors annotated with @KotshiConstructor", element)
                     }
-                    .first()
+                }
+                .first()
         }.also { it.validate() }
     }
 
     private fun generateFields(properties: Set<AdapterKey>): List<FieldSpec> =
-            properties.mapIndexed { index, (type) ->
-                FieldSpec
-                        .builder(getAdapterType(JsonAdapter::class.java, type),
-                                generateAdapterFieldName(index),
-                                Modifier.PRIVATE,
-                                Modifier.FINAL)
-                        .build()
-            }
+        properties.mapIndexed { index, (type) ->
+            FieldSpec
+                .builder(getAdapterType(JsonAdapter::class.java, type),
+                    generateAdapterFieldName(index),
+                    Modifier.PRIVATE,
+                    Modifier.FINAL)
+                .build()
+        }
 
     private fun generateConstructor(element: Element,
                                     typeElement: TypeElement,
                                     adapters: Set<AdapterKey>,
                                     genericTypes: List<TypeVariableName>): MethodSpec = MethodSpec.constructorBuilder()
-            .addModifiers(Modifier.PUBLIC)
-            .applyIf(adapters.isNotEmpty()) {
-                addParameter(Moshi::class.java, "moshi")
+        .addModifiers(Modifier.PUBLIC)
+        .applyIf(adapters.isNotEmpty()) {
+            addParameter(Moshi::class.java, "moshi")
+        }
+        .applyIf(genericTypes.isNotEmpty()) {
+            addParameter(Array<Type>::class.java, "types")
+        }
+        .addStatement("super(\$S)", ClassName.bestGuess(typeElement.toString())
+            .simpleNames()
+            .joinToString(".")
+            .let { "KotshiJsonAdapter($it)" })
+        .apply {
+            fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
+                0 -> CodeBlock.of("")
+                1 -> CodeBlock.of(", \$T.class", jsonQualifiers.first())
+                else -> CodeBlock.builder()
+                    .add(", \$T.unmodifiableSet(new \$T<>(\$T.asList(",
+                        Collections::class.java, LinkedHashSet::class.java, Arrays::class.java)
+                    .apply {
+                        jsonQualifiers.forEachIndexed { index, qualifier ->
+                            if (index > 0) add(", ")
+                            add("\$T.createJsonQualifierImplementation(\$T.class)", KotshiUtils::class.java, qualifier)
+                        }
+                    }
+                    .add(")))")
+                    .build()
             }
-            .applyIf(genericTypes.isNotEmpty()) {
-                addParameter(Array<Type>::class.java, "types")
-            }
-            .addStatement("super(\$S)", ClassName.bestGuess(typeElement.toString())
-                    .simpleNames()
-                    .joinToString(".")
-                    .let { "KotshiJsonAdapter($it)" })
-            .apply {
-                fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
-                    0 -> CodeBlock.of("")
-                    1 -> CodeBlock.of(", \$T.class", jsonQualifiers.first())
-                    else -> CodeBlock.builder()
-                            .add(", \$T.unmodifiableSet(new \$T<>(\$T.asList(",
-                                Collections::class.java, LinkedHashSet::class.java, Arrays::class.java)
-                            .apply {
-                                jsonQualifiers.forEachIndexed { index, qualifier ->
-                                    if (index > 0) add(", ")
-                                    add("\$T.createJsonQualifierImplementation(\$T.class)", KotshiUtils::class.java, qualifier)
-                                }
-                            }
-                            .add(")))")
-                            .build()
-                }
 
-                adapters.forEachIndexed { index, adapterKey ->
-                    val fieldName = generateAdapterFieldName(index)
+            adapters.forEachIndexed { index, adapterKey ->
+                val fieldName = generateAdapterFieldName(index)
 
-                    addCode(CodeBlock.builder()
-                            .add("\$[\$L = moshi.adapter(", fieldName)
-                            .add(adapterKey.asRuntimeType { typeVariableName ->
-                                val genericIndex = genericTypes.indexOf(typeVariableName)
-                                if (genericIndex == -1) {
-                                    throw ProcessingError("Element is generic but if an unknown type", element)
-                                } else {
-                                    CodeBlock.of("types[$genericIndex]")
-                                }
-                            })
-                            .add(adapterKey.annotations())
-                            .add(");\$]\n")
-                            .build())
-                }
+                addCode(CodeBlock.builder()
+                    .add("\$[\$L = moshi.adapter(", fieldName)
+                    .add(adapterKey.asRuntimeType { typeVariableName ->
+                        val genericIndex = genericTypes.indexOf(typeVariableName)
+                        if (genericIndex == -1) {
+                            throw ProcessingError("Element is generic but if an unknown type", element)
+                        } else {
+                            CodeBlock.of("types[$genericIndex]")
+                        }
+                    })
+                    .add(adapterKey.annotations())
+                    .add(");\$]\n")
+                    .build())
             }
-            .build()
+        }
+        .build()
 
     private fun getAdapterType(superClass: Class<*>, typeName: TypeName): ParameterizedTypeName =
-            ParameterizedTypeName.get(ClassName.get(superClass), typeName.box())
+        ParameterizedTypeName.get(ClassName.get(superClass), typeName.box())
 
     private fun generateAdapterFieldName(index: Int): String = "adapter$index"
 
@@ -245,50 +245,50 @@ class AdaptersProcessingStep(
     private fun generateWriteMethod(type: TypeMirror,
                                     properties: Iterable<Property>,
                                     adapterKeys: Set<AdapterKey>): MethodSpec =
-            MethodSpec.methodBuilder("toJson")
-                    .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addException(IOException::class.java)
-                    .addParameter(JsonWriter::class.java, "writer")
-                    .addParameter(TypeName.get(type), "value")
-                    .addIf("value == null") {
-                        addStatement("writer.nullValue()")
-                        addStatement("return")
-                    }
-                    .addStatement("writer.beginObject()")
-                    .addCode("\n")
-                    .applyEach(properties) { property ->
-                        addStatement("writer.name(\$S)", property.jsonName)
-                        val getter = if (property.getter != null) {
-                            "value.${property.getter.simpleName}()"
-                        } else {
-                            "value.${property.field!!.simpleName}"
+        MethodSpec.methodBuilder("toJson")
+            .addAnnotation(Override::class.java)
+            .addModifiers(Modifier.PUBLIC)
+            .addException(IOException::class.java)
+            .addParameter(JsonWriter::class.java, "writer")
+            .addParameter(TypeName.get(type), "value")
+            .addIf("value == null") {
+                addStatement("writer.nullValue()")
+                addStatement("return")
+            }
+            .addStatement("writer.beginObject()")
+            .addCode("\n")
+            .applyEach(properties) { property ->
+                addStatement("writer.name(\$S)", property.jsonName)
+                val getter = if (property.getter != null) {
+                    "value.${property.getter.simpleName}()"
+                } else {
+                    "value.${property.field!!.simpleName}"
+                }
+
+                if (property.shouldUseAdapter) {
+                    val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
+                    addStatement("$adapterName.toJson(writer, $getter)")
+                } else {
+                    fun MethodSpec.Builder.writePrimitive(getter: String) =
+                        when (property.jsonType) {
+                            TYPE_NAME_STRING,
+                            TypeName.INT,
+                            TypeName.LONG,
+                            TypeName.FLOAT,
+                            TypeName.DOUBLE,
+                            TypeName.SHORT,
+                            TypeName.BOOLEAN -> addStatement("writer.value($getter)")
+                            TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
+                            TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
+                            else -> throw AssertionError("Unknown type ${property.type}")
                         }
 
-                        if (property.shouldUseAdapter) {
-                            val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
-                            addStatement("$adapterName.toJson(writer, $getter)")
-                        } else {
-                            fun MethodSpec.Builder.writePrimitive(getter: String) =
-                                    when (property.jsonType) {
-                                        TYPE_NAME_STRING,
-                                        TypeName.INT,
-                                        TypeName.LONG,
-                                        TypeName.FLOAT,
-                                        TypeName.DOUBLE,
-                                        TypeName.SHORT,
-                                        TypeName.BOOLEAN -> addStatement("writer.value($getter)")
-                                        TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
-                                        TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
-                                        else -> throw AssertionError("Unknown type ${property.type}")
-                                    }
-
-                            writePrimitive(getter)
-                        }
-                    }
-                    .addCode("\n")
-                    .addStatement("writer.endObject()")
-                    .build()
+                    writePrimitive(getter)
+                }
+            }
+            .addCode("\n")
+            .addStatement("writer.endObject()")
+            .build()
 
     private fun generateReadMethod(nameAllocator: NameAllocator,
                                    type: TypeMirror,
@@ -313,181 +313,181 @@ class AdaptersProcessingStep(
 
 
         return MethodSpec.methodBuilder("fromJson")
-                .addAnnotation(Override::class.java)
-                .addModifiers(Modifier.PUBLIC)
-                .addException(IOException::class.java)
-                .addParameter(JsonReader::class.java, "reader")
-                .returns(TypeName.get(type))
-                .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
-                    addStatement("return reader.nextNull()")
+            .addAnnotation(Override::class.java)
+            .addModifiers(Modifier.PUBLIC)
+            .addException(IOException::class.java)
+            .addParameter(JsonReader::class.java, "reader")
+            .returns(TypeName.get(type))
+            .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
+                addStatement("return reader.nextNull()")
+            }
+            .addCode("\n")
+            .addStatement("reader.beginObject()")
+            .addCode("\n")
+            .applyEach(properties) { property ->
+                val variableType = property.variableType()
+                if (property.requiresHelper()) {
+                    addStatement("boolean \$L = false", property.helperBooleanName())
                 }
-                .addCode("\n")
-                .addStatement("reader.beginObject()")
-                .addCode("\n")
-                .applyEach(properties) { property ->
-                    val variableType = property.variableType()
-                    if (property.requiresHelper()) {
-                        addStatement("boolean \$L = false", property.helperBooleanName())
-                    }
-                    if (property.useStaticDefault()) {
-                        addCode(CodeBlock.builder()
-                                .add("$[")
-                                .add("\$T \$N = ", variableType, property.variableName())
-                                .add(property.defaultValueProvider!!.accessor)
-                                .add(";\n$]")
-                                .build())
-                    } else {
-                        addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
-                    }
+                if (property.useStaticDefault()) {
+                    addCode(CodeBlock.builder()
+                        .add("$[")
+                        .add("\$T \$N = ", variableType, property.variableName())
+                        .add(property.defaultValueProvider!!.accessor)
+                        .add(";\n$]")
+                        .build())
+                } else {
+                    addStatement("\$T \$N = \$L", variableType, property.variableName(), variableType.jvmDefault)
                 }
-                .addWhile("reader.hasNext()") {
-                    addSwitch("reader.selectName(\$N)", optionsField) {
-                        properties.forEachIndexed { index, property ->
-                            addSwitchBranch("\$L", index, terminator = "continue") {
-                                if (property.shouldUseAdapter) {
-                                    val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))
-                                    addStatement("\$L = \$L.fromJson(reader)", property.variableName(), adapterFieldName)
-                                } else {
-                                    fun MethodSpec.Builder.readPrimitive(reader: () -> Unit) {
-                                        addIfElse("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
-                                            addStatement("reader.nextNull()")
-                                        }
-                                        addElse {
-                                            reader()
-                                            if (property.requiresHelper()) {
-                                                addStatement("\$L = true", property.helperBooleanName())
-                                            }
-                                        }
-                                    }
-
-                                    when (property.jsonType) {
-                                        TYPE_NAME_STRING -> readPrimitive {
-                                            addStatement("\$L = reader.nextString()", property.variableName())
-                                        }
-                                        TypeName.BOOLEAN -> readPrimitive {
-                                            addStatement("\$L = reader.nextBoolean()", property.variableName())
-                                        }
-                                        TypeName.BYTE -> readPrimitive {
-                                            addStatement("\$L = \$T.nextByte(reader)", property.variableName(), KotshiUtils::class.java)
-                                        }
-                                        TypeName.SHORT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextShort(reader)", property.variableName(), KotshiUtils::class.java)
-                                        }
-                                        TypeName.INT -> readPrimitive {
-                                            addStatement("\$L = reader.nextInt()", property.variableName())
-                                        }
-                                        TypeName.LONG -> readPrimitive {
-                                            addStatement("\$L = reader.nextLong()", property.variableName())
-                                        }
-                                        TypeName.CHAR -> readPrimitive {
-                                            addStatement("\$L = \$T.nextChar(reader)", property.variableName(), KotshiUtils::class.java)
-                                        }
-                                        TypeName.FLOAT -> readPrimitive {
-                                            addStatement("\$L = \$T.nextFloat(reader)", property.variableName(), KotshiUtils::class.java)
-                                        }
-                                        TypeName.DOUBLE -> readPrimitive {
-                                            addStatement("\$L = reader.nextDouble()", property.variableName())
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        addSwitchBranch("-1", terminator = "continue") {
-                            addStatement("reader.nextName()")
-                            addStatement("reader.skipValue()")
-                        }
-                    }
-                }
-                .addCode("\n")
-                .addStatement("reader.endObject()")
-                .apply {
-                    var hasStringBuilder = false
-                    for (property in properties) {
-                        val variableType = property.variableType()
-                        val check = if (variableType.isPrimitive) {
-                            "!${property.helperBooleanName()}"
-                        } else {
-                            "${property.variableName()} == null"
-                        }
-
-                        if (!hasStringBuilder) {
-                            val needsStringBuilder = if (property.defaultValueProvider != null) {
-                                !variableType.isPrimitive && property.defaultValueProvider.isNullable && !property.defaultValueProvider.isStatic
+            }
+            .addWhile("reader.hasNext()") {
+                addSwitch("reader.selectName(\$N)", optionsField) {
+                    properties.forEachIndexed { index, property ->
+                        addSwitchBranch("\$L", index, terminator = "continue") {
+                            if (property.shouldUseAdapter) {
+                                val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))
+                                addStatement("\$L = \$L.fromJson(reader)", property.variableName(), adapterFieldName)
                             } else {
-                                !property.isNullable
-                            }
-
-                            if (needsStringBuilder) {
-                                addStatement("\$T stringBuilder = null", StringBuilder::class.java)
-                                hasStringBuilder = true
-                            }
-                        }
-
-                        fun appendError() {
-                            addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
-                        }
-
-                        if (property.useStaticDefault()) {
-                            // Empty
-                        } else if (property.defaultValueProvider != null) {
-                            addIf(check) {
-                                // We require a temp var if the variable is a primitive and we allow the provider to return null
-                                val requiresTmpVar = variableType.isPrimitive && property.defaultValueProvider.isNullable
-                                val variableName = if (requiresTmpVar) {
-                                    nameAllocator.newName("${property.variableName()}Default")
-                                } else {
-                                    property.variableName()
-                                }
-                                addCode("\$[")
-                                if (requiresTmpVar) {
-                                    addCode("\$T $variableName = ", property.defaultValueProvider.type)
-                                } else {
-                                    addCode("$variableName = ")
-                                }
-                                addCode(property.defaultValueProvider.accessor)
-                                addCode(";\n\$]")
-
-                                // If the variable we're assigning to is primitive we don't need any checks since java
-                                // throws and if the default value provider cannot return null we don't need a check
-                                if (!variableType.isPrimitive && property.defaultValueProvider.canReturnNull) {
-                                    if (!property.defaultValueProvider.isNullable) {
-                                        addIf("$variableName == null") {
-                                            addStatement("throw new \$T(\"The default value provider returned null\")",
-                                                    java.lang.NullPointerException::class.java)
-                                        }
-                                    } else if (!property.isNullable) {
-                                        addIf("$variableName == null") {
-                                            appendError()
+                                fun MethodSpec.Builder.readPrimitive(reader: () -> Unit) {
+                                    addIfElse("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
+                                        addStatement("reader.nextNull()")
+                                    }
+                                    addElse {
+                                        reader()
+                                        if (property.requiresHelper()) {
+                                            addStatement("\$L = true", property.helperBooleanName())
                                         }
                                     }
                                 }
 
-                                // If we used a temp var we need to assign it to the real variable
-                                if (requiresTmpVar) {
-                                    addStatement("${property.variableName()} = $variableName")
+                                when (property.jsonType) {
+                                    TYPE_NAME_STRING -> readPrimitive {
+                                        addStatement("\$L = reader.nextString()", property.variableName())
+                                    }
+                                    TypeName.BOOLEAN -> readPrimitive {
+                                        addStatement("\$L = reader.nextBoolean()", property.variableName())
+                                    }
+                                    TypeName.BYTE -> readPrimitive {
+                                        addStatement("\$L = \$T.nextByte(reader)", property.variableName(), KotshiUtils::class.java)
+                                    }
+                                    TypeName.SHORT -> readPrimitive {
+                                        addStatement("\$L = \$T.nextShort(reader)", property.variableName(), KotshiUtils::class.java)
+                                    }
+                                    TypeName.INT -> readPrimitive {
+                                        addStatement("\$L = reader.nextInt()", property.variableName())
+                                    }
+                                    TypeName.LONG -> readPrimitive {
+                                        addStatement("\$L = reader.nextLong()", property.variableName())
+                                    }
+                                    TypeName.CHAR -> readPrimitive {
+                                        addStatement("\$L = \$T.nextChar(reader)", property.variableName(), KotshiUtils::class.java)
+                                    }
+                                    TypeName.FLOAT -> readPrimitive {
+                                        addStatement("\$L = \$T.nextFloat(reader)", property.variableName(), KotshiUtils::class.java)
+                                    }
+                                    TypeName.DOUBLE -> readPrimitive {
+                                        addStatement("\$L = reader.nextDouble()", property.variableName())
+                                    }
                                 }
-
-                            }
-                        } else if (!property.isNullable) {
-                            addIf(check) {
-                                appendError()
                             }
                         }
                     }
-                    if (hasStringBuilder) {
-                        addIf("stringBuilder != null") {
-                            addStatement("throw new \$T(stringBuilder.toString())", NullPointerException::class.java)
-                        }
-                        addCode("\n")
+                    addSwitchBranch("-1", terminator = "continue") {
+                        addStatement("reader.nextName()")
+                        addStatement("reader.skipValue()")
                     }
                 }
-                .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.variableName() }})", type)
-                .build()
+            }
+            .addCode("\n")
+            .addStatement("reader.endObject()")
+            .apply {
+                var hasStringBuilder = false
+                for (property in properties) {
+                    val variableType = property.variableType()
+                    val check = if (variableType.isPrimitive) {
+                        "!${property.helperBooleanName()}"
+                    } else {
+                        "${property.variableName()} == null"
+                    }
+
+                    if (!hasStringBuilder) {
+                        val needsStringBuilder = if (property.defaultValueProvider != null) {
+                            !variableType.isPrimitive && property.defaultValueProvider.isNullable && !property.defaultValueProvider.isStatic
+                        } else {
+                            !property.isNullable
+                        }
+
+                        if (needsStringBuilder) {
+                            addStatement("\$T stringBuilder = null", StringBuilder::class.java)
+                            hasStringBuilder = true
+                        }
+                    }
+
+                    fun appendError() {
+                        addStatement("stringBuilder = \$T.appendNullableError(stringBuilder, \$S)", KotshiUtils::class.java, property.name)
+                    }
+
+                    if (property.useStaticDefault()) {
+                        // Empty
+                    } else if (property.defaultValueProvider != null) {
+                        addIf(check) {
+                            // We require a temp var if the variable is a primitive and we allow the provider to return null
+                            val requiresTmpVar = variableType.isPrimitive && property.defaultValueProvider.isNullable
+                            val variableName = if (requiresTmpVar) {
+                                nameAllocator.newName("${property.variableName()}Default")
+                            } else {
+                                property.variableName()
+                            }
+                            addCode("\$[")
+                            if (requiresTmpVar) {
+                                addCode("\$T $variableName = ", property.defaultValueProvider.type)
+                            } else {
+                                addCode("$variableName = ")
+                            }
+                            addCode(property.defaultValueProvider.accessor)
+                            addCode(";\n\$]")
+
+                            // If the variable we're assigning to is primitive we don't need any checks since java
+                            // throws and if the default value provider cannot return null we don't need a check
+                            if (!variableType.isPrimitive && property.defaultValueProvider.canReturnNull) {
+                                if (!property.defaultValueProvider.isNullable) {
+                                    addIf("$variableName == null") {
+                                        addStatement("throw new \$T(\"The default value provider returned null\")",
+                                            java.lang.NullPointerException::class.java)
+                                    }
+                                } else if (!property.isNullable) {
+                                    addIf("$variableName == null") {
+                                        appendError()
+                                    }
+                                }
+                            }
+
+                            // If we used a temp var we need to assign it to the real variable
+                            if (requiresTmpVar) {
+                                addStatement("${property.variableName()} = $variableName")
+                            }
+
+                        }
+                    } else if (!property.isNullable) {
+                        addIf(check) {
+                            appendError()
+                        }
+                    }
+                }
+                if (hasStringBuilder) {
+                    addIf("stringBuilder != null") {
+                        addStatement("throw new \$T(stringBuilder.toString())", NullPointerException::class.java)
+                    }
+                    addCode("\n")
+                }
+            }
+            .addStatement("return new \$T(\n${properties.joinToString(",\n") { it.variableName() }})", type)
+            .build()
     }
 }
 
 data class GlobalConfig(
-        val useAdaptersForPrimitives: Boolean
+    val useAdaptersForPrimitives: Boolean
 ) {
     constructor(factory: KotshiJsonAdapterFactory) : this(factory.useAdaptersForPrimitives)
 

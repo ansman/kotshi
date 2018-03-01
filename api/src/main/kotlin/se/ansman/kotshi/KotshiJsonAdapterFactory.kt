@@ -24,5 +24,5 @@ package se.ansman.kotshi
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
 annotation class KotshiJsonAdapterFactory(
-        val useAdaptersForPrimitives: Boolean = false
+    val useAdaptersForPrimitives: Boolean = false
 )

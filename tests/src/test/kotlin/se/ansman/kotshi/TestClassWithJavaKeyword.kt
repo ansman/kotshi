@@ -28,13 +28,13 @@ class TestClassWithJavaKeyword {
             |}""".trimMargin()
 
         val actual = Buffer()
-                .apply {
-                    adapter.toJson(JsonWriter.of(this)
-                            .apply {
-                                indent = "  "
-                            }, ClassWithJavaKeyword(true, 4711, 1337))
-                }
-                .readUtf8()
+            .apply {
+                adapter.toJson(JsonWriter.of(this)
+                    .apply {
+                        indent = "  "
+                    }, ClassWithJavaKeyword(true, 4711, 1337))
+            }
+            .readUtf8()
         assertEquals(expected, actual)
     }
 

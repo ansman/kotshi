@@ -11,9 +11,9 @@ import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
 class DefaultValuesProcessingStep(
-        private val messager: Messager,
-        private val types: Types,
-        private val defaultValueProviders: DefaultValueProviders
+    private val messager: Messager,
+    private val types: Types,
+    private val defaultValueProviders: DefaultValueProviders
 ) : KotshiProcessor.ProcessingStep {
     override val annotations: Set<Class<out Annotation>> = setOf(JsonDefaultValue::class.java)
 
@@ -52,30 +52,30 @@ class DefaultValuesProcessingStep(
     }
 
     private fun Element.getProvider(): Element =
-            if (isPublic) {
-                this
-            } else {
-                when (kind) {
-                    ElementKind.FIELD -> {
-                        val getterName = MoreElements.asVariable(this).getGetterName()
-                        enclosingElement
-                                .findMethodNamed(getterName)
-                                ?: enclosingElement?.findClassNamed("Companion")?.findMethodNamed(getterName)
-                                ?: this
-                    }
-                    else -> this
+        if (isPublic) {
+            this
+        } else {
+            when (kind) {
+                ElementKind.FIELD -> {
+                    val getterName = MoreElements.asVariable(this).getGetterName()
+                    enclosingElement
+                        .findMethodNamed(getterName)
+                        ?: enclosingElement?.findClassNamed("Companion")?.findMethodNamed(getterName)
+                        ?: this
                 }
+                else -> this
             }
+        }
 
     private fun Element.findMethodNamed(name: String): Element? =
-            enclosedElements
-                    .asSequence()
-                    .filter { it.kind == ElementKind.METHOD }
-                    .firstOrNull { it.simpleName.contentEquals(name) }
+        enclosedElements
+            .asSequence()
+            .filter { it.kind == ElementKind.METHOD }
+            .firstOrNull { it.simpleName.contentEquals(name) }
 
     private fun Element.findClassNamed(name: String): Element? =
-            enclosedElements
-                    .asSequence()
-                    .filter { it.kind == ElementKind.CLASS }
-                    .firstOrNull { it.simpleName.contentEquals(name) }
+        enclosedElements
+            .asSequence()
+            .filter { it.kind == ElementKind.CLASS }
+            .firstOrNull { it.simpleName.contentEquals(name) }
 }

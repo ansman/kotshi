@@ -8,16 +8,16 @@ import javax.lang.model.element.Modifier
 inline fun <reified T : Annotation> Element.hasAnnotation() = getAnnotation(T::class.java) != null
 
 fun Element.hasAnnotation(simpleName: String) =
-        annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
+    annotationMirrors.any { it.annotationType.asElement().simpleName.contentEquals(simpleName) }
 
 fun Element.getDefaultValueQualifier(): Element? = getQualifiers<JsonDefaultValue>().firstOrNull()
 
 fun Element.getJsonQualifiers(): List<Element> = getQualifiers<JsonQualifier>().toList()
 
 inline fun <reified T : Annotation> Element.getQualifiers(): Sequence<Element> = annotationMirrors
-        .asSequence()
-        .map { it.annotationType.asElement() }
-        .filter { it.getAnnotation(T::class.java) != null }
+    .asSequence()
+    .map { it.annotationType.asElement() }
+    .filter { it.getAnnotation(T::class.java) != null }
 
 val Element.isPublic: Boolean
     get() = when (requireNotNull(kind)) {

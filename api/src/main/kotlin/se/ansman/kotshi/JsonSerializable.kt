@@ -33,5 +33,5 @@ package se.ansman.kotshi
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
 annotation class JsonSerializable(
-        val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT
+    val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT
 )

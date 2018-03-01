@@ -14,9 +14,9 @@ import kotlin.test.assertEquals
 
 class TestAdapterGeneration {
     private val moshi: Moshi = Moshi.Builder()
-            .add(TestFactory.INSTANCE)
-            .add(String::class.java, Hello::class.java, HelloJsonAdapter())
-            .build()
+        .add(TestFactory.INSTANCE)
+        .add(String::class.java, Hello::class.java, HelloJsonAdapter())
+        .build()
 
     @Test
     fun testBasic() {
@@ -68,39 +68,39 @@ class TestAdapterGeneration {
         val actual = adapter.fromJson(json)
 
         val expected = TestClass(
-                string = "string",
-                nullableString = "nullableString",
-                integer = 4711,
-                nullableInt = 1337,
-                isBoolean = true,
-                isNullableBoolean = false,
-                aShort = Short.MAX_VALUE,
-                nullableShort = Short.MIN_VALUE,
-                aByte = -1,
-                nullableByte = Byte.MIN_VALUE,
-                aChar = 'c',
-                nullableChar = 'n',
-                list = listOf("String1", "String2"),
-                nestedList = listOf(
-                        mapOf("key1" to setOf("set1", "set2")),
-                        mapOf(
-                                "key2" to setOf("set1", "set2"),
-                                "key3" to setOf())),
-                abstractProperty = "abstract",
-                customName = "other_value",
-                annotated = "Hello, World!",
-                anotherAnnotated = "Hello, Other World!",
-                genericClass = GenericClass(listOf("val1", "val2"), "val3"))
+            string = "string",
+            nullableString = "nullableString",
+            integer = 4711,
+            nullableInt = 1337,
+            isBoolean = true,
+            isNullableBoolean = false,
+            aShort = Short.MAX_VALUE,
+            nullableShort = Short.MIN_VALUE,
+            aByte = -1,
+            nullableByte = Byte.MIN_VALUE,
+            aChar = 'c',
+            nullableChar = 'n',
+            list = listOf("String1", "String2"),
+            nestedList = listOf(
+                mapOf("key1" to setOf("set1", "set2")),
+                mapOf(
+                    "key2" to setOf("set1", "set2"),
+                    "key3" to setOf())),
+            abstractProperty = "abstract",
+            customName = "other_value",
+            annotated = "Hello, World!",
+            anotherAnnotated = "Hello, Other World!",
+            genericClass = GenericClass(listOf("val1", "val2"), "val3"))
 
         assertEquals(expected, actual)
         assertEquals(json, Buffer()
-                .apply {
-                    JsonWriter.of(this).run {
-                        indent = "  "
-                        adapter.toJson(this, actual)
-                    }
+            .apply {
+                JsonWriter.of(this).run {
+                    indent = "  "
+                    adapter.toJson(this, actual)
                 }
-                .readUtf8())
+            }
+            .readUtf8())
     }
 
     @Test
@@ -109,20 +109,20 @@ class TestAdapterGeneration {
             moshi.adapter(TestClass::class.java).fromJson("{}")
         } catch (e: NullPointerException) {
             assertEquals("The following properties were null: " +
-                    "string, " +
-                    "integer, " +
-                    "isBoolean, " +
-                    "aShort, " +
-                    "aByte, " +
-                    "aChar, " +
-                    "list, " +
-                    "nestedList, " +
-                    "abstractProperty, " +
-                    "customName, " +
-                    "annotated, " +
-                    "anotherAnnotated, " +
-                    "genericClass",
-                    e.message)
+                "string, " +
+                "integer, " +
+                "isBoolean, " +
+                "aShort, " +
+                "aByte, " +
+                "aChar, " +
+                "list, " +
+                "nestedList, " +
+                "abstractProperty, " +
+                "customName, " +
+                "annotated, " +
+                "anotherAnnotated, " +
+                "genericClass",
+                e.message)
         }
     }
 
@@ -156,7 +156,7 @@ class TestAdapterGeneration {
     @Test
     fun testGenericTypeWithQualifier() {
         val adapter: JsonAdapter<GenericClassWithQualifier<String>> =
-                moshi.adapter(Types.newParameterizedType(GenericClassWithQualifier::class.java, String::class.java))
+            moshi.adapter(Types.newParameterizedType(GenericClassWithQualifier::class.java, String::class.java))
         val json = """{"value":"world!"}"""
         val actual = adapter.fromJson(json)
         assertEquals(GenericClassWithQualifier("Hello, world!"), actual)
@@ -166,33 +166,33 @@ class TestAdapterGeneration {
     @Test
     fun testMultipleJsonQualifiers() {
         val adapter = Moshi.Builder()
-                .add(object : Any() {
-                    @FromJson
-                    @WrappedInObject
-                    @WrappedInArray
-                    fun fromJson(reader: JsonReader): String {
-                        reader.beginObject()
-                        reader.nextName()
-                        reader.beginArray()
-                        val value = reader.nextString()
-                        reader.endArray()
-                        reader.endObject()
-                        return value
-                    }
+            .add(object : Any() {
+                @FromJson
+                @WrappedInObject
+                @WrappedInArray
+                fun fromJson(reader: JsonReader): String {
+                    reader.beginObject()
+                    reader.nextName()
+                    reader.beginArray()
+                    val value = reader.nextString()
+                    reader.endArray()
+                    reader.endObject()
+                    return value
+                }
 
-                    @ToJson
-                    fun toJson(writer: JsonWriter, @WrappedInObject @WrappedInArray value: String) {
-                        writer.beginObject()
-                        writer.name("name")
-                        writer.beginArray()
-                        writer.value(value)
-                        writer.endArray()
-                        writer.endObject()
-                    }
-                })
-                .add(TestFactory.INSTANCE)
-                .build()
-                .adapter(MultipleJsonQualifiers::class.java)
+                @ToJson
+                fun toJson(writer: JsonWriter, @WrappedInObject @WrappedInArray value: String) {
+                    writer.beginObject()
+                    writer.name("name")
+                    writer.beginArray()
+                    writer.value(value)
+                    writer.endArray()
+                    writer.endObject()
+                }
+            })
+            .add(TestFactory.INSTANCE)
+            .build()
+            .adapter(MultipleJsonQualifiers::class.java)
         val json = """{"string":{"name":["Hello, world!"]}}"""
         val value = MultipleJsonQualifiers("Hello, world!")
         assertEquals(value, adapter.fromJson(json))

@@ -6,37 +6,37 @@ import java.time.LocalTime
 
 @JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
 data class ClassWithDefaultValues(
-        @JsonDefaultValue
-        val v1: WithCompanionFunction,
-        @JsonDefaultValue
-        val v2: WithStaticFunction,
-        @JsonDefaultValue
-        val v3: WithCompanionProperty,
-        @JsonDefaultValue
-        val v4: WithStaticProperty,
-        @JsonDefaultValue
-        val v5: GenericClassWithDefault<String>,
-        @JsonDefaultValue
-        val v6: GenericClassWithDefault<Int>,
-        @JsonDefaultValue
-        val v7: LocalDate,
-        @JsonDefaultValue
-        val v8: LocalTime,
-        @JsonDefaultValue
-        val v9: LocalDateTime,
-        val v10: WithCompanionFunction, // No annotations, should not get a default value
-        @OtherJsonDefaultValue
-        val v11: WithCompanionFunction,
-        @JsonDefaultValue
-        val v12: ClassWithConstructorAsDefault,
-        @JsonDefaultValue
-        val v13: GenericClassWithConstructorAsDefault<String>,
-        @JsonDefaultValue
-        val v14: Int?,
-        @JsonDefaultValue
-        val v15: SomeEnum,
-        @JsonDefaultValue
-        val v16: Map<String, Int>
+    @JsonDefaultValue
+    val v1: WithCompanionFunction,
+    @JsonDefaultValue
+    val v2: WithStaticFunction,
+    @JsonDefaultValue
+    val v3: WithCompanionProperty,
+    @JsonDefaultValue
+    val v4: WithStaticProperty,
+    @JsonDefaultValue
+    val v5: GenericClassWithDefault<String>,
+    @JsonDefaultValue
+    val v6: GenericClassWithDefault<Int>,
+    @JsonDefaultValue
+    val v7: LocalDate,
+    @JsonDefaultValue
+    val v8: LocalTime,
+    @JsonDefaultValue
+    val v9: LocalDateTime,
+    val v10: WithCompanionFunction, // No annotations, should not get a default value
+    @OtherJsonDefaultValue
+    val v11: WithCompanionFunction,
+    @JsonDefaultValue
+    val v12: ClassWithConstructorAsDefault,
+    @JsonDefaultValue
+    val v13: GenericClassWithConstructorAsDefault<String>,
+    @JsonDefaultValue
+    val v14: Int?,
+    @JsonDefaultValue
+    val v15: SomeEnum,
+    @JsonDefaultValue
+    val v16: Map<String, Int>
 )
 
 @JsonSerializable

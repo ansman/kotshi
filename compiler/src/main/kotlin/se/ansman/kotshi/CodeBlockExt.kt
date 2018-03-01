@@ -39,28 +39,28 @@ inline fun CodeBlock.Builder.addSwitchBranch(branch: String,
 inline fun CodeBlock.Builder.addIf(predicate: String,
                                    vararg args: Any,
                                    block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addControlFlow("if ($predicate)", *args) { block() }
+    addControlFlow("if ($predicate)", *args) { block() }
 
 inline fun CodeBlock.Builder.addIfElse(predicate: String,
                                        vararg args: Any,
                                        block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addControlFlow("if ($predicate)", *args, close = false) { block() }
+    addControlFlow("if ($predicate)", *args, close = false) { block() }
 
 inline fun CodeBlock.Builder.addElseIf(predicate: String,
                                        vararg args: Any,
                                        block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addNextControlFlow("else if ($predicate)", *args, close = false) { block() }
+    addNextControlFlow("else if ($predicate)", *args, close = false) { block() }
 
 inline fun CodeBlock.Builder.addElse(block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addNextControlFlow("else") { block() }
+    addNextControlFlow("else") { block() }
 
 inline fun CodeBlock.Builder.addWhile(predicate: String,
                                       vararg args: Any,
                                       block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addControlFlow("while ($predicate)", *args) { block() }
+    addControlFlow("while ($predicate)", *args) { block() }
 
 inline fun CodeBlock.Builder.addSwitch(predicate: String,
                                        vararg args: Any,
                                        block: CodeBlock.Builder.() -> Unit): CodeBlock.Builder =
-        addControlFlow("switch ($predicate)", *args) { block() }
+    addControlFlow("switch ($predicate)", *args) { block() }
 

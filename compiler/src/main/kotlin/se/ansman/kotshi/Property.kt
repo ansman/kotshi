@@ -11,13 +11,13 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 
 class Property(
-        defaultValueProviders: DefaultValueProviders,
-        types: Types,
-        globalConfig: GlobalConfig,
-        enclosingClass: Element,
-        val parameter: VariableElement,
-        val field: VariableElement?,
-        val getter: ExecutableElement?
+    defaultValueProviders: DefaultValueProviders,
+    types: Types,
+    globalConfig: GlobalConfig,
+    enclosingClass: Element,
+    val parameter: VariableElement,
+    val field: VariableElement?,
+    val getter: ExecutableElement?
 ) {
     val typeMirror: TypeMirror = field?.asType() ?: parameter.asType()
 
@@ -32,21 +32,21 @@ class Property(
     val name: CharSequence = field?.simpleName ?: parameter.simpleName
 
     val jsonName: CharSequence = field?.getAnnotation(Json::class.java)?.name
-            ?: parameter.getAnnotation(Json::class.java)?.name
-            ?: name
+        ?: parameter.getAnnotation(Json::class.java)?.name
+        ?: name
 
     val isNullable: Boolean = parameter.hasAnnotation("Nullable")
 
     private val useAdaptersForPrimitives: Boolean =
-            when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
-                PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
-                PrimitiveAdapters.ENABLED -> true
-                PrimitiveAdapters.DISABLED -> false
-            }
+        when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
+            PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
+            PrimitiveAdapters.ENABLED -> true
+            PrimitiveAdapters.DISABLED -> false
+        }
 
     val shouldUseAdapter: Boolean = useAdaptersForPrimitives ||
-            adapterKey.jsonQualifiers.isNotEmpty() ||
-            !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
+        adapterKey.jsonQualifiers.isNotEmpty() ||
+        !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
 
     val defaultValueProvider: DefaultValueProvider?
 

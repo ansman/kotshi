@@ -2,8 +2,8 @@ package se.ansman.kotshi
 
 @JsonSerializable
 data class ClassWithGenericDefaults(
-        @JsonDefaultValue
-        val generic2: Generic2<String?, Int?>
+    @JsonDefaultValue
+    val generic2: Generic2<String?, Int?>
 ) {
 
     open class Generic2<out T1, out T2>(val t1: T1, val t2: T2)

@@ -19,11 +19,11 @@ class TestDefaultValues {
     @Before
     fun setup() {
         moshi = Moshi.Builder()
-                .add(TestFactory.INSTANCE)
-                .add(LocalDate::class.java, LocalDateAdapter)
-                .add(LocalTime::class.java, LocalTimeAdapter)
-                .add(LocalDateTime::class.java, LocalDateTimeAdapter)
-                .build()
+            .add(TestFactory.INSTANCE)
+            .add(LocalDate::class.java, LocalDateAdapter)
+            .add(LocalTime::class.java, LocalTimeAdapter)
+            .add(LocalDateTime::class.java, LocalDateTimeAdapter)
+            .build()
     }
 
     @Test
@@ -70,22 +70,22 @@ class TestDefaultValues {
              |}""".trimMargin()
 
         val expected = ClassWithDefaultValues(
-                v1 = WithCompanionFunction("v1"),
-                v2 = WithStaticFunction("v2"),
-                v3 = WithCompanionProperty("v3"),
-                v4 = WithStaticProperty("v4"),
-                v5 = GenericClassWithDefault("v5"),
-                v6 = GenericClassWithDefault(6),
-                v7 = LocalDate.of(1989, 7, 3),
-                v8 = LocalTime.of(13, 37),
-                v9 = LocalDateTime.of(1989, 7, 3, 13, 37),
-                v10 = WithCompanionFunction("v10"),
-                v11 = WithCompanionFunction("v11"),
-                v12 = ClassWithConstructorAsDefault("v12"),
-                v13 = GenericClassWithConstructorAsDefault("v13"),
-                v14 = 14,
-                v15 = SomeEnum.VALUE4,
-                v16 = mapOf("someKey" to 4711))
+            v1 = WithCompanionFunction("v1"),
+            v2 = WithStaticFunction("v2"),
+            v3 = WithCompanionProperty("v3"),
+            v4 = WithStaticProperty("v4"),
+            v5 = GenericClassWithDefault("v5"),
+            v6 = GenericClassWithDefault(6),
+            v7 = LocalDate.of(1989, 7, 3),
+            v8 = LocalTime.of(13, 37),
+            v9 = LocalDateTime.of(1989, 7, 3, 13, 37),
+            v10 = WithCompanionFunction("v10"),
+            v11 = WithCompanionFunction("v11"),
+            v12 = ClassWithConstructorAsDefault("v12"),
+            v13 = GenericClassWithConstructorAsDefault("v13"),
+            v14 = 14,
+            v15 = SomeEnum.VALUE4,
+            v16 = mapOf("someKey" to 4711))
 
         expected.testFormatting(json)
     }
@@ -93,22 +93,22 @@ class TestDefaultValues {
     @Test
     fun withNullValues() {
         val expected = ClassWithDefaultValues(
-                v1 = WithCompanionFunction("WithCompanionFunction"),
-                v2 = WithStaticFunction("WithStaticFunction"),
-                v3 = WithCompanionProperty("WithCompanionProperty"),
-                v4 = WithStaticProperty("WithStaticProperty"),
-                v5 = GenericClassWithDefault(null),
-                v6 = GenericClassWithDefault(4711),
-                v7 = LocalDate.MIN,
-                v8 = LocalTime.MIN,
-                v9 = LocalDateTime.MIN,
-                v10 = WithCompanionFunction("v10"),
-                v11 = WithCompanionFunction("OtherJsonDefaultValue"),
-                v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
-                v13 = GenericClassWithConstructorAsDefault(null),
-                v14 = 4711,
-                v15 = SomeEnum.VALUE3,
-                v16 = emptyMap())
+            v1 = WithCompanionFunction("WithCompanionFunction"),
+            v2 = WithStaticFunction("WithStaticFunction"),
+            v3 = WithCompanionProperty("WithCompanionProperty"),
+            v4 = WithStaticProperty("WithStaticProperty"),
+            v5 = GenericClassWithDefault(null),
+            v6 = GenericClassWithDefault(4711),
+            v7 = LocalDate.MIN,
+            v8 = LocalTime.MIN,
+            v9 = LocalDateTime.MIN,
+            v10 = WithCompanionFunction("v10"),
+            v11 = WithCompanionFunction("OtherJsonDefaultValue"),
+            v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
+            v13 = GenericClassWithConstructorAsDefault(null),
+            v14 = 4711,
+            v15 = SomeEnum.VALUE3,
+            v16 = emptyMap())
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v1": null,
@@ -137,22 +137,22 @@ class TestDefaultValues {
     @Test
     fun withAbsentValues() {
         val expected = ClassWithDefaultValues(
-                v1 = WithCompanionFunction("WithCompanionFunction"),
-                v2 = WithStaticFunction("WithStaticFunction"),
-                v3 = WithCompanionProperty("WithCompanionProperty"),
-                v4 = WithStaticProperty("WithStaticProperty"),
-                v5 = GenericClassWithDefault(null),
-                v6 = GenericClassWithDefault(4711),
-                v7 = LocalDate.MIN,
-                v8 = LocalTime.MIN,
-                v9 = LocalDateTime.MIN,
-                v10 = WithCompanionFunction("v10"),
-                v11 = WithCompanionFunction("OtherJsonDefaultValue"),
-                v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
-                v13 = GenericClassWithConstructorAsDefault(null),
-                v14 = 4711,
-                v15 = SomeEnum.VALUE3,
-                v16 = emptyMap())
+            v1 = WithCompanionFunction("WithCompanionFunction"),
+            v2 = WithStaticFunction("WithStaticFunction"),
+            v3 = WithCompanionProperty("WithCompanionProperty"),
+            v4 = WithStaticProperty("WithStaticProperty"),
+            v5 = GenericClassWithDefault(null),
+            v6 = GenericClassWithDefault(4711),
+            v7 = LocalDate.MIN,
+            v8 = LocalTime.MIN,
+            v9 = LocalDateTime.MIN,
+            v10 = WithCompanionFunction("v10"),
+            v11 = WithCompanionFunction("OtherJsonDefaultValue"),
+            v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
+            v13 = GenericClassWithConstructorAsDefault(null),
+            v14 = 4711,
+            v15 = SomeEnum.VALUE3,
+            v16 = emptyMap())
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v10": {
@@ -177,18 +177,18 @@ class TestDefaultValues {
         val actual = adapter.fromJson(json)
         assertEquals(this, actual)
         assertEquals(json, Buffer()
-                .apply {
-                    JsonWriter.of(this).run {
-                        indent = "  "
-                        adapter.toJson(this, actual)
-                    }
+            .apply {
+                JsonWriter.of(this).run {
+                    indent = "  "
+                    adapter.toJson(this, actual)
                 }
-                .readUtf8())
+            }
+            .readUtf8())
     }
 
     object LocalDateAdapter : JsonAdapter<LocalDate>() {
         override fun fromJson(reader: JsonReader): LocalDate? =
-                if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalDate.parse(reader.nextString())
+            if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalDate.parse(reader.nextString())
 
         override fun toJson(writer: JsonWriter, value: LocalDate?) {
             writer.value(value?.toString())
@@ -197,7 +197,7 @@ class TestDefaultValues {
 
     object LocalTimeAdapter : JsonAdapter<LocalTime>() {
         override fun fromJson(reader: JsonReader): LocalTime? =
-                if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalTime.parse(reader.nextString())
+            if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalTime.parse(reader.nextString())
 
         override fun toJson(writer: JsonWriter, value: LocalTime?) {
             writer.value(value?.toString())
@@ -206,7 +206,7 @@ class TestDefaultValues {
 
     object LocalDateTimeAdapter : JsonAdapter<LocalDateTime>() {
         override fun fromJson(reader: JsonReader): LocalDateTime? =
-                if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalDateTime.parse(reader.nextString())
+            if (reader.peek() == JsonReader.Token.NULL) reader.nextNull() else LocalDateTime.parse(reader.nextString())
 
         override fun toJson(writer: JsonWriter, value: LocalDateTime?) {
             writer.value(value?.toString())
