@@ -41,13 +41,16 @@ class KotshiProcessor : AbstractProcessor() {
                 types = processingEnv.typeUtils,
                 filer = processingEnv.filer,
                 adapters = adapters,
-                defaultValueProviders = defaultValueProviders
+                defaultValueProviders = defaultValueProviders,
+                elements = processingEnv.elementUtils,
+                sourceVersion = processingEnv.sourceVersion
             ),
             FactoryProcessingStep(
                 messager = processingEnv.messager,
                 filer = processingEnv.filer,
                 types = processingEnv.typeUtils,
                 elements = processingEnv.elementUtils,
+                sourceVersion = processingEnv.sourceVersion,
                 adapters = adapters))
     }
 
