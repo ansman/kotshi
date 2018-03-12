@@ -18,16 +18,20 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import java.io.IOException
 import java.lang.reflect.Type
-import java.util.*
+import java.util.Arrays
+import java.util.Collections
+import java.util.LinkedHashSet
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
+import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
+import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
@@ -36,7 +40,9 @@ class AdaptersProcessingStep(
     private val types: Types,
     private val filer: Filer,
     private val adapters: MutableMap<TypeName, GeneratedAdapter>,
-    private val defaultValueProviders: DefaultValueProviders
+    private val defaultValueProviders: DefaultValueProviders,
+    private val elements: Elements,
+    private val sourceVersion: SourceVersion
 ) : KotshiProcessor.ProcessingStep {
     override val annotations: Set<Class<out Annotation>> =
         setOf(JsonSerializable::class.java, KotshiJsonAdapterFactory::class.java)
@@ -128,6 +134,7 @@ class AdaptersProcessingStep(
             .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
             .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
             .addMethod(generateReadMethod(nameAllocator, typeMirror, properties, adapterKeys, optionsField))
+            .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .build()
 
         val output = JavaFile.builder(adapter.packageName(), typeSpec).build()

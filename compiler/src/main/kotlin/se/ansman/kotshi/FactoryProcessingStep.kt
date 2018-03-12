@@ -16,6 +16,7 @@ import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
+import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -26,11 +27,12 @@ import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
 class FactoryProcessingStep(
-    val messager: Messager,
-    val filer: Filer,
-    val types: Types,
-    val elements: Elements,
-    val adapters: Map<TypeName, GeneratedAdapter>
+    private val messager: Messager,
+    private val filer: Filer,
+    private val types: Types,
+    private val elements: Elements,
+    private val sourceVersion: SourceVersion,
+    private val adapters: Map<TypeName, GeneratedAdapter>
 ) : KotshiProcessor.ProcessingStep {
 
     private fun TypeMirror.implements(someType: KClass<*>): Boolean =
@@ -58,6 +60,7 @@ class FactoryProcessingStep(
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
         val typeSpecBuilder = TypeSpec.classBuilder(generatedName.simpleName())
+                .maybeAddGeneratedAnnotation(elements, sourceVersion)
 
         if (element.asType().implements(JsonAdapter.Factory::class)) {
             if (Modifier.ABSTRACT !in element.modifiers) {
