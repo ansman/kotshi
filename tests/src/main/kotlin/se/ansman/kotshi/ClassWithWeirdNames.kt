@@ -9,5 +9,9 @@ data class ClassWithWeirdNames(
     val adapter1: Byte,
     val adapter2: Int?,
     val types: List<String>,
-    val moshi: String
+    val moshi: String,
+    val isStuff: Int,
+    val is_stuff: Int,
+    val getStuff: Int,
+    val get_stuff: Int
 )
