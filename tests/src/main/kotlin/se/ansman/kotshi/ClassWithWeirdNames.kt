@@ -10,5 +10,8 @@ data class ClassWithWeirdNames(
     val adapter2: Int?,
     val types: List<String>,
     val moshi: String,
-    val isStuff: Int
+    val isStuff: Int,
+    val is_stuff: Int,
+    val getStuff: Int,
+    val get_stuff: Int
 )
