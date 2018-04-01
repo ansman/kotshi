@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName
 import com.squareup.moshi.Json
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
@@ -37,6 +38,8 @@ class Property(
 
     val isNullable: Boolean = parameter.hasAnnotation("Nullable")
 
+    val isTransient: Boolean = field?.modifiers?.contains(Modifier.TRANSIENT) == true
+
     private val useAdaptersForPrimitives: Boolean =
         when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
             PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
@@ -53,7 +56,8 @@ class Property(
     init {
         require(getter != null || field != null)
 
-        defaultValueProvider = if (defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()) {
+        defaultValueProvider = if (isTransient || defaultValueQualifier != null ||
+            parameter.hasAnnotation<JsonDefaultValue>()) {
             if (adapterKey.isGeneric) {
                 throw ProcessingError("You cannot use default values on a generic type", parameter)
             }
