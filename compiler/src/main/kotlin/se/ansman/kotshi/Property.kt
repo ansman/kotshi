@@ -56,14 +56,24 @@ class Property(
     init {
         require(getter != null || field != null)
 
-        defaultValueProvider = if (isTransient || defaultValueQualifier != null ||
-            parameter.hasAnnotation<JsonDefaultValue>()) {
+        val specifiesDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
+        defaultValueProvider = if (isTransient || specifiesDefaultValue) {
             if (adapterKey.isGeneric) {
-                throw ProcessingError("You cannot use default values on a generic type", parameter)
+                val message = if (isTransient && !specifiesDefaultValue) {
+                    "@Transient fields require a default value, but a default value cannot be supplied for generic types"
+                } else {
+                    "You cannot use default values on a generic type"
+                }
+                throw ProcessingError(message, parameter)
             }
             (type as? ParameterizedTypeName)?.typeArguments?.forEach {
                 if (it !is ClassName) {
-                    throw ProcessingError("Generic classes must not have wildcard types if you want to use default values", parameter)
+                    val message = if (isTransient && !specifiesDefaultValue) {
+                        "@Transient fields require a default value, but a default value cannot be supplied for generic classes with wildcard types"
+                    } else {
+                        "Generic classes must not have wildcard types if you want to use default values"
+                    }
+                    throw ProcessingError(message, parameter)
                 }
             }
             defaultValueProviders[this]

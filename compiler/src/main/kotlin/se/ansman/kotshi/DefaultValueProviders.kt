@@ -49,7 +49,9 @@ class DefaultValueProviders(private val types: Types) {
             ?: getPrimitiveAnnotation<Double, JsonDefaultValueDouble>(property) { CodeBlock.of("${it.value}") }
             ?: get(property, true)
             ?: get(property, false)
-            ?: throw ProcessingError("No default value provider found", property.parameter)
+            ?: throw ProcessingError("No default value provider found" +
+                    if (property.isTransient) { " (required for @Transient)" } else "",
+                    property.parameter)
     }
 
     private inline fun <reified T, reified A : Annotation> getPrimitiveAnnotation(property: Property, block: (A) -> CodeBlock): DefaultValueProvider? =

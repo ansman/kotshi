@@ -20,12 +20,12 @@ class TestTransientAdapters {
     @Test
     fun withValues() {
         val json = """{
-             |  "value": "string"
+             |  "value2": "string2"
              |}""".trimMargin()
 
         val expected = ClassWithTransient(
-            value = "string",
-            value2 = "",
+            value = "",
+            value2 = "string2",
             list = listOf())
 
         expected.testFormatting(json)
@@ -40,8 +40,8 @@ class TestTransientAdapters {
              |}""".trimMargin()
 
         val expected = ClassWithTransient(
-                value = "string",
-                value2 = "",
+                value = "",
+                value2 = "string2",
                 list = listOf())
 
         assertEquals(expected, moshi.adapter(ClassWithTransient::class.java).fromJson(json))

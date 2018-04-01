@@ -351,7 +351,7 @@ class AdaptersProcessingStep(
             }
             .addWhile("reader.hasNext()") {
                 addSwitch("reader.selectName(\$N)", optionsField) {
-                    properties.forEachIndexed { index, property ->
+                    properties.filterNot { it.isTransient }.forEachIndexed { index, property ->
                         addSwitchBranch("\$L", index, terminator = "continue") {
                             if (property.shouldUseAdapter) {
                                 val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))
