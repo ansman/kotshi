@@ -1,5 +1,13 @@
 Change Log
 ===
+Version 1.0.3 (2018-04-17)
+---
+Changes:
+* Add Generated annotation to types. ([#71](https://github.com/ansman/kotshi/pull/71))
+* Add support for @Transient modifier ([#79](https://github.com/ansman/kotshi/pull/79))
+* Update to Kotlin 1.2.31 ([#69](https://github.com/ansman/kotshi/pull/69))
+* Fix a bug regarding getter name matching ([#75](https://github.com/ansman/kotshi/pull/75))
+
 Version 1.0.2 (2018-02-28)
 ---
 This version fixes some problems with wildcards when using `Any` or `Object` as
