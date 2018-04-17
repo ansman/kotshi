@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName
 import com.squareup.moshi.Json
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
@@ -37,6 +38,8 @@ class Property(
 
     val isNullable: Boolean = parameter.hasAnnotation("Nullable")
 
+    val isTransient: Boolean = field?.modifiers?.contains(Modifier.TRANSIENT) == true
+
     private val useAdaptersForPrimitives: Boolean =
         when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
             PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
@@ -53,13 +56,24 @@ class Property(
     init {
         require(getter != null || field != null)
 
-        defaultValueProvider = if (defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()) {
+        val specifiesDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
+        defaultValueProvider = if (isTransient || specifiesDefaultValue) {
             if (adapterKey.isGeneric) {
-                throw ProcessingError("You cannot use default values on a generic type", parameter)
+                val message = if (isTransient && !specifiesDefaultValue) {
+                    "@Transient fields require a default value, but a default value cannot be supplied for generic types"
+                } else {
+                    "You cannot use default values on a generic type"
+                }
+                throw ProcessingError(message, parameter)
             }
             (type as? ParameterizedTypeName)?.typeArguments?.forEach {
                 if (it !is ClassName) {
-                    throw ProcessingError("Generic classes must not have wildcard types if you want to use default values", parameter)
+                    val message = if (isTransient && !specifiesDefaultValue) {
+                        "@Transient fields require a default value, but a default value cannot be supplied for generic classes with wildcard types"
+                    } else {
+                        "Generic classes must not have wildcard types if you want to use default values"
+                    }
+                    throw ProcessingError(message, parameter)
                 }
             }
             defaultValueProviders[this]

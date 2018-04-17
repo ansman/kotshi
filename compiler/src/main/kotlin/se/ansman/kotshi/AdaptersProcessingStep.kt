@@ -120,8 +120,10 @@ class AdaptersProcessingStep(
         nameAllocator.newName("stringBuilder")
         (0 until adapterKeys.size).forEach { nameAllocator.newName(generateAdapterFieldName(it)) }
 
-        val stringArguments = Collections.nCopies(properties.size, "\$S").joinToString(",\n")
-        val jsonNames = properties.map { it.jsonName }
+        val jsonNames = properties
+                .filterNot { it.isTransient }
+                .map { it.jsonName }
+        val stringArguments = Collections.nCopies(jsonNames.size, "\$S").joinToString(",\n")
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
             .initializer("\$[\$T.of(\n$stringArguments)\$]", JsonReader.Options::class.java, *jsonNames.toTypedArray())
             .build()
@@ -264,7 +266,7 @@ class AdaptersProcessingStep(
             }
             .addStatement("writer.beginObject()")
             .addCode("\n")
-            .applyEach(properties) { property ->
+            .applyEach(properties.filterNot { it.isTransient }) { property ->
                 addStatement("writer.name(\$S)", property.jsonName)
                 val getter = if (property.getter != null) {
                     "value.${property.getter.simpleName}()"
@@ -349,7 +351,7 @@ class AdaptersProcessingStep(
             }
             .addWhile("reader.hasNext()") {
                 addSwitch("reader.selectName(\$N)", optionsField) {
-                    properties.forEachIndexed { index, property ->
+                    properties.filterNot { it.isTransient }.forEachIndexed { index, property ->
                         addSwitchBranch("\$L", index, terminator = "continue") {
                             if (property.shouldUseAdapter) {
                                 val adapterFieldName = generateAdapterFieldName(adapters.indexOf(property.adapterKey))

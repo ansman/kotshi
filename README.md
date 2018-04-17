@@ -120,6 +120,11 @@ data class MyClass(
 ```
 The default value provider is allowed to return `null` but only if it's annotated with `@Nullable`.
 
+### Transient Values
+
+Fields marked with `@Transient` are not serialized. When constructing, the adapter supplies the specified
+[default value](#default-values) instead.
+
 Limitations
 ---
 Currently KAPT does not allow processing Kotlin files directly but rather the generated stubs. This has some downsides
