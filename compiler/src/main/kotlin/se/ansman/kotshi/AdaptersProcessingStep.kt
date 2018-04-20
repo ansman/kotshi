@@ -29,6 +29,8 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
+import javax.lang.model.type.NoType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Elements
@@ -63,6 +65,34 @@ class AdaptersProcessingStep(
         }
     }
 
+    private val Element.fields: List<VariableElement>
+        get() {
+            if (this !is TypeElement) {
+                return emptyList()
+            }
+
+            val superFields = if (superclass is NoType) {
+                emptyList()
+            } else {
+                types.asElement(superclass).fields
+            }
+            return superFields.plus(ElementFilter.fieldsIn(enclosedElements))
+        }
+
+    private val Element.methods: List<ExecutableElement>
+        get() {
+            if (this !is TypeElement) {
+                return emptyList()
+            }
+
+            val superMethods = if (superclass is NoType) {
+                emptyList()
+            } else {
+                types.asElement(superclass).methods
+            }
+            return superMethods.plus(ElementFilter.methodsIn(enclosedElements))
+        }
+
     private fun generateJsonAdapter(globalConfig: GlobalConfig, element: Element) {
         val nameAllocator = NameAllocator()
         val typeElement = MoreElements.asType(element)
@@ -71,8 +101,8 @@ class AdaptersProcessingStep(
 
         val constructor = findConstructor(element)
 
-        val fields = ElementFilter.fieldsIn(element.enclosedElements).associateBy { it.simpleName.toString() }
-        val methods = ElementFilter.methodsIn(element.enclosedElements).associateBy { it.simpleName.toString() }
+        val fields = element.fields.associateBy { it.simpleName.toString() }
+        val methods = element.methods.associateBy { it.simpleName.toString() }
 
         val properties = constructor.parameters
             .map { parameter ->
@@ -121,8 +151,8 @@ class AdaptersProcessingStep(
         (0 until adapterKeys.size).forEach { nameAllocator.newName(generateAdapterFieldName(it)) }
 
         val jsonNames = properties
-                .filterNot { it.isTransient }
-                .map { it.jsonName }
+            .filterNot { it.isTransient }
+            .map { it.jsonName }
         val stringArguments = Collections.nCopies(jsonNames.size, "\$S").joinToString(",\n")
         val optionsField = FieldSpec.builder(JsonReader.Options::class.java, "OPTIONS", Modifier.FINAL, Modifier.STATIC, Modifier.PRIVATE)
             .initializer("\$[\$T.of(\n$stringArguments)\$]", JsonReader.Options::class.java, *jsonNames.toTypedArray())
