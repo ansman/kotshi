@@ -1,8 +1,11 @@
 package se.ansman.kotshi
 
+import com.squareup.javapoet.ArrayTypeName
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeVariableName
+import com.squareup.javapoet.WildcardTypeName
 import com.squareup.moshi.Json
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
@@ -58,7 +61,7 @@ class Property(
 
         val specifiesDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
         defaultValueProvider = if (isTransient || specifiesDefaultValue) {
-            if (adapterKey.isGeneric) {
+            if (adapterKey.type.isGeneric(recursive = false)) {
                 val message = if (isTransient && !specifiesDefaultValue) {
                     "@Transient fields require a default value, but a default value cannot be supplied for generic types"
                 } else {
@@ -66,16 +69,26 @@ class Property(
                 }
                 throw ProcessingError(message, parameter)
             }
-            (type as? ParameterizedTypeName)?.typeArguments?.forEach {
-                if (it !is ClassName) {
-                    val message = if (isTransient && !specifiesDefaultValue) {
-                        "@Transient fields require a default value, but a default value cannot be supplied for generic classes with wildcard types"
-                    } else {
-                        "Generic classes must not have wildcard types if you want to use default values"
+            val message = if (isTransient && !specifiesDefaultValue) {
+                "@Transient fields require a default value, but a default value cannot be supplied for generic classes with wildcard types"
+            } else {
+                "Generic classes must not have wildcard types if you want to use default values"
+            }
+
+            fun TypeName.check() {
+                when (this) {
+                    is TypeVariableName,
+                    is ArrayTypeName,
+                    is ClassName -> {}
+                    is ParameterizedTypeName -> typeArguments.forEach(TypeName::check)
+                    is WildcardTypeName -> if (upperBounds.any { it == TypeName.OBJECT }) {
+                        throw ProcessingError(message, parameter)
                     }
-                    throw ProcessingError(message, parameter)
+                    else -> throw ProcessingError(message, parameter)
                 }
             }
+
+            (type as? ParameterizedTypeName)?.typeArguments?.forEach { it.check() }
             defaultValueProviders[this]
         } else {
             null

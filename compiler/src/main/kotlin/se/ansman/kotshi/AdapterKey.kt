@@ -14,11 +14,7 @@ data class AdapterKey(
 ) {
 
     val isGeneric: Boolean
-        get() = when (type) {
-            is TypeVariableName -> true
-            is WildcardTypeName -> false
-            else -> false
-        }
+        get() = type.isGeneric()
 
     fun asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
         type.asRuntimeType(typeVariableAccessor)
