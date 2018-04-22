@@ -18,9 +18,7 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import java.io.IOException
 import java.lang.reflect.Type
-import java.util.Arrays
-import java.util.Collections
-import java.util.LinkedHashSet
+import java.util.*
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
@@ -125,7 +123,15 @@ class AdaptersProcessingStep(
                     }
                 }
 
-                Property(defaultValueProviders, types, globalConfig, element, parameter, field, getter)
+                Property(
+                    defaultValueProviders = defaultValueProviders,
+                    types = types,
+                    globalConfig = globalConfig,
+                    enclosingClass = element,
+                    parameter = parameter,
+                    field = field,
+                    getter = getter
+                )
             }
 
         val adapterKeys: Set<AdapterKey> = properties
