@@ -167,7 +167,9 @@ class AdaptersProcessingStep(
             .addTypeVariables(genericTypes)
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .superclass(getAdapterType(NamedJsonAdapter::class.java, typeName))
-            .addField(optionsField)
+            .applyIf(jsonNames.isNotEmpty()) {
+                addField(optionsField)
+            }
             .addFields(generateFields(adapterKeys))
             .addMethod(generateConstructor(element, typeElement, adapterKeys, genericTypes))
             .addMethod(generateWriteMethod(typeMirror, properties, adapterKeys))
@@ -187,35 +189,29 @@ class AdaptersProcessingStep(
 
     private fun findConstructor(element: Element): ExecutableElement {
         val constructors = ElementFilter.constructorsIn(element.enclosedElements)
-            .filter { it.parameters.isNotEmpty() }
 
         if (constructors.isEmpty()) {
-            throw ProcessingError("No non empty constructor found", element)
+            throw ProcessingError("No constructors found", element)
         }
 
-        fun ExecutableElement.validate() {
+        fun ExecutableElement.validate(): ExecutableElement {
             if (Modifier.PRIVATE in modifiers) {
                 throw ProcessingError("Constructor is private", this)
             }
-            if (parameters.isEmpty()) {
-                throw ProcessingError("Constructor has no parameters", this)
-            }
+            return this
         }
 
-        return if (constructors.size == 1) {
-            constructors.first()
-        } else {
-            constructors
-                .filter { it.getAnnotation(KotshiConstructor::class.java) != null }
-                .also {
-                    if (it.isEmpty()) {
-                        throw ProcessingError("Multiple constructors found, please annotate the primary one with @KotshiConstructor", element)
-                    } else if (it.size > 1) {
-                        throw ProcessingError("Multiple constructors annotated with @KotshiConstructor", element)
-                    }
-                }
-                .first()
-        }.also { it.validate() }
+        val kotshiConstructors = constructors.filter { it.getAnnotation(KotshiConstructor::class.java) != null }
+        val nonEmptyConstructors = constructors.filter { it.parameters.isNotEmpty() }
+
+        val constructor = when {
+            kotshiConstructors.size == 1 -> kotshiConstructors.first()
+            kotshiConstructors.size > 1 -> throw ProcessingError("Multiple constructors annotated with @KotshiConstructor", element)
+            nonEmptyConstructors.size == 1 -> constructors.first()
+            constructors.size == 1 -> constructors.first()
+            else -> throw ProcessingError("Multiple constructors found, please annotate the primary one with @KotshiConstructor", element)
+        }
+        return constructor.validate()
     }
 
     private fun generateFields(properties: Set<AdapterKey>): List<FieldSpec> =
@@ -288,56 +284,70 @@ class AdaptersProcessingStep(
     private val Property.jsonType get() = if (this.type.isBoxedPrimitive) this.type.unbox() else this.type
 
     private fun generateWriteMethod(type: TypeMirror,
-                                    properties: Iterable<Property>,
-                                    adapterKeys: Set<AdapterKey>): MethodSpec =
-        MethodSpec.methodBuilder("toJson")
+                                    properties: Collection<Property>,
+                                    adapterKeys: Set<AdapterKey>): MethodSpec {
+        val builder = MethodSpec.methodBuilder("toJson")
             .addAnnotation(Override::class.java)
             .addModifiers(Modifier.PUBLIC)
             .addException(IOException::class.java)
             .addParameter(JsonWriter::class.java, "writer")
             .addParameter(TypeName.get(type), "value")
-            .addIf("value == null") {
-                addStatement("writer.nullValue()")
-                addStatement("return")
-            }
-            .addStatement("writer.beginObject()")
-            .addCode("\n")
-            .applyEach(properties.filterNot { it.isTransient }) { property ->
-                addStatement("writer.name(\$S)", property.jsonName)
-                val getter = if (property.getter != null) {
-                    "value.${property.getter.simpleName}()"
-                } else {
-                    "value.${property.field!!.simpleName}"
+
+        if (properties.isEmpty()) {
+            builder
+                .addIfElse("value == null") {
+                    addStatement("writer.nullValue()")
+                }
+                .addElse {
+                    addStatement("writer\n.beginObject()\n.endObject()")
                 }
 
-                if (property.shouldUseAdapter) {
-                    val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
-                    addStatement("$adapterName.toJson(writer, $getter)")
-                } else {
-                    fun MethodSpec.Builder.writePrimitive(getter: String) =
-                        when (property.jsonType) {
-                            TYPE_NAME_STRING,
-                            TypeName.INT,
-                            TypeName.LONG,
-                            TypeName.FLOAT,
-                            TypeName.DOUBLE,
-                            TypeName.SHORT,
-                            TypeName.BOOLEAN -> addStatement("writer.value($getter)")
-                            TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
-                            TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
-                            else -> throw AssertionError("Unknown type ${property.type}")
-                        }
-
-                    writePrimitive(getter)
+        } else {
+            builder
+                .addIf("value == null") {
+                    addStatement("writer.nullValue()")
+                    addStatement("return")
                 }
-            }
-            .addCode("\n")
-            .addStatement("writer.endObject()")
-            .build()
+                .addStatement("writer.beginObject()")
+                .addCode("\n")
+                .applyEach(properties.filterNot { it.isTransient }) { property ->
+                    addStatement("writer.name(\$S)", property.jsonName)
+                    val getter = if (property.getter != null) {
+                        "value.${property.getter.simpleName}()"
+                    } else {
+                        "value.${property.field!!.simpleName}"
+                    }
+
+                    if (property.shouldUseAdapter) {
+                        val adapterName = generateAdapterFieldName(adapterKeys.indexOf(property.adapterKey))
+                        addStatement("$adapterName.toJson(writer, $getter)")
+                    } else {
+                        fun MethodSpec.Builder.writePrimitive(getter: String) =
+                            when (property.jsonType) {
+                                TYPE_NAME_STRING,
+                                TypeName.INT,
+                                TypeName.LONG,
+                                TypeName.FLOAT,
+                                TypeName.DOUBLE,
+                                TypeName.SHORT,
+                                TypeName.BOOLEAN -> addStatement("writer.value($getter)")
+                                TypeName.BYTE -> addStatement("\$T.byteValue(writer, $getter)", KotshiUtils::class.java)
+                                TypeName.CHAR -> addStatement("\$T.value(writer, $getter)", KotshiUtils::class.java)
+                                else -> throw AssertionError("Unknown type ${property.type}")
+                            }
+
+                        writePrimitive(getter)
+                    }
+                }
+                .addCode("\n")
+                .addStatement("writer.endObject()")
+        }
+        return builder.build()
+    }
 
     private fun generateReadMethod(nameAllocator: NameAllocator,
                                    type: TypeMirror,
-                                   properties: Iterable<Property>,
+                                   properties: Collection<Property>,
                                    adapters: Set<AdapterKey>,
                                    optionsField: FieldSpec): MethodSpec {
         val helperNames = mutableMapOf<Property, String>()
@@ -357,12 +367,32 @@ class AdaptersProcessingStep(
         fun Property.requiresHelper() = !useStaticDefault() && variableType().isPrimitive
 
 
-        return MethodSpec.methodBuilder("fromJson")
+        val builder = MethodSpec.methodBuilder("fromJson")
             .addAnnotation(Override::class.java)
             .addModifiers(Modifier.PUBLIC)
             .addException(IOException::class.java)
             .addParameter(JsonReader::class.java, "reader")
             .returns(TypeName.get(type))
+
+        if (properties.isEmpty()) {
+            builder.addSwitch("reader.peek()") {
+                builder.addSwitchBranch("NULL", terminator = null) {
+                    addStatement("return reader.nextNull()")
+                }
+                builder.addSwitchBranch("BEGIN_OBJECT", terminator = null) {
+                    addStatement("reader.skipValue()")
+                    addStatement("return new \$T()", type)
+                }
+                builder.addSwitchDefault(terminator = null) {
+                    addComment("Will throw an exception")
+                    addStatement("reader.beginObject()")
+                    addStatement("throw new \$T()", AssertionError::class.java)
+                }
+            }
+            return builder.build()
+        }
+
+        return builder
             .addIf("reader.peek() == \$T.NULL", JsonReader.Token::class.java) {
                 addStatement("return reader.nextNull()")
             }
