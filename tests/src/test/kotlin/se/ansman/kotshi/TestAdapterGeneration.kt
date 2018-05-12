@@ -10,12 +10,11 @@ import com.squareup.moshi.Types
 import okio.Buffer
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 
 class TestAdapterGeneration {
     private val moshi: Moshi = Moshi.Builder()
-        .add(TestFactory.INSTANCE)
+        .add(TestFactory)
         .add(String::class.java, Hello::class.java, HelloJsonAdapter())
         .build()
 
@@ -191,7 +190,7 @@ class TestAdapterGeneration {
                     writer.endObject()
                 }
             })
-            .add(TestFactory.INSTANCE)
+            .add(TestFactory)
             .build()
             .adapter(MultipleJsonQualifiers::class.java)
         val json = """{"string":{"name":["Hello, world!"]}}"""
@@ -204,14 +203,5 @@ class TestAdapterGeneration {
     fun testToString() {
         assertEquals("KotshiJsonAdapter(NestedClasses)", moshi.adapter(NestedClasses::class.java).toString())
         assertEquals("KotshiJsonAdapter(NestedClasses.Inner)", moshi.adapter(NestedClasses.Inner::class.java).toString())
-    }
-
-    @Test
-    fun testEmptyClass() {
-        val adapter = moshi.adapter(EmptyClass::class.java)
-        assert(adapter.fromJson("{}") is EmptyClass)
-        assertNull(adapter.fromJson("null"))
-        assertEquals("{}", adapter.toJson(EmptyClass()))
-        assertEquals("null", adapter.toJson(null))
     }
 }

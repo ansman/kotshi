@@ -61,9 +61,7 @@ by passing the same argument to `@JsonSerializable` (the default is to follow
 the module wide setting).
 
 ### Annotations
-* `@GetterName` must be used when overriding the default getter name using `@get:JvmName("...")`.
 * `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on Kotlin data classes.
-* `@KotshiConstructor` should be used when there are multiple constructors in the class. Place it on the primary constructor.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
 * `@JsonDefaultValue` used for enabling default values (see [below](#default-values))
 * `@JsonDefaultValueString` used for specifying default values for String properties inline
@@ -122,26 +120,23 @@ The default value provider is allowed to return `null` but only if it's annotate
 
 ### Transient Values
 
-Fields marked with `@Transient` are not serialized. When constructing, the adapter supplies the specified
-[default value](#default-values) instead.
+Properties marked with `@Transient` are not serialized. All transient fields must have a default value.
+
+Only properties declared in the constructor needs to be annotated since other properties are ignores.
+
+Please note that due to limitation in KAPT properties with a java keyword as a name cannot be marked as transient.
 
 Limitations
 ---
-Currently KAPT does not allow processing Kotlin files directly but rather the generated stubs. This has some downsides
-since some Kotlin features are not available in Java.
+Kotshi only processes files written in Kotlin, types written in Java are not support.
 
-Another limitation is that custom getter names for the JVM cannot be accessed from the constructor parameter which requires
-you to annotate the parameter with `@Getter`. This limitation will be removed when the library starts generating Kotlin code.
-
-Even though Kotlin nor Moshi prevents having mutable objects Kotshi tries to enforce that for the reason of promoting a good
-design as well as avoiding complexity in the generated code. This means that all the properties that you want serialized must
-be declared in the primary constructor of the class. This means that `var` properties declared outside the constructor will
-not be serialized.
+All classes annotated with `@JsonSerializable` must be a Kotlin data class and only the properties declared in the 
+primary constructor will be serialized.
 
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:1.0.6' // Use implementation if using Android
+compile 'se.ansman.kotshi:api:1.0.6' // Use implementation or api if using Android
 kapt 'se.ansman.kotshi:compiler:1.0.6'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
@@ -149,7 +144,7 @@ Snapshots of the development version are available in [Sonatype's snapshots repo
 License
 ---
 ```text
-Copyright 2017-2018 Nicklas Ansman Giertz.
+Copyright 2017-2019 Nicklas Ansman Giertz.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -6,7 +6,8 @@ dependencies {
     compile libraries.moshi
     kapt project(':compiler')
     compile project(':compiler')
-    compile libraries.kotlin
+    compile libraries.kotlin_stdlib
+    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
     testCompile libraries.truth
     testCompile libraries.compiletesting
     testCompile libraries.junit

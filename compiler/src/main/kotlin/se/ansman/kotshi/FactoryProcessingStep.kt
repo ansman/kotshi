@@ -1,16 +1,22 @@
+@file:Suppress("UnstableApiUsage")
+
 package se.ansman.kotshi
 
+import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.JavaFile
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
-import com.squareup.javapoet.WildcardTypeName
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import java.lang.reflect.ParameterizedType
+import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
+import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -26,13 +32,14 @@ import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
 class FactoryProcessingStep(
+    override val processor: KotshiProcessor,
     private val messager: Messager,
-    private val filer: Filer,
+    override val filer: Filer,
     private val types: Types,
     private val elements: Elements,
     private val sourceVersion: SourceVersion,
-    private val adapters: Map<TypeName, GeneratedAdapter>
-) : KotshiProcessor.ProcessingStep {
+    private val adapters: List<GeneratedAdapter>
+) : KotshiProcessor.GeneratingProcessingStep() {
 
     private fun TypeMirror.implements(someType: KClass<*>): Boolean =
         types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
@@ -42,75 +49,102 @@ class FactoryProcessingStep(
     override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         val elements = elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
         if (elements.size > 1) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "Multiple classes found with annotations KotshiJsonAdapterFactory")
-        } else {
-            for (element in elements) {
-                generateFactory(element)
+            messager.printMessage(Diagnostic.Kind.ERROR, "Multiple classes found with annotations @KotshiJsonAdapterFactory", elements.first())
+        } else for (element in elements) {
+            try {
+                generateFactory(MoreElements.asType(element))
+            } catch (e: ProcessingError) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }
     }
 
-    private fun generateFactory(element: Element) {
-        val factoryType = element as TypeElement
-        val generatedName = ClassName.get(factoryType).let {
-            ClassName.get(it.packageName(), "Kotshi${it.simpleNames().joinToString("_")}")
+    private fun generateFactory(element: TypeElement) {
+        val metadata = element.kotlinMetadata as KotlinClassMetadata?
+            ?: throw ProcessingError("Factories must be written in Kotlin", element)
+
+        val elementClassName = metadata.asClassName()
+        val generatedName = elementClassName.let {
+            ClassName(it.packageName, "Kotshi${it.simpleNames.joinToString("_")}")
         }
 
-        val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
-
-        val typeSpecBuilder = TypeSpec.classBuilder(generatedName.simpleName())
-            .maybeAddGeneratedAnnotation(elements, sourceVersion)
-
-        if (element.asType().implements(JsonAdapter.Factory::class)) {
-            if (Modifier.ABSTRACT !in element.modifiers) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "Must be abstract", element)
-            }
-            typeSpecBuilder
-                .addModifiers(Modifier.FINAL)
-                .superclass(TypeName.get(factoryType.asType()))
+        val typeSpecBuilder = if (element.asType().implements(JsonAdapter.Factory::class) && Modifier.ABSTRACT in element.modifiers) {
+            TypeSpec.objectBuilder(generatedName)
+                .superclass(elementClassName)
         } else {
-            typeSpecBuilder
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+            TypeSpec.objectBuilder(generatedName)
                 .addSuperinterface(JsonAdapter.Factory::class.java)
         }
 
-        typeSpecBuilder
-            // Package private constructor
-            .addMethod(MethodSpec.constructorBuilder()
-                .build())
-            .addMethod(MethodSpec.methodBuilder("create")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override::class.java)
-                .returns(ParameterizedTypeName.get(ClassName.get(JsonAdapter::class.java), WildcardTypeName.subtypeOf(TypeName.OBJECT)))
-                .addParameter(Type::class.java, "type")
-                .addParameter(ParameterizedTypeName.get(ClassName.get(Set::class.java), WildcardTypeName.subtypeOf(Annotation::class.java)), "annotations")
-                .addParameter(TypeName.get(Moshi::class.java), "moshi")
-                .addStatement("if (!annotations.isEmpty()) return null")
-                .addCode("\n")
-                .applyIf(genericAdapters.isNotEmpty()) {
-                    addIf("type instanceof \$T", ParameterizedType::class.java) {
-                        addStatement("\$1T parameterized = (\$1T) type", ParameterizedType::class.java)
-                        addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
-                        for ((type, adapter) in genericAdapters) {
-                            addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
-                                addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
-                                    adapter.className)
-                            }
-                        }
-                    }
-                }
-                .applyEach(regularAdapters) { (type, adapter) ->
-                    addIf("type.equals(\$T.class)", type) {
-                        if (adapter.requiresMoshi) {
-                            addStatement("return new \$T(moshi)", adapter.className)
-                        } else {
-                            addStatement("return new \$T()", adapter.className)
-                        }
-                    }
-                }
-                .addStatement("return null")
-                .build())
+        typeSpecBuilder.maybeAddGeneratedAnnotation(elements, sourceVersion)
 
-        JavaFile.builder(generatedName.packageName(), typeSpecBuilder.build()).build().writeTo(filer)
+        val typeParam = ParameterSpec.builder("type", Type::class)
+            .build()
+        val annotationsParam = ParameterSpec.builder("annotations", Set::class.asClassName().parameterizedBy(Annotation::class.asClassName()))
+            .build()
+        val moshiParam = ParameterSpec.builder("moshi", Moshi::class)
+            .build()
+
+        val imports = mutableSetOf<Import>()
+
+        val factory = typeSpecBuilder
+            .addFunction(makeCreateFunction(typeParam, annotationsParam, moshiParam, adapters, imports))
+            .build()
+
+        FileSpec.builder(generatedName.packageName, generatedName.simpleName)
+            .addComment("Code generated by Kotshi. Do not edit.")
+            .addImports(imports)
+            .addType(factory)
+            .build()
+            .write()
+    }
+
+    private fun makeCreateFunction(
+        typeParam: ParameterSpec,
+        annotationsParam: ParameterSpec,
+        moshiParam: ParameterSpec,
+        adapters: List<GeneratedAdapter>,
+        imports: MutableCollection<Import>
+    ): FunSpec {
+        val createSpec = FunSpec.builder("create")
+            .addModifiers(KModifier.OVERRIDE)
+            .returns(JsonAdapter::class.asClassName().parameterizedBy(STAR).nullable())
+            .addParameter(typeParam)
+            .addParameter(annotationsParam)
+            .addParameter(moshiParam)
+
+
+        if (adapters.isEmpty()) {
+            return createSpec
+                .addStatement("return null")
+                .build()
+        }
+
+        return createSpec
+            .addStatement("if (%N.isNotEmpty()) return null", annotationsParam)
+            .addCode("\n")
+            .addControlFlow("return when (%T.getRawType(%N))", com.squareup.moshi.Types::class.java, typeParam) {
+                for (adapter in adapters) {
+                    addCode("«%T::class.java ->\n%T", adapter.targetType, adapter.className)
+                    if (adapter.typeVariables.isNotEmpty()) {
+                        addCode(adapter.typeVariables.joinToString(", ", prefix = "<", postfix = ">") { "Nothing" })
+                    }
+                    addCode("(")
+                    when {
+                        adapter.requiresTypes -> {
+                            imports += typeArgumentsOrFail
+                            addCode("%N, %N.typeArgumentsOrFail", moshiParam, typeParam)
+                        }
+                        adapter.requiresMoshi -> addCode("%N", moshiParam)
+                    }
+                    addCode(")\n»")
+                }
+                addStatement("else -> null")
+            }
+            .build()
+    }
+
+    companion object {
+        private val typeArgumentsOrFail: Import = Import(KotshiUtils::class.java, "typeArgumentsOrFail")
     }
 }
