@@ -1,5 +1,12 @@
 Change Log
 ===
+Version 1.0.4 (2018-05-14)
+---
+* Fix an issue that caused errors when using default values and wildcards ([#87](https://github.com/ansman/kotshi/pull/87))
+* Add support for getters present in a superclass ([#88](https://github.com/ansman/kotshi/pull/88))
+* Implement support for empty classes ([#89](https://github.com/ansman/kotshi/pull/89))
+* Update to Kotlin 1.2.40 ([#84](https://github.com/ansman/kotshi/pull/84))
+
 Version 1.0.3 (2018-04-17)
 ---
 Changes:
