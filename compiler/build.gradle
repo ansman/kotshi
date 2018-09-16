@@ -8,7 +8,6 @@ dependencies {
     kapt libraries.autoservice
     compile libraries.autocommon
     compile libraries.javapoet
-    compile libraries.javaFormat
     compile libraries.kotlin
     compile libraries.moshi
     testCompile libraries.truth
