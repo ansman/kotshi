@@ -1,4 +1,4 @@
-apply plugin: 'org.jetbrains.dokka-android'
+apply plugin: 'org.jetbrains.dokka'
 
 group = GROUP
 version = VERSION_NAME
