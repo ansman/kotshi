@@ -91,7 +91,10 @@ class FactoryProcessingStep(
                 .apply {
                     when {
                         genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
-                        regularAdapters.isEmpty() -> addCode(handleGenericAdapters(genericAdapters))
+                        regularAdapters.isEmpty() ->
+                            addIf("type instanceof \$T", ParameterizedType::class.java) {
+                                addCode(handleGenericAdapters(genericAdapters))
+                            }
                         else -> {
                             addIf("type instanceof \$T", ParameterizedType::class.java) {
                                 addCode(handleGenericAdapters(genericAdapters))
