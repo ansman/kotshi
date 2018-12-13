@@ -1,5 +1,16 @@
 Change Log
 ===
+Version 1.0.6 (2018-12-13)
+---
+* Update to kotlin 1.3.11 ([#105](https://github.com/ansman/kotshi/pull/105))
+* Fix a crash that would happens when only generic adapters are used ([#103](https://github.com/ansman/kotshi/pull/103))
+
+Version 1.0.5 (2018-09-15)
+---
+* Remove unused java formatter ([#95](https://github.com/ansman/kotshi/pull/95))
+  - This was causing issues with the Android Jetifier and it wasn't being used anyway.
+* Update to Kotlin 1.2.70 ([#96](https://github.com/ansman/kotshi/pull/96))
+
 Version 1.0.4 (2018-05-14)
 ---
 * Fix an issue that caused errors when using default values and wildcards ([#87](https://github.com/ansman/kotshi/pull/87))
