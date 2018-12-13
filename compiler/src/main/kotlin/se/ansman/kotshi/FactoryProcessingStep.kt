@@ -2,7 +2,6 @@ package se.ansman.kotshi
 
 import com.google.common.collect.SetMultimap
 import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterizedTypeName
@@ -60,7 +59,7 @@ class FactoryProcessingStep(
         val (genericAdapters, regularAdapters) = adapters.entries.partition { it.value.requiresTypes }
 
         val typeSpecBuilder = TypeSpec.classBuilder(generatedName.simpleName())
-                .maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .maybeAddGeneratedAnnotation(elements, sourceVersion)
 
         if (element.asType().implements(JsonAdapter.Factory::class)) {
             if (Modifier.ABSTRACT !in element.modifiers) {
@@ -88,15 +87,24 @@ class FactoryProcessingStep(
                 .addParameter(TypeName.get(Moshi::class.java), "moshi")
                 .addStatement("if (!annotations.isEmpty()) return null")
                 .addCode("\n")
-                .apply {
-                    when {
-                        genericAdapters.isEmpty() -> addCode(handleRegularAdapters(regularAdapters))
-                        regularAdapters.isEmpty() -> addCode(handleGenericAdapters(genericAdapters))
-                        else -> {
-                            addIf("type instanceof \$T", ParameterizedType::class.java) {
-                                addCode(handleGenericAdapters(genericAdapters))
+                .applyIf(genericAdapters.isNotEmpty()) {
+                    addIf("type instanceof \$T", ParameterizedType::class.java) {
+                        addStatement("\$1T parameterized = (\$1T) type", ParameterizedType::class.java)
+                        addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
+                        for ((type, adapter) in genericAdapters) {
+                            addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
+                                addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
+                                    adapter.className)
                             }
-                            addCode(handleRegularAdapters(regularAdapters))
+                        }
+                    }
+                }
+                .applyEach(regularAdapters) { (type, adapter) ->
+                    addIf("type.equals(\$T.class)", type) {
+                        if (adapter.requiresMoshi) {
+                            addStatement("return new \$T(moshi)", adapter.className)
+                        } else {
+                            addStatement("return new \$T()", adapter.className)
                         }
                     }
                 }
@@ -105,32 +113,4 @@ class FactoryProcessingStep(
 
         JavaFile.builder(generatedName.packageName(), typeSpecBuilder.build()).build().writeTo(filer)
     }
-
-    private fun handleGenericAdapters(adapters: List<Map.Entry<TypeName, GeneratedAdapter>>): CodeBlock = CodeBlock.builder()
-        .addStatement("\$1T parameterized = (\$1T) type", ParameterizedType::class.java)
-        .addStatement("\$T rawType = parameterized.getRawType()", Type::class.java)
-        .apply {
-            for ((type, adapter) in adapters) {
-                addIf("rawType.equals(\$T.class)", (type as ParameterizedTypeName).rawType) {
-                    addStatement("return new \$T<>(moshi, parameterized.getActualTypeArguments())",
-                        adapter.className)
-                }
-            }
-        }
-        .build()
-
-    private fun handleRegularAdapters(adapters: List<Map.Entry<TypeName, GeneratedAdapter>>): CodeBlock = CodeBlock.builder()
-        .apply {
-            for ((type, adapter) in adapters) {
-                addIf("type.equals(\$T.class)", type) {
-                    if (adapter.requiresMoshi) {
-                        addStatement("return new \$T(moshi)", adapter.className)
-                    } else {
-                        addStatement("return new \$T()", adapter.className)
-                    }
-                }
-            }
-        }
-        .build()
-
 }
