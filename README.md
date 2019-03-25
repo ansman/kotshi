@@ -81,7 +81,7 @@ Limitations
 Download
 ---
 ```groovy
-implementation 'se.ansman.kotshi:api:1.0.6' // Use implementation or api if using Android
+implementation 'se.ansman.kotshi:api:1.0.6'
 kapt 'se.ansman.kotshi:compiler:1.0.6'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
