@@ -151,6 +151,7 @@ class AdaptersProcessingStep(
 
         val stringArguments = jsonNames.asSequence().map { "%S" }.joinToString(",\n")
         val options = PropertySpec.builder("options", JsonReader.Options::class, KModifier.PRIVATE)
+            .addAnnotation(JvmStatic::class)
             .initializer("%T.of(\n$stringArguments)", JsonReader.Options::class, *jsonNames.toTypedArray())
             .build()
 
@@ -167,12 +168,15 @@ class AdaptersProcessingStep(
                 .build())
             .superclass(NamedJsonAdapter::class.asClassName().plusParameter(typeName))
             .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
-            .applyIf(jsonNames.isNotEmpty()) {
-                addProperty(options)
-            }
             .addProperties(adapterKeys.values)
             .addToJson(typeName, properties, adapterKeys, imports)
             .addFromJson(typeName, nameAllocator, typeMirror, properties, adapterKeys, options, imports)
+            .applyIf(jsonNames.isNotEmpty()) {
+                addType(TypeSpec.companionObjectBuilder()
+                    .addModifiers(KModifier.PRIVATE)
+                    .addProperty(options)
+                    .build())
+            }
             .build()
 
         adapters += GeneratedAdapter(className, adapterClassName, typeVariables, requiresMoshi = adapterKeys.isNotEmpty())
