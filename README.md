@@ -58,11 +58,11 @@ the module wide setting).
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
 
 ### Default values
-You can use default values just like you normally would in Kotlin. 
+You can use default values just like you normally would in Kotlin.
 
-Due to limitations in Kotlin two instances of the object will be created when a class uses default values 
+Due to limitations in Kotlin two instances of the object will be created when a class uses default values
 ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)). This also means that composite default values are not
-supported (for example a `fullName` property that is `"$firstName $lastName"`). 
+supported (for example a `fullName` property that is `"$firstName $lastName"`).
 
 ### Transient Values
 
@@ -81,8 +81,8 @@ Limitations
 Download
 ---
 ```groovy
-implementation 'se.ansman.kotshi:api:1.0.6'
-kapt 'se.ansman.kotshi:compiler:1.0.6'
+implementation 'se.ansman.kotshi:api:2.0-rc1'
+kapt 'se.ansman.kotshi:compiler:2.0-rc1'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
 

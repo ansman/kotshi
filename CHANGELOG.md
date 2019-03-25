@@ -1,5 +1,16 @@
 Change Log
 ===
+Version 2.0-rc1 (2019-03-25)
+---
+This is a major release of Kotshi that includes breaking changes.
+
+Changes:
+* Kotshi now understands and generates Kotlin code. No more ugly annotations are needed for multiple constructors or custom getter names.
+* Only data classes are allowed.
+* Regular default values in Kotlin is now the only way to provide default values, all other annotations have been removed.
+* The processor is now incremental which should yield a performance boost when using Kotlin 1.3.30 and above.
+* The adapter factory is not generated in a deterministic order which allows it to be cached more efficiently.
+
 Version 1.0.6 (2018-12-13)
 ---
 * Update to kotlin 1.3.11 ([#105](https://github.com/ansman/kotshi/pull/105))
