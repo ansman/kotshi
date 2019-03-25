@@ -23,32 +23,25 @@ First you must annotate your Kotlin data classes with the `@JsonSerializable` an
 data class Person(
     val name: String,
     val email: String?,
-    // This property uses a custom getter name which requires two annotations.
-    @get:JvmName("hasVerifiedAccount") @Getter("hasVerifiedAccount")
     val hasVerifiedAccount: Boolean,
     // This property has a different name in the Json than here so @Json must be applied.
     @Json(name = "created_at")
     val signUpDate: Date,
-    // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
-    @NullIfEmpty
-    val jobTitle: String?
+    // This field has a default value which will be used if the field is missing.
+    val jobTitle: String? = null
 )
 ```
 
 Then create a class that will be your factory:
 ```kotlin
 @KotshiJsonAdapterFactory
-abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
-    companion object {
-        val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory()
-    }
-}
+object ApplicationJsonAdapterFactory : JsonAdapter.Factory by KotshiApplicationJsonAdapterFactory()
 ```
 
 Lastly just add the factory to your Moshi instance and you're all set:
 ```kotlin
 val moshi = Moshi.Builder()
-    .add(ApplicationJsonAdapterFactory.INSTANCE)
+    .add(ApplicationJsonAdapterFactory)
     .build()
 ```
 
@@ -63,80 +56,32 @@ the module wide setting).
 ### Annotations
 * `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on Kotlin data classes.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
-* `@JsonDefaultValue` used for enabling default values (see [below](#default-values))
-* `@JsonDefaultValueString` used for specifying default values for String properties inline
-* `@JsonDefaultValueBoolean` used for specifying default values for Boolean properties inline
-* `@JsonDefaultValueByte` used for specifying default values for Byte properties inline
-* `@JsonDefaultValueChar` used for specifying default values for Char properties inline
-* `@JsonDefaultValueShort` used for specifying default values for Short properties inline
-* `@JsonDefaultValueInt` used for specifying default values for Int properties inline
-* `@JsonDefaultValueLong` used for specifying default values for Long properties inline
-* `@JsonDefaultValueFloat` used for specifying default values for Float properties inline
-* `@JsonDefaultValueDouble` used for specifying default values for Double properties inline
 
 ### Default values
-You can use default values by first annotating a function, field, constructor or enum type with the annotation
-`@JsonDefaultValue`. This will be the provider of the default value.
+You can use default values just like you normally would in Kotlin. 
 
-You then annotate a parameter of the same type (or a supertype) with the same annotation.
-
-If you need to have multiple default values of the same type you can create a custom default value annotation by
-annotating it with `@JsonDefaultValue`.
-
-If you don't want to define default value providers for primitive and string properties you can use the specialized
-default value annotations (`@JsonDefaultValueString`, `@JsonDefaultValueInt` etc).
-
-```kotlin
-@Target(AnnotationTarget.VALUE_PARAMETER,
-        AnnotationTarget.FUNCTION,
-        AnnotationTarget.CONSTRUCTOR,
-        AnnotationTarget.FIELD,
-        AnnotationTarget.PROPERTY_GETTER)
-@MustBeDocumented
-@Retention(AnnotationRetention.SOURCE)
-@JsonDefaultValue // Makes this annotation a custom default value annotation
-annotation class StringWithNA
-
-@JsonSerializable
-data class MyClass(
-    @JsonDefaultValue
-    val name: String,
-    @StringWithNA
-    val address: String,
-    @JsonDefaultValueInt(-1)
-    val age: Int
-) {
-    companion object {
-        @JsonDefaultValue
-        @JvmField
-        val defaultString = ""
-
-        @StringWithNA
-        fun defaultStringWithNA() = "N/A"
-    }
-}
-```
-The default value provider is allowed to return `null` but only if it's annotated with `@Nullable`.
+Due to limitations in Kotlin two instances of the object will be created when a class uses default values 
+([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)). This also means that composite default values are not
+supported (for example a `fullName` property that is `"$firstName $lastName"`). 
 
 ### Transient Values
 
-Properties marked with `@Transient` are not serialized. All transient fields must have a default value.
+Properties marked with `@Transient` are not serialized. All transient properties must have a default value.
 
 Only properties declared in the constructor needs to be annotated since other properties are ignores.
 
-Please note that due to limitation in KAPT properties with a java keyword as a name cannot be marked as transient.
-
 Limitations
 ---
-Kotshi only processes files written in Kotlin, types written in Java are not support.
-
-All classes annotated with `@JsonSerializable` must be a Kotlin data class and only the properties declared in the 
-primary constructor will be serialized.
+* Kotshi only processes files written in Kotlin, types written in Java are not support.
+* Only data classes are supported.
+  - Only constructor properties will be serialized.
+* Due to limitation in KAPT properties with a java keyword as a name cannot be marked as transient.
+* Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 
 Download
 ---
 ```groovy
-compile 'se.ansman.kotshi:api:1.0.6' // Use implementation or api if using Android
+implementation 'se.ansman.kotshi:api:1.0.6' // Use implementation or api if using Android
 kapt 'se.ansman.kotshi:compiler:1.0.6'
 ```
 Snapshots of the development version are available in [Sonatype's snapshots repository](https://oss.sonatype.org/content/repositories/snapshots/).
