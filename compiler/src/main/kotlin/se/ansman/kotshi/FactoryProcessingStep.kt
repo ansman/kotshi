@@ -124,7 +124,7 @@ class FactoryProcessingStep(
             .addStatement("if (%N.isNotEmpty()) return null", annotationsParam)
             .addCode("\n")
             .addControlFlow("return when (%T.getRawType(%N))", com.squareup.moshi.Types::class.java, typeParam) {
-                for (adapter in adapters) {
+                for (adapter in adapters.sortedBy { it.className }) {
                     addCode("«%T::class.java ->\n%T", adapter.targetType, adapter.className)
                     if (adapter.typeVariables.isNotEmpty()) {
                         addCode(adapter.typeVariables.joinToString(", ", prefix = "<", postfix = ">") { "Nothing" })
