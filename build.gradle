@@ -53,6 +53,7 @@ ext {
             kotlin_stdlib  : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
             kotlin_junit   : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
             kotlin_metadata: "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0",
-            moshi          : "com.squareup.moshi:moshi:1.7.0"
+            moshi          : "com.squareup.moshi:moshi:1.7.0",
+            findBugs       : "com.google.code.findbugs:jsr305:3.0.2",
     ]
 }

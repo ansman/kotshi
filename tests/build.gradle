@@ -7,7 +7,7 @@ dependencies {
     kapt project(':compiler')
     compile project(':compiler')
     compile libraries.kotlin_stdlib
-    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
+    compileOnly libraries.findBugs
     testCompile libraries.truth
     testCompile libraries.compiletesting
     testCompile libraries.junit
