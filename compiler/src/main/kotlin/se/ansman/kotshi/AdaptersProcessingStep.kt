@@ -124,7 +124,7 @@ class AdaptersProcessingStep(
 
         val adapterClassName = ClassName(className.packageName, "Kotshi${className.simpleNames.joinToString("_")}JsonAdapter")
 
-        nameAllocator.newName("OPTIONS")
+        nameAllocator.newName("options")
         nameAllocator.newName("value")
         nameAllocator.newName("writer")
         nameAllocator.newName("reader")
