@@ -19,7 +19,7 @@ class TestDefaultValues {
     @Before
     fun setup() {
         moshi = Moshi.Builder()
-            .add(TestFactory.INSTANCE)
+            .add(TestFactory)
             .add(LocalDate::class.java, LocalDateAdapter)
             .add(LocalTime::class.java, LocalTimeAdapter)
             .add(LocalDateTime::class.java, LocalDateTimeAdapter)
@@ -28,87 +28,42 @@ class TestDefaultValues {
 
     @Test
     fun withValues() {
-        val json = """{
-             |  "v1": {
-             |    "v": "v1"
-             |  },
-             |  "v2": {
-             |    "v": "v2"
-             |  },
-             |  "v3": {
-             |    "v": "v3"
-             |  },
-             |  "v4": {
-             |    "v": "v4"
-             |  },
-             |  "v5": {
-             |    "v": "v5"
-             |  },
-             |  "v6": {
-             |    "v": 6
-             |  },
-             |  "v7": "1989-07-03",
-             |  "v8": "13:37",
-             |  "v9": "1989-07-03T13:37",
-             |  "v10": {
-             |    "v": "v10"
-             |  },
-             |  "v11": {
-             |    "v": "v11"
-             |  },
-             |  "v12": {
-             |    "v": "v12"
-             |  },
-             |  "v13": {
-             |    "v": "v13"
-             |  },
-             |  "v14": 14,
-             |  "v15": "VALUE4",
-             |  "v16": {
-             |    "someKey": 4711
-             |  }
-             |}""".trimMargin()
+        val json = """
+            |{
+            |  "v1": 1,
+            |  "v2": "2",
+            |  "v3": 3,
+            |  "v4": 4,
+            |  "v5": 5,
+            |  "v6": 6.0,
+            |  "v7": 7.0,
+            |  "v8": "8",
+            |  "v9": [
+            |    "9"
+            |  ],
+            |  "v10": "10"
+            |}
+        """.trimMargin()
 
         val expected = ClassWithDefaultValues(
-            v1 = WithCompanionFunction("v1"),
-            v2 = WithStaticFunction("v2"),
-            v3 = WithCompanionProperty("v3"),
-            v4 = WithStaticProperty("v4"),
-            v5 = GenericClassWithDefault("v5"),
-            v6 = GenericClassWithDefault(6),
-            v7 = LocalDate.of(1989, 7, 3),
-            v8 = LocalTime.of(13, 37),
-            v9 = LocalDateTime.of(1989, 7, 3, 13, 37),
-            v10 = WithCompanionFunction("v10"),
-            v11 = WithCompanionFunction("v11"),
-            v12 = ClassWithConstructorAsDefault("v12"),
-            v13 = GenericClassWithConstructorAsDefault("v13"),
-            v14 = 14,
-            v15 = SomeEnum.VALUE4,
-            v16 = mapOf("someKey" to 4711))
+            v1 = 1,
+            v2 = '2',
+            v3 = 3,
+            v4 = 4,
+            v5 = 5,
+            v6 = 6f,
+            v7 = 7.0,
+            v8 = "8",
+            v9 = listOf("9"),
+            v10 = "10"
+        )
 
         expected.testFormatting(json)
     }
 
     @Test
     fun withNullValues() {
-        val expected = ClassWithDefaultValues(
-            v1 = WithCompanionFunction("WithCompanionFunction"),
-            v2 = WithStaticFunction("WithStaticFunction"),
-            v3 = WithCompanionProperty("WithCompanionProperty"),
-            v4 = WithStaticProperty("WithStaticProperty"),
-            v5 = GenericClassWithDefault(null),
-            v6 = GenericClassWithDefault(4711),
-            v7 = LocalDate.MIN,
-            v8 = LocalTime.MIN,
-            v9 = LocalDateTime.MIN,
-            v10 = WithCompanionFunction("v10"),
-            v11 = WithCompanionFunction("OtherJsonDefaultValue"),
-            v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
-            v13 = GenericClassWithConstructorAsDefault(null),
-            v14 = 4711,
-            v15 = SomeEnum.VALUE3,
-            v16 = emptyMap())
+        val expected = ClassWithDefaultValues(v10 = "10")
 
         val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
              |  "v1": null,
@@ -120,15 +75,7 @@ class TestDefaultValues {
              |  "v7": null,
              |  "v8": null,
              |  "v9": null,
-             |  "v10": {
-             |    "v": "v10"
-             |  },
-             |  "v11": null,
-             |  "v12": null,
-             |  "v13": null,
-             |  "v14": null,
-             |  "v15": null,
-             |  "v16": null
+             |  "v10": "10"
              |}""".trimMargin())
 
         assertEquals(expected, actual)
@@ -136,29 +83,12 @@ class TestDefaultValues {
 
     @Test
     fun withAbsentValues() {
-        val expected = ClassWithDefaultValues(
-            v1 = WithCompanionFunction("WithCompanionFunction"),
-            v2 = WithStaticFunction("WithStaticFunction"),
-            v3 = WithCompanionProperty("WithCompanionProperty"),
-            v4 = WithStaticProperty("WithStaticProperty"),
-            v5 = GenericClassWithDefault(null),
-            v6 = GenericClassWithDefault(4711),
-            v7 = LocalDate.MIN,
-            v8 = LocalTime.MIN,
-            v9 = LocalDateTime.MIN,
-            v10 = WithCompanionFunction("v10"),
-            v11 = WithCompanionFunction("OtherJsonDefaultValue"),
-            v12 = ClassWithConstructorAsDefault("ClassWithConstructorAsDefault"),
-            v13 = GenericClassWithConstructorAsDefault(null),
-            v14 = 4711,
-            v15 = SomeEnum.VALUE3,
-            v16 = emptyMap())
-
-        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
-             |  "v10": {
-             |    "v": "v10"
-             |  }
-        |}""".trimMargin())
+        val expected = ClassWithDefaultValues(v10 = "10")
+        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""
+            |{
+            |  "v10": "10"
+            |}
+        """.trimMargin())
         assertEquals(expected, actual)
     }
 

@@ -1,98 +1,84 @@
 package se.ansman.kotshi
 
-import com.squareup.javapoet.ArrayTypeName
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeVariableName
-import com.squareup.javapoet.WildcardTypeName
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.moshi.Json
-import javax.lang.model.element.Element
-import javax.lang.model.element.ExecutableElement
+import me.eugeniomarletti.kotlin.metadata.declaresDefaultValue
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf.Visibility.INTERNAL
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf.Visibility.PUBLIC
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import me.eugeniomarletti.kotlin.metadata.visibility
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.lang.model.type.TypeMirror
-import javax.lang.model.util.Types
 
-class Property(
-    defaultValueProviders: DefaultValueProviders,
-    types: Types,
-    globalConfig: GlobalConfig,
-    enclosingClass: Element,
+class Property private constructor(
+    val name: String,
+    val type: TypeName,
+    val jsonName: String,
+    val adapterKey: AdapterKey,
     val parameter: VariableElement,
-    val field: VariableElement?,
-    val getter: ExecutableElement?
+    val valueParameter: ProtoBuf.ValueParameter,
+    val shouldUseAdapter: Boolean,
+    val isTransient: Boolean
 ) {
-    val typeMirror: TypeMirror = field?.asType() ?: parameter.asType()
-
-    val rawTypeMirror: TypeMirror by lazy { types.erasure(typeMirror) }
-
-    val type: TypeName = typeMirror.asTypeName()
-
-    val defaultValueQualifier = parameter.getDefaultValueQualifier()
-
-    val adapterKey: AdapterKey = AdapterKey(type, parameter.getJsonQualifiers())
-
-    val name: CharSequence = field?.simpleName ?: parameter.simpleName
-
-    val jsonName: CharSequence = field?.getAnnotation(Json::class.java)?.name
-        ?: parameter.getAnnotation(Json::class.java)?.name
-        ?: name
-
-    val isNullable: Boolean = parameter.hasAnnotation("Nullable")
-
-    val isTransient: Boolean = field?.modifiers?.contains(Modifier.TRANSIENT) == true
-
-    private val useAdaptersForPrimitives: Boolean =
-        when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
-            PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
-            PrimitiveAdapters.ENABLED -> true
-            PrimitiveAdapters.DISABLED -> false
-        }
-
-    val shouldUseAdapter: Boolean = useAdaptersForPrimitives ||
-        adapterKey.jsonQualifiers.isNotEmpty() ||
-        !(type.isPrimitive || type.isBoxedPrimitive || type == TYPE_NAME_STRING)
-
-    val defaultValueProvider: DefaultValueProvider?
+    val hasDefaultValue: Boolean = valueParameter.declaresDefaultValue
 
     init {
-        require(getter != null || field != null)
-
-        val specifiesDefaultValue = defaultValueQualifier != null || parameter.hasAnnotation<JsonDefaultValue>()
-        defaultValueProvider = if (isTransient || specifiesDefaultValue) {
-            if (adapterKey.type.isGeneric(recursive = false)) {
-                val message = if (isTransient && !specifiesDefaultValue) {
-                    "@Transient fields require a default value, but a default value cannot be supplied for generic types"
-                } else {
-                    "You cannot use default values on a generic type"
-                }
-                throw ProcessingError(message, parameter)
-            }
-            val message = if (isTransient && !specifiesDefaultValue) {
-                "@Transient fields require a default value, but a default value cannot be supplied for generic classes with wildcard types"
-            } else {
-                "Generic classes must not have wildcard types if you want to use default values"
-            }
-
-            fun TypeName.check() {
-                when (this) {
-                    is TypeVariableName,
-                    is ArrayTypeName,
-                    is ClassName -> {}
-                    is ParameterizedTypeName -> typeArguments.forEach(TypeName::check)
-                    is WildcardTypeName -> if (upperBounds.any { it == TypeName.OBJECT }) {
-                        throw ProcessingError(message, parameter)
-                    }
-                    else -> throw ProcessingError(message, parameter)
-                }
-            }
-
-            (type as? ParameterizedTypeName)?.typeArguments?.forEach { it.check() }
-            defaultValueProviders[this]
-        } else {
-            null
+        if (isTransient && !hasDefaultValue) {
+            throw ProcessingError("Transient properties must declare a default value", parameter)
         }
+    }
 
+    companion object {
+        fun create(
+            classProto: ProtoBuf.Class,
+            nameResolver: NameResolver,
+            globalConfig: GlobalConfig,
+            enclosingClass: TypeElement,
+            parameter: VariableElement,
+            valueParameter: ProtoBuf.ValueParameter
+        ): Property {
+            val name = nameResolver.getString(valueParameter.name)
+            val type = valueParameter.type.asTypeName(nameResolver, classProto::getTypeParameter, useAbbreviatedType = false)
+            val adapterKey = AdapterKey(type.notNull(), parameter.getJsonQualifiers())
+
+            val useAdaptersForPrimitives = when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
+                PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
+                PrimitiveAdapters.ENABLED -> true
+                PrimitiveAdapters.DISABLED -> false
+            }
+
+            val protoProperty = classProto.propertyList.find { nameResolver.getString(it.name) == name }
+                ?: throw ProcessingError("Could not find property for parameter", parameter)
+
+            val field = enclosingClass.enclosedElements
+                .asSequence()
+                .filter { it.kind == ElementKind.FIELD && Modifier.STATIC !in it.modifiers }
+                .find { it.simpleName.contentEquals(name) }
+
+            when (protoProperty.visibility) {
+                INTERNAL, PUBLIC -> Unit
+                else -> throw ProcessingError("Properties must be public or internal", parameter)
+            }
+
+            val isTransient = Modifier.TRANSIENT in field?.modifiers ?: emptySet()
+
+            return Property(
+                name = name,
+                type = type,
+                jsonName = parameter.getAnnotation(Json::class.java)?.name
+                    ?: field?.getAnnotation(Json::class.java)?.name
+                    ?: name,
+                adapterKey = adapterKey,
+                parameter = parameter,
+                valueParameter = valueParameter,
+                shouldUseAdapter = useAdaptersForPrimitives ||
+                    adapterKey.jsonQualifiers.isNotEmpty() ||
+                    !type.notNull().isPrimitive && type.notNull() != STRING,
+                isTransient = isTransient
+            )
+        }
     }
 }

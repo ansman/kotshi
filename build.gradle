@@ -4,7 +4,7 @@ subprojects { project ->
 }
 
 buildscript {
-    ext.kotlin_version = '1.3.11'
+    ext.kotlin_version = "1.3.21"
 
     repositories {
         mavenCentral()
@@ -25,12 +25,15 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
     }
 
     idea {
         module {
-            sourceDirs += file('build/generated/source/kapt/main')
-            generatedSourceDirs += file('build/generated/source/kapt/main')
+            sourceDirs += file('build/generated/source/kaptKotlin/main')
+            generatedSourceDirs += file('build/generated/source/kaptKotlin/main')
         }
     }
 }
@@ -41,14 +44,16 @@ subprojects {
 
 ext {
     libraries = [
-            javapoet      : 'com.squareup:javapoet:1.9.0',
-            autocommon    : 'com.google.auto:auto-common:0.8',
-            autoservice   : 'com.google.auto.service:auto-service:1.0-rc2',
-            junit         : 'junit:junit:4.12',
-            truth         : 'com.google.truth:truth:0.30',
-            compiletesting: 'com.google.testing.compile:compile-testing:0.10',
-            kotlin        : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
-            kotlin_junit  : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
-            moshi         : "com.squareup.moshi:moshi:1.5.0"
+            kotlinpoet     : 'com.squareup:kotlinpoet:1.1.0',
+            autocommon     : 'com.google.auto:auto-common:0.8',
+            autoservice    : 'com.google.auto.service:auto-service:1.0-rc2',
+            junit          : 'junit:junit:4.12',
+            truth          : 'com.google.truth:truth:0.30',
+            compiletesting : 'com.google.testing.compile:compile-testing:0.10',
+            kotlin_stdlib  : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
+            kotlin_junit   : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
+            kotlin_metadata: "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0",
+            moshi          : "com.squareup.moshi:moshi:1.7.0",
+            findBugs       : "com.google.code.findbugs:jsr305:3.0.2",
     ]
 }

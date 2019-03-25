@@ -7,13 +7,10 @@ dependencies {
     compile libraries.autoservice
     kapt libraries.autoservice
     compile libraries.autocommon
-    compile libraries.javapoet
-    compile libraries.kotlin
+    compile libraries.kotlinpoet
+    compile libraries.kotlin_stdlib
+    compile libraries.kotlin_metadata
     compile libraries.moshi
-    testCompile libraries.truth
-    testCompile libraries.compiletesting
-    testCompile libraries.junit
-    testCompile libraries.moshi
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')

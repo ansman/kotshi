@@ -6,9 +6,11 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
-import com.squareup.javapoet.TypeName
-import javax.annotation.processing.AbstractProcessor
-import javax.annotation.processing.Messager
+import com.squareup.kotlinpoet.FileSpec
+import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
+import me.eugeniomarletti.kotlin.processing.KotlinAbstractProcessor
+import java.io.File
+import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -21,44 +23,41 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.SimpleElementVisitor6
 
 @AutoService(Processor::class)
-class KotshiProcessor : AbstractProcessor() {
+class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
     private lateinit var elements: Elements
-    private lateinit var messager: Messager
     private lateinit var steps: ImmutableList<out ProcessingStep>
+    private val processingEnvironment: ProcessingEnvironment
+        get() = (this as KotlinAbstractProcessor).processingEnv
+
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latestSupported()
 
     private fun initSteps(): Iterable<ProcessingStep> {
-        val adapters: MutableMap<TypeName, GeneratedAdapter> = mutableMapOf()
-        val defaultValueProviders = DefaultValueProviders(processingEnv.typeUtils)
+        val adapters: MutableList<GeneratedAdapter> = mutableListOf()
         return listOf(
-            DefaultValuesProcessingStep(
-                messager = processingEnv.messager,
-                types = processingEnv.typeUtils,
-                defaultValueProviders = defaultValueProviders
-            ),
             AdaptersProcessingStep(
-                messager = processingEnv.messager,
-                types = processingEnv.typeUtils,
-                filer = processingEnv.filer,
+                processor = this,
+                messager = processingEnvironment.messager,
+                filer = processingEnvironment.filer,
                 adapters = adapters,
-                defaultValueProviders = defaultValueProviders,
-                elements = processingEnv.elementUtils,
-                sourceVersion = processingEnv.sourceVersion
+                elements = processingEnvironment.elementUtils,
+                sourceVersion = processingEnvironment.sourceVersion
             ),
             FactoryProcessingStep(
-                messager = processingEnv.messager,
-                filer = processingEnv.filer,
-                types = processingEnv.typeUtils,
-                elements = processingEnv.elementUtils,
-                sourceVersion = processingEnv.sourceVersion,
-                adapters = adapters))
+                processor = this,
+                messager = processingEnvironment.messager,
+                filer = processingEnvironment.filer,
+                types = processingEnvironment.typeUtils,
+                elements = processingEnvironment.elementUtils,
+                sourceVersion = processingEnvironment.sourceVersion,
+                adapters = adapters
+            )
+        )
     }
 
     @Synchronized
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         elements = processingEnv.elementUtils
-        messager = processingEnv.messager
         steps = ImmutableList.copyOf(initSteps())
     }
 
@@ -121,7 +120,7 @@ class KotshiProcessor : AbstractProcessor() {
     /** Processes the valid elements, including those previously deferred by each step.  */
     private fun process(validElements: ImmutableSetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
         for (step in steps) {
-            val stepElements = Multimaps.filterKeys(validElements, { it in step.annotations })
+            val stepElements = Multimaps.filterKeys(validElements) { it in step.annotations }
             if (!stepElements.isEmpty) {
                 step.process(stepElements, roundEnv)
             }
@@ -130,8 +129,19 @@ class KotshiProcessor : AbstractProcessor() {
 
     interface ProcessingStep {
         val annotations: Set<Class<out Annotation>>
-
         fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment)
+    }
+
+    abstract class GeneratingProcessingStep : ProcessingStep {
+        protected abstract val filer: Filer
+        protected abstract val processor: KotshiProcessor
+
+        protected fun FileSpec.write() {
+            writeTo(processor.generatedDir ?: filer.createSourceFile(name).toUri()
+                .let(::File)
+                .parentFile
+                .also { filer.createSourceFile(name).toUri().let(::File).delete() })
+        }
     }
 
     private data class ElementName(private val kind: ElementName.Kind, val name: String) {

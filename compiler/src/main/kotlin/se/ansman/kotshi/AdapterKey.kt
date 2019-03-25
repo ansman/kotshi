@@ -1,43 +1,65 @@
 package se.ansman.kotshi
 
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeVariableName
-import com.squareup.javapoet.WildcardTypeName
+import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.ARRAY
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.Dynamic
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.moshi.Types
 import javax.lang.model.element.Element
 
 data class AdapterKey(
     val type: TypeName,
     val jsonQualifiers: List<Element>
-) {
+)
 
-    val isGeneric: Boolean
-        get() = type.isGeneric()
+fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
+    type.asRuntimeType(typeVariableAccessor)
 
-    fun asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
-        type.asRuntimeType(typeVariableAccessor)
+val AdapterKey.suggestedAdapterName: String
+    get() = "${jsonQualifiers.joinToString("") { it.simpleName }}${type.baseAdapterName}Adapter".decapitalize()
 
-    private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
-        when (this) {
+private val TypeName.baseAdapterName: String
+    get() {
+        return when (this) {
+            is ClassName -> simpleNames.joinToString("")
+            Dynamic -> "dynamic"
+            is LambdaTypeName -> "lambda"
             is ParameterizedTypeName ->
-                CodeBlock.builder()
-                    .add("\$T.newParameterizedType(\$T.class", Types::class.java, rawType)
-                    .apply {
-                        for (typeArgument in typeArguments) {
-                            add(", ")
-                            add(typeArgument.asRuntimeType(typeVariableAccessor))
-                        }
-                    }
-                    .add(")")
-                    .build()
-            is WildcardTypeName -> when {
-                lowerBounds.size == 1 -> lowerBounds[0].asRuntimeType(typeVariableAccessor)
-                upperBounds[0] == TypeName.OBJECT -> TypeName.OBJECT.asRuntimeType(typeVariableAccessor)
-                else -> upperBounds[0].asRuntimeType(typeVariableAccessor)
-            }
-            is TypeVariableName -> typeVariableAccessor(this)
-            else -> CodeBlock.of("\$T.class", this)
+                typeArguments.joinToString("") { it.baseAdapterName } + rawType.baseAdapterName
+            is TypeVariableName -> name
+            is WildcardTypeName -> "wildcard"
         }
-}
+    }
+
+private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
+    when (this) {
+        is ParameterizedTypeName ->
+            CodeBlock.builder()
+                .add("%T.newParameterizedType(%T::class.javaObjectType", Types::class.java, if (rawType == ARRAY) {
+                    // Arrays are special, you cannot just do Array::class.java
+                    this
+                } else {
+                    rawType.notNull()
+                })
+                .apply {
+                    for (typeArgument in typeArguments) {
+                        add(", ")
+                        add(typeArgument.asRuntimeType(typeVariableAccessor))
+                    }
+                }
+                .add(")")
+                .build()
+        is WildcardTypeName -> when {
+            inTypes.size == 1 -> inTypes[0].asRuntimeType(typeVariableAccessor)
+            outTypes[0] == ANY -> ANY.asRuntimeType(typeVariableAccessor)
+            else -> outTypes[0].asRuntimeType(typeVariableAccessor)
+        }
+        is TypeVariableName -> typeVariableAccessor(this)
+        else -> CodeBlock.of("%T::class.javaObjectType", notNull())
+    }

@@ -13,7 +13,7 @@ class TestTransientAdapters {
     @Before
     fun setup() {
         moshi = Moshi.Builder()
-            .add(TestFactory.INSTANCE)
+            .add(TestFactory)
             .build()
     }
 

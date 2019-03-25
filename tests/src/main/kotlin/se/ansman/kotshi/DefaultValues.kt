@@ -1,131 +1,49 @@
 package se.ansman.kotshi
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 @JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
 data class ClassWithDefaultValues(
-    @JsonDefaultValue
-    val v1: WithCompanionFunction,
-    @JsonDefaultValue
-    val v2: WithStaticFunction,
-    @JsonDefaultValue
-    val v3: WithCompanionProperty,
-    @JsonDefaultValue
-    val v4: WithStaticProperty,
-    @JsonDefaultValue
-    val v5: GenericClassWithDefault<String>,
-    @JsonDefaultValue
-    val v6: GenericClassWithDefault<Int>,
-    @JsonDefaultValue
-    val v7: LocalDate,
-    @JsonDefaultValue
-    val v8: LocalTime,
-    @JsonDefaultValue
-    val v9: LocalDateTime,
-    val v10: WithCompanionFunction, // No annotations, should not get a default value
-    @OtherJsonDefaultValue
-    val v11: WithCompanionFunction,
-    @JsonDefaultValue
-    val v12: ClassWithConstructorAsDefault,
-    @JsonDefaultValue
-    val v13: GenericClassWithConstructorAsDefault<String>,
-    @JsonDefaultValue
-    val v14: Int?,
-    @JsonDefaultValue
-    val v15: SomeEnum,
-    @JsonDefaultValue
-    val v16: Map<String, Int>
+    val v1: Byte = Byte.MAX_VALUE,
+    val v2: Char = Char.MAX_VALUE,
+    val v3: Short = Short.MAX_VALUE,
+    val v4: Int = Int.MAX_VALUE,
+    val v5: Long = Long.MAX_VALUE,
+    val v6: Float = Float.MAX_VALUE,
+    val v7: Double = Double.MAX_VALUE,
+    val v8: String = "n/a",
+    val v9: List<String> = emptyList(),
+    val v10: String
 )
 
 @JsonSerializable
 data class WithCompanionFunction(val v: String?) {
-    companion object {
-        @JsonDefaultValue
-        fun provideDefault(): WithCompanionFunction = WithCompanionFunction("WithCompanionFunction")
-
-        @OtherJsonDefaultValue
-        fun provideQualifiedDefault() = WithCompanionFunction("OtherJsonDefaultValue")
-    }
 }
 
 @JsonSerializable
 data class WithStaticFunction(val v: String?) {
-    companion object {
-        @JsonDefaultValue
-        @JvmStatic
-        fun provideDefault() = WithStaticFunction("WithStaticFunction")
-    }
 }
 
 @JsonSerializable
 data class WithCompanionProperty(val v: String?) {
-    companion object {
-        @JsonDefaultValue
-        val defaultValue = WithCompanionProperty("WithCompanionProperty")
-    }
 }
 
 @JsonSerializable
 data class WithStaticProperty(val v: String?) {
-    companion object {
-        @JvmField
-        @JsonDefaultValue
-        val defaultValue = WithStaticProperty("WithStaticProperty")
-    }
 }
 
 @JsonSerializable
 data class GenericClassWithDefault<out T>(val v: T?) {
-    companion object {
-        @JsonDefaultValue
-        fun <T> provideDefault() = GenericClassWithDefault<T>(null)
-
-        @JsonDefaultValue
-        fun provideIntDefault() = GenericClassWithDefault(4711)
-    }
 }
 
 object DefaultProvider {
-    @JsonDefaultValue
-    fun provideDefaultLocalDate(): LocalDate = LocalDate.MIN
-
-    @JsonDefaultValue
-    @JvmStatic
-    fun provideDefaultLocalTime(): LocalTime = LocalTime.MIN
-}
-
-class OtherDefaultProvider private constructor() {
-    @JsonDefaultValue
-    fun provideDefaultLocalDateTime(): LocalDateTime = LocalDateTime.MIN
-
-    companion object {
-        @JvmStatic
-        val instance = OtherDefaultProvider()
-    }
 }
 
 @JsonSerializable
 data class ClassWithConstructorAsDefault(val v: String?) {
-    @JsonDefaultValue
     constructor() : this("ClassWithConstructorAsDefault")
 }
 
 @JsonSerializable
 data class GenericClassWithConstructorAsDefault<T : CharSequence>(val v: T?) {
-    @JsonDefaultValue
     constructor() : this(null)
 }
 
-@JsonDefaultValue
-fun provideIntDefault(): Int? = 4711
-
-@JsonDefaultValue
-fun <K, V> provideDefaultMap() = emptyMap<K, V>()
-
-@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
-@MustBeDocumented
-@Retention(AnnotationRetention.SOURCE)
-@JsonDefaultValue
-annotation class OtherJsonDefaultValue
