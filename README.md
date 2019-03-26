@@ -35,7 +35,9 @@ data class Person(
 Then create a class that will be your factory:
 ```kotlin
 @KotshiJsonAdapterFactory
-object ApplicationJsonAdapterFactory : JsonAdapter.Factory by KotshiApplicationJsonAdapterFactory
+abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
+  val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory
+}
 ```
 
 Lastly just add the factory to your Moshi instance and you're all set:
