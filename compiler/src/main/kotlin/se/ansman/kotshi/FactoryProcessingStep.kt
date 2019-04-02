@@ -76,7 +76,9 @@ class FactoryProcessingStep(
                 .addSuperinterface(JsonAdapter.Factory::class.java)
         }
 
-        typeSpecBuilder.maybeAddGeneratedAnnotation(elements, sourceVersion)
+        typeSpecBuilder
+            .maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .addOriginatingElement(element)
 
         val typeParam = ParameterSpec.builder("type", Type::class)
             .build()
@@ -96,7 +98,7 @@ class FactoryProcessingStep(
             .addImports(imports)
             .addType(factory)
             .build()
-            .write()
+            .writeTo(filer)
     }
 
     private fun makeCreateFunction(

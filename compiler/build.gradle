@@ -4,8 +4,10 @@ version = VERSION_NAME
 
 dependencies {
     compile project(':api')
-    compile libraries.autoservice
-    kapt libraries.autoservice
+    compile libraries.autoservice_api
+    kapt libraries.autoservice_compiler
+    compile libraries.incap_api
+    kapt libraries.incap_compiler
     compile libraries.autocommon
     compile libraries.kotlinpoet
     compile libraries.kotlin_stdlib
