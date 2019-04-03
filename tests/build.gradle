@@ -13,3 +13,5 @@ dependencies {
     testCompile libraries.kotlin_junit
     testCompile libraries.moshi
 }
+
+compileJava.enabled = false
