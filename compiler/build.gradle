@@ -3,16 +3,16 @@ group = GROUP
 version = VERSION_NAME
 
 dependencies {
-    compile project(':api')
-    compile libraries.autoservice_api
+    implementation project(':api')
+    implementation libraries.autoservice_api
     kapt libraries.autoservice_compiler
-    compile libraries.incap_api
+    implementation libraries.incap_api
     kapt libraries.incap_compiler
-    compile libraries.autocommon
-    compile libraries.kotlinpoet
-    compile libraries.kotlin_stdlib
-    compile libraries.kotlin_metadata
-    compile libraries.moshi
+    implementation libraries.autocommon
+    implementation libraries.kotlinpoet
+    implementation libraries.kotlin_stdlib
+    implementation libraries.kotlin_metadata
+    implementation libraries.moshi
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')

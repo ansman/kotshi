@@ -16,8 +16,8 @@ dokka {
 }
 
 dependencies {
-    compile libraries.kotlin_stdlib
-    compile libraries.moshi
+    api libraries.kotlin_stdlib
+    api libraries.moshi
 }
 
 
