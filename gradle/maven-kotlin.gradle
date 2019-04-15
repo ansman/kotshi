@@ -66,7 +66,7 @@ artifacts {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        kotshi(MavenPublication) {
             version VERSION_NAME
             from components.java
             afterEvaluate {
@@ -75,6 +75,7 @@ publishing {
             }
 
             pom {
+                name = project.name
                 description = POM_DESCRIPTION
                 url = POM_URL
                 licenses {
@@ -104,7 +105,7 @@ publishing {
 artifactory {
     publish {
         defaults {
-            publications('mavenJava')
+            publications('kotshi')
         }
     }
 }
@@ -112,6 +113,7 @@ artifactory {
 bintray {
     user = bintrayUsername
     key = bintrayApiKey
+    publications = ['kotshi']
     configurations = ['archives']
     pkg {
         repo = 'kotshi'
