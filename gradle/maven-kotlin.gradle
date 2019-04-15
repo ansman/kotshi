@@ -30,9 +30,11 @@ artifactory {
     }
 }
 
-dokka {
+task dokkaJavadoc(type: dokka.class) {
     outputFormat = 'html'
-    outputDirectory = "$buildDir/javadoc"
+    outputDirectory = javadoc.destinationDir
+    inputs.dir 'src/main/kotlin'
+
     reportUndocumented = false
 
     externalDocumentationLink {
@@ -54,7 +56,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task dokkaJavadocJar(type: Jar, dependsOn: dokka) {
+task dokkaJavadocJar(type: Jar, dependsOn: dokkaJavadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
 }
