@@ -1,5 +1,5 @@
 1. `git pull origin`
-2. Change the version in `gradle.properties` to a non-SNAPSHOT version.
+2. Change the version in `gradle.properties` to a non-snapshot version.
 3. Update the `CHANGELOG.md` for the impending release.
 4. Update the `README.md` with the new version.
 5. `git commit -am "Prepare for release X.Y.Z"` (where X.Y.Z is the new version)

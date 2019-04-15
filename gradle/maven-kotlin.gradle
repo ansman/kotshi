@@ -1,4 +1,3 @@
-apply from: rootProject.file("gradle/gitter.gradle")
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven'
@@ -7,7 +6,7 @@ apply plugin: 'org.jetbrains.dokka'
 apply plugin: "signing"
 
 version = VERSION_NAME
-group = GROUP
+group = "se.ansman.kotshi"
 
 def bintrayUsername = hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
 def bintrayApiKey = hasProperty('BINTRAY_API_KEY') ? BINTRAY_API_KEY : ""
@@ -39,10 +38,6 @@ dokka {
     externalDocumentationLink {
         url = new URL("https://square.github.io/moshi/1.x/moshi/")
     }
-//    packageOptions {
-//        prefix = "com.square" // will match kotlin.internal and all sub-packages of it
-//        suppress = true
-//    }
     linkMapping {
         dir = "src/main/kotlin"
         url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
@@ -51,28 +46,8 @@ dokka {
 }
 
 publishToMavenLocal.doLast {
-    printf("Published artifact %s:%s:%s\n", project.group, project.name, getVersionName())
+    printf("Published artifact %s:%s:%s\n", project.group, project.name, VERSION_NAME)
 }
-
-artifactoryPublish.doFirst {
-    if (getGitTag().isDirty) {
-        throw new IllegalArgumentException("You cannot have a dirty repo when publishing")
-    }
-}
-
-//task dokkaJavadoc(type: dokka.class) {
-//    outputFormat = 'html'
-//    outputDirectory = javadoc.destinationDir
-//    inputs.dir 'src/main/kotlin'
-//
-//    reportUndocumented = false
-//
-//    linkMapping {
-//        dir = "src/main/kotlin"
-//        url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
-//        suffix = "#L"
-//    }
-//}
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -92,7 +67,7 @@ artifacts {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            version getVersionName()
+            version VERSION_NAME
             from components.java
             afterEvaluate {
                 artifact sourcesJar
