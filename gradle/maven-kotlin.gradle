@@ -54,7 +54,7 @@ publishToMavenLocal.doLast {
     printf("Published artifact %s:%s:%s\n", project.group, project.name, getVersionName())
 }
 
-:artifactoryDeploy.doFirst {
+artifactoryDeploy.doFirst {
     if (getGitTag().isDirty) {
         throw new IllegalArgumentException("You cannot have a dirty repo when publishing")
     }
