@@ -1,0 +1,158 @@
+apply from: rootProject.file("gradle/gitter.gradle")
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'org.jetbrains.dokka'
+apply plugin: "signing"
+
+version = VERSION_NAME
+group = GROUP
+
+def bintrayUsername = hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
+def bintrayApiKey = hasProperty('BINTRAY_API_KEY') ? BINTRAY_API_KEY : ""
+def bintrayGPGKey = hasProperty('BINTRAY_GPG_PASSWORD') ? BINTRAY_GPG_PASSWORD : ""
+
+artifactory {
+    contextUrl = 'https://oss.jfrog.org/artifactory'
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = bintrayUsername
+            password = bintrayApiKey
+        }
+        defaults {
+            publishConfigs('archives')
+            publishIvy = false
+        }
+    }
+    resolve {
+        repoKey = 'libs-release'
+    }
+}
+
+dokka {
+    outputFormat = 'html'
+    outputDirectory = "$buildDir/javadoc"
+    reportUndocumented = false
+
+    externalDocumentationLink {
+        url = new URL("https://square.github.io/moshi/1.x/moshi/")
+    }
+//    packageOptions {
+//        prefix = "com.square" // will match kotlin.internal and all sub-packages of it
+//        suppress = true
+//    }
+    linkMapping {
+        dir = "src/main/kotlin"
+        url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
+        suffix = "#L"
+    }
+}
+
+publishToMavenLocal.doLast {
+    printf("Published artifact %s:%s:%s\n", project.group, project.name, getVersionName())
+}
+
+artifactoryPublish.doFirst {
+    if (getGitTag().isDirty) {
+        throw new IllegalArgumentException("You cannot have a dirty repo when publishing")
+    }
+}
+
+//task dokkaJavadoc(type: dokka.class) {
+//    outputFormat = 'html'
+//    outputDirectory = javadoc.destinationDir
+//    inputs.dir 'src/main/kotlin'
+//
+//    reportUndocumented = false
+//
+//    linkMapping {
+//        dir = "src/main/kotlin"
+//        url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
+//        suffix = "#L"
+//    }
+//}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task dokkaJavadocJar(type: Jar, dependsOn: dokka) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives dokkaJavadocJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            version getVersionName()
+            from components.java
+            afterEvaluate {
+                artifact sourcesJar
+                artifact dokkaJavadocJar
+            }
+
+            pom {
+                description = POM_DESCRIPTION
+                url = POM_URL
+                licenses {
+                    license {
+                        name = POM_LICENCE_NAME
+                        url = POM_LICENCE_URL
+                        distribution = POM_LICENCE_DIST
+                    }
+                }
+                developers {
+                    developer {
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
+                        email = POM_DEVELOPER_EMAIL
+                    }
+                }
+                scm {
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEV_CONNECTION
+                    url = POM_SCM_URL
+                }
+            }
+        }
+    }
+}
+
+artifactory {
+    publish {
+        defaults {
+            publications('mavenJava')
+        }
+    }
+}
+
+bintray {
+    user = bintrayUsername
+    key = bintrayApiKey
+    configurations = ['archives']
+    pkg {
+        repo = 'kotshi'
+        name = POM_ARTIFACT_ID
+        desc = POM_DESCRIPTION
+        websiteUrl = POM_URL
+        vcsUrl = VCS_URL
+        publish = true
+        publicDownloadNumbers = true
+        version {
+            desc = POM_DESCRIPTION
+            released = new Date()
+            gpg {
+                sign = true
+                passphrase = bintrayGPGKey
+            }
+        }
+    }
+}

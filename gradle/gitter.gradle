@@ -1,0 +1,72 @@
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+class GitTag {
+    public final String tag
+    public final Integer distance
+    public final String hash
+    public final boolean isDirty
+
+    GitTag(String tag, Integer distance, String hash, boolean isDirty) {
+        this.tag = tag
+        this.distance = distance
+        this.hash = hash
+        this.isDirty = isDirty
+    }
+
+    static GitTag parse(String gitTag) {
+        Matcher matcher = Pattern.compile(/^(.+?)(?:-(\d+)-g([a-f0-9]+))?(-dirty)?$/).matcher(gitTag)
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Unknown git tag " + gitTag)
+        }
+        return new GitTag(
+                matcher.group(1),
+                matcher.group(2) == null ? null : Integer.parseInt(matcher.group(2)),
+                matcher.group(3),
+                matcher.group(4) != null)
+    }
+}
+
+ext.getGitTag = {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine "git", "describe", "--tags", "--dirty", "--always"
+        standardOutput = stdout
+    }
+    return GitTag.parse(stdout.toString().trim())
+}
+
+ext.getVersionName = {
+    GitTag gitTag = getGitTag()
+    def versionBuilder = new StringBuilder()
+
+    def isSnapshot = gitTag.isDirty || gitTag.hash != null
+
+    if (isSnapshot) {
+        Matcher matcher = Pattern.compile(/^(\d+)\.(\d+)(\..*)$/).matcher(gitTag.tag)
+        if (matcher.matches()) {
+            versionBuilder
+                    .append(matcher.group(1))
+                    .append('.')
+                    .append(matcher.group(2).toInteger() + 1)
+                    .append(".0")
+        } else {
+            versionBuilder.append(gitTag.tag)
+        }
+    } else {
+        versionBuilder.append(gitTag.tag)
+    }
+
+    if (gitTag.hash != null) {
+        versionBuilder
+                .append('-')
+                .append(gitTag.hash)
+    }
+    if (gitTag.isDirty) {
+        versionBuilder.append("-dirty")
+    }
+    if (isSnapshot) {
+        versionBuilder.append('-SNAPSHOT')
+    }
+    return versionBuilder.toString()
+}

@@ -1,26 +1,6 @@
-apply plugin: 'org.jetbrains.dokka'
-
-group = GROUP
-version = VERSION_NAME
-
-
-dokka {
-    outputFormat = 'javadoc'
-    outputDirectory = "$buildDir/javadoc"
-
-    linkMapping {
-        dir = "src/main/kotlin"
-        url = "https://github.com/ansman/kotshi/api/src/main/kotlin"
-        suffix = "#L"
-    }
-}
+apply from: rootProject.file("gradle/kotlin.gradle")
+apply from: rootProject.file("gradle/maven-kotlin.gradle")
 
 dependencies {
-    api libraries.kotlin_stdlib
     api libraries.moshi
 }
-
-
-apply from: rootProject.file("gradle/maven-push.gradle")
-apply from: rootProject.file('gradle/bintray.gradle')
-apply from: rootProject.file('gradle/snapshots.gradle')

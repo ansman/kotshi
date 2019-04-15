@@ -1,6 +1,5 @@
-apply plugin: "kotlin-kapt"
-group = GROUP
-version = VERSION_NAME
+apply from: rootProject.file("gradle/kotlin.gradle")
+apply from: rootProject.file("gradle/maven-kotlin.gradle")
 
 dependencies {
     implementation project(':api')
@@ -10,11 +9,6 @@ dependencies {
     kapt libraries.incap_compiler
     implementation libraries.autocommon
     implementation libraries.kotlinpoet
-    implementation libraries.kotlin_stdlib
     implementation libraries.kotlin_metadata
     implementation libraries.moshi
 }
-
-apply from: rootProject.file('gradle/bintray.gradle')
-apply from: rootProject.file('gradle/snapshots.gradle')
-apply from: rootProject.file("gradle/maven-push.gradle")

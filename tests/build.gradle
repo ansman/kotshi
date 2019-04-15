@@ -1,11 +1,9 @@
-apply plugin: 'kotlin-kapt'
+apply from: rootProject.file("gradle/kotlin.gradle")
 
 dependencies {
     implementation project(':api')
-    implementation libraries.moshi
     kapt project(':compiler')
     implementation project(':compiler')
-    implementation libraries.kotlin_stdlib
     compileOnly libraries.findBugs
     testImplementation libraries.truth
     testImplementation libraries.compiletesting
