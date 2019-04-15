@@ -1,16 +1,17 @@
-
 apply plugin: 'kotlin-kapt'
 
 dependencies {
-    compile project(':api')
-    compile libraries.moshi
+    implementation project(':api')
+    implementation libraries.moshi
     kapt project(':compiler')
-    compile project(':compiler')
-    compile libraries.kotlin_stdlib
+    implementation project(':compiler')
+    implementation libraries.kotlin_stdlib
     compileOnly libraries.findBugs
-    testCompile libraries.truth
-    testCompile libraries.compiletesting
-    testCompile libraries.junit
-    testCompile libraries.kotlin_junit
-    testCompile libraries.moshi
+    testImplementation libraries.truth
+    testImplementation libraries.compiletesting
+    testImplementation libraries.junit
+    testImplementation libraries.kotlin_junit
+    testImplementation libraries.moshi
 }
+
+compileJava.enabled = false

@@ -156,6 +156,7 @@ class AdaptersProcessingStep(
             .build()
 
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
+            .addOriginatingElement(element)
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
             .primaryConstructor(FunSpec.constructorBuilder()
@@ -186,7 +187,7 @@ class AdaptersProcessingStep(
             .addImports(imports)
             .addType(typeSpec)
             .build()
-            .write()
+            .writeTo(filer)
     }
 
     private fun printNonDataClassError(element: Element): Nothing =

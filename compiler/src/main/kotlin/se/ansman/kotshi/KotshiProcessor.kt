@@ -6,10 +6,10 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
-import com.squareup.kotlinpoet.FileSpec
 import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
 import me.eugeniomarletti.kotlin.processing.KotlinAbstractProcessor
-import java.io.File
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
@@ -23,6 +23,7 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.SimpleElementVisitor6
 
 @AutoService(Processor::class)
+@IncrementalAnnotationProcessor(AGGREGATING)
 class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
     private lateinit var elements: Elements
     private lateinit var steps: ImmutableList<out ProcessingStep>
@@ -135,13 +136,6 @@ class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
     abstract class GeneratingProcessingStep : ProcessingStep {
         protected abstract val filer: Filer
         protected abstract val processor: KotshiProcessor
-
-        protected fun FileSpec.write() {
-            writeTo(processor.generatedDir ?: filer.createSourceFile(name).toUri()
-                .let(::File)
-                .parentFile
-                .also { filer.createSourceFile(name).toUri().let(::File).delete() })
-        }
     }
 
     private data class ElementName(private val kind: ElementName.Kind, val name: String) {

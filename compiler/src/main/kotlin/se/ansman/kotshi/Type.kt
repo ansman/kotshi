@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
@@ -36,14 +37,20 @@ internal fun ProtoBuf.Type.asTypeName(
         else -> className
     }
 
-    var typeName: TypeName = ClassName.bestGuess(nameResolver.getString(realType)
-        .replace("/", "."))
+    var typeName: TypeName = if (hasClassName()) {
+        ClassName.bestGuess(nameResolver.getString(realType)
+            .replace("/", "."))
+    } else {
+        TypeVariableName(nameResolver.getString(realType))
+    }
 
     if (argumentList.isNotEmpty()) {
         val remappedArgs: Array<TypeName> = argumentList.map { argumentType ->
             val nullableProjection = if (argumentType.hasProjection()) {
                 argumentType.projection
-            } else null
+            } else {
+                null
+            }
             if (argumentType.hasType()) {
                 argumentType.type.asTypeName(nameResolver, getTypeParameter, useAbbreviatedType)
                     .let { argumentTypeName ->
