@@ -83,8 +83,8 @@ Limitations
 Download
 ---
 ```groovy
-implementation 'se.ansman.kotshi:api:2.0-rc1'
-kapt 'se.ansman.kotshi:compiler:2.0-rc1'
+implementation 'se.ansman.kotshi:api:2.0-rc2'
+kapt 'se.ansman.kotshi:compiler:2.0-rc2'
 ```
 Snapshots of the development version are available in [jfrogs's snapshots repository](https://oss.jfrog.org/artifactory/oss-snapshot-local/se/ansman/kotshi/).
 

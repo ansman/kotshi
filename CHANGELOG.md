@@ -1,5 +1,13 @@
 Change Log
 ===
+Version 2.0-rc2 (2019-04-15)
+---
+This is the second release candidate for the 2.0 version.
+
+Changes (since rc1)
+* Update Kotlin to 1.3.30
+* Fix the incremental compilation
+
 Version 2.0-rc1 (2019-03-25)
 ---
 This is a major release of Kotshi that includes breaking changes.
