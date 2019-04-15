@@ -19,7 +19,6 @@ buildscript {
 }
 
 allprojects {
-    apply plugin: 'java'
     apply plugin: 'kotlin'
     apply plugin: 'idea'
 
@@ -32,8 +31,8 @@ allprojects {
 
     idea {
         module {
-            sourceDirs += file('build/generated/source/kaptKotlin/main')
-            generatedSourceDirs += file('build/generated/source/kaptKotlin/main')
+            sourceDirs += file('build/generated/source/kapt/main')
+            generatedSourceDirs += file('build/generated/source/kapt/main')
         }
     }
 }
@@ -43,17 +42,22 @@ subprojects {
 }
 
 ext {
+    autoServiceVersion = "1.0-rc5"
+    incapVersion = "0.2"
     libraries = [
-            kotlinpoet     : 'com.squareup:kotlinpoet:1.1.0',
-            autocommon     : 'com.google.auto:auto-common:0.8',
-            autoservice    : 'com.google.auto.service:auto-service:1.0-rc2',
-            junit          : 'junit:junit:4.12',
-            truth          : 'com.google.truth:truth:0.30',
-            compiletesting : 'com.google.testing.compile:compile-testing:0.10',
-            kotlin_stdlib  : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
-            kotlin_junit   : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
-            kotlin_metadata: "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0",
-            moshi          : "com.squareup.moshi:moshi:1.7.0",
-            findBugs       : "com.google.code.findbugs:jsr305:3.0.2",
+            kotlinpoet          : 'com.squareup:kotlinpoet:1.2.0',
+            autocommon          : 'com.google.auto:auto-common:0.8',
+            autoservice_compiler: "com.google.auto.service:auto-service:$autoServiceVersion",
+            autoservice_api     : "com.google.auto.service:auto-service-annotations:$autoServiceVersion",
+            junit               : 'junit:junit:4.12',
+            truth               : 'com.google.truth:truth:0.30',
+            compiletesting      : 'com.google.testing.compile:compile-testing:0.10',
+            kotlin_stdlib       : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
+            kotlin_junit        : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
+            kotlin_metadata     : "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0",
+            moshi               : "com.squareup.moshi:moshi:1.7.0",
+            findBugs            : "com.google.code.findbugs:jsr305:3.0.2",
+            incap_api           : "net.ltgt.gradle.incap:incap:$incapVersion",
+            incap_compiler      : "net.ltgt.gradle.incap:incap-processor:$incapVersion",
     ]
 }
