@@ -7,7 +7,7 @@ This is a major release of Kotshi. The main change is that Kotshi now generates 
 Changes (since 1.0.6):
 * Kotshi now understands and generates Kotlin code. No more ugly annotations are needed for multiple constructors or custom getter names.
 * Only data classes are allowed.
-* * Regular default values in Kotlin is now the only way to provide default values, all other annotations have been removed.
+* Regular default values in Kotlin is now the only way to provide default values, all other annotations have been removed.
 * The processor is now incremental which should yield a performance boost when using Kotlin 1.3.30 and above.
 * The adapter factory is not generated in a deterministic order which allows it to be cached more efficiently.
 * Update Kotlin to 1.3.30.
