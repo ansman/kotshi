@@ -3,7 +3,6 @@ apply from: rootProject.file("gradle/kotlin.gradle")
 dependencies {
     implementation project(':api')
     kapt project(':compiler')
-    implementation project(':compiler')
     compileOnly libraries.findBugs
     testImplementation libraries.truth
     testImplementation libraries.compiletesting
