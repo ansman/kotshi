@@ -156,6 +156,7 @@ class AdaptersProcessingStep(
             .build()
 
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
+            .addModifiers(KModifier.INTERNAL)
             .addOriginatingElement(element)
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
