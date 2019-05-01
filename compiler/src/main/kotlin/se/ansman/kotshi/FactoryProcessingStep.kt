@@ -78,6 +78,7 @@ class FactoryProcessingStep(
 
         typeSpecBuilder
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .addModifiers(KModifier.INTERNAL)
             .addOriginatingElement(element)
 
         val typeParam = ParameterSpec.builder("type", Type::class)
