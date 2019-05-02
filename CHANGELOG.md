@@ -1,5 +1,13 @@
 Change Log
 ===
+Version 2.0.1 (2019-05-02)
+---
+This is a patch version for 2.0. It contains a fix for a bug that caused
+compilation to fail if the data class was internal.
+
+Changes:
+* Make generated adapters and factories internal ([#117](https://github.com/ansman/kotshi/pull/117))
+
 Version 2.0 (2019-04-26)
 ---
 This is a major release of Kotshi. The main change is that Kotshi now generates Kotlin code rather than java code. This means that you don't need to annotate your primary constructor or add special annotations when your getter name is custom. It also means that you can use regular default values in Kotlin (with some limitations, see the readme).
