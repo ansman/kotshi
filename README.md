@@ -74,10 +74,10 @@ Only properties declared in the constructor needs to be annotated since other pr
 
 Limitations
 ---
-* Kotshi only processes files written in Kotlin, types written in Java are not support.
+* Kotshi only processes files written in Kotlin, types written in Java are not supported.
 * Only data classes are supported.
   - Only constructor properties will be serialized.
-* Due to limitation in KAPT properties with a java keyword as a name cannot be marked as transient.
+* Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
 * Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 
 Download
