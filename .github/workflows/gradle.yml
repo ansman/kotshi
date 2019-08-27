@@ -1,10 +1,9 @@
-name: Android CI
+name: Build Gradle
 
-on: [push]
-
-push:
-  branches:
-    - '!gh_pages'
+on:
+  push:
+    branches:
+      - '!gh_pages'
 
 jobs:
   build:
@@ -21,3 +20,4 @@ jobs:
       run: ./gradlew build --stacktrace
     - name: Deploy snapshot
       run: gradle/deploy_snapshot.sh
+      if: github.ref == 'master'
