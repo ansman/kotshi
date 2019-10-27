@@ -121,7 +121,8 @@ class TestAdapterGeneration {
                 "customName, " +
                 "annotated, " +
                 "anotherAnnotated, " +
-                "genericClass",
+                "genericClass " +
+                "(at path $)",
                 e.message)
         }
     }

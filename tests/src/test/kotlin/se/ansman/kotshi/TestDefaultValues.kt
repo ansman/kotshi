@@ -98,7 +98,7 @@ class TestDefaultValues {
             moshi.adapter(ClassWithDefaultValues::class.java).fromJson("{}")
             fail()
         } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: v10", e.message)
+            assertEquals("The following properties were null: v10 (at path $)", e.message)
         }
     }
 
