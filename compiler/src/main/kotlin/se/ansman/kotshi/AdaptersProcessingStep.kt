@@ -441,6 +441,7 @@ class AdaptersProcessingStep(
                     }
 
                     addIf("%N != null", stringBuilder) {
+                        addStatement("%N.append(\" (at path \").append(%N.path).append(')')", stringBuilder, reader)
                         addStatement("throw NullPointerException(%N.toString())", stringBuilder)
                     }
                     addCode("\n")
