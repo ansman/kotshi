@@ -10,7 +10,7 @@ package se.ansman.kotshi
  * @KotshiJsonAdapterFactory
  * abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
  *     companion object {
- *         val INSTANCE = KotshiApplicationJsonAdapterFactory()
+ *         val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory
  *     }
  * }
  * ```
