@@ -2,7 +2,7 @@ language: java
 jdk:
 - openjdk8
 script:
-- "./gradlew build --stacktrace"
+- "./gradlew build --rerun-tasks --stacktrace"
 after_success:
 - gradle/deploy_snapshot.sh
 branches:
