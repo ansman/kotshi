@@ -13,20 +13,31 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
-import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonQualifier
 import javax.lang.model.SourceVersion
 import javax.lang.model.util.Elements
 import kotlin.reflect.KClass
 
-@JvmField
 val STRING: ClassName = ClassName("kotlin", "String")
+val JSON: ClassName = Json::class.java.asClassName()
+val JSON_QUALIFIER = JsonQualifier::class.java
+
+fun List<AnnotationSpec>?.jsonName(): String? =
+    this?.find { it.className == JSON }?.let {
+        it.members[0].toString().removePrefix("name = \"").removeSuffix("\"")
+    }
+
+fun List<AnnotationSpec>?.qualifiers(elements: Elements): Set<AnnotationSpec> {
+    if (this == null) return setOf()
+    return filterTo(mutableSetOf()) {
+        elements.getTypeElement(it.className.toString()).getAnnotation(JSON_QUALIFIER) != null
+    }
+}
 
 val TypeName.isPrimitive: Boolean
     get() = when (this) {
@@ -43,34 +54,6 @@ val TypeName.isPrimitive: Boolean
 
 fun TypeName.nullable(): TypeName = if (isNullable) this else copy(nullable = true)
 fun TypeName.notNull(): TypeName = if (isNullable) copy(nullable = false) else this
-
-fun ProtoBuf.Class.asTypeName(nameResolver: NameResolver): TypeName {
-    val className = asClassName(nameResolver)
-    if (typeParameterCount == 0) {
-        return className
-    }
-    return className.parameterizedBy(*typeParameterList.map { it.asTypeName(nameResolver, ::getTypeParameter) }.toTypedArray())
-}
-
-fun ProtoBuf.Class.asClassName(nameResolver: NameResolver): ClassName {
-    val name = nameResolver.getQualifiedClassName(fqName)
-    val packageEnd = name.lastIndexOf('/')
-
-    val packageName: String
-    val simpleNamesString: String
-
-    if (packageEnd == -1) {
-        packageName = ""
-        simpleNamesString = name
-    } else {
-        packageName = name.substring(0, packageEnd)
-        simpleNamesString = name.substring(packageEnd + 1, name.length)
-    }
-    val simpleNames = simpleNamesString.split('.')
-    return ClassName(packageName.replace('/', '.'), simpleNames.first(), *simpleNames.subList(1, simpleNames.size).toTypedArray())
-}
-
-fun KotlinClassMetadata.asClassName() = data.classProto.asClassName(data.nameResolver)
 
 fun TypeSpec.Builder.maybeAddGeneratedAnnotation(elements: Elements, sourceVersion: SourceVersion) =
     apply {
@@ -175,7 +158,7 @@ inline fun FunSpec.Builder.addWhen(
 ): FunSpec.Builder =
     addControlFlow("when ($subject)", *args, block = block)
 
-fun FileSpec.Builder.   addImport(import: Import) = addImport(import.className, *import.simpleNames.toTypedArray())
+fun FileSpec.Builder.addImport(import: Import) = addImport(import.className, *import.simpleNames.toTypedArray())
 fun FileSpec.Builder.addImports(imports: Iterable<Import>) = applyEach(imports) { addImport(it) }
 
 data class Import(val className: ClassName, val simpleNames: List<String>) {
