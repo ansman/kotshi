@@ -1,6 +1,5 @@
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'com.jfrog.bintray'
-apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: "signing"
@@ -30,21 +29,24 @@ artifactory {
     }
 }
 
-task dokkaJavadoc(type: dokka.class) {
+dokka {
     outputFormat = 'html'
     outputDirectory = javadoc.destinationDir
     inputs.dir 'src/main/kotlin'
 
-    reportUndocumented = false
+    configuration {
+        reportUndocumented = false
+        externalDocumentationLink {
+            url = new URL("https://square.github.io/moshi/1.x/moshi/")
+            packageListUrl = new URL("https://square.github.io/moshi/1.x/moshi/package-list")
+        }
+        sourceLink {
+            path = "src/main/kotlin"
+            url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
+            lineSuffix = "#L"
+        }
+    }
 
-    externalDocumentationLink {
-        url = new URL("https://square.github.io/moshi/1.x/moshi/")
-    }
-    linkMapping {
-        dir = "src/main/kotlin"
-        url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
-        suffix = "#L"
-    }
 }
 
 publishToMavenLocal.doLast {
@@ -52,18 +54,13 @@ publishToMavenLocal.doLast {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
-task dokkaJavadocJar(type: Jar, dependsOn: dokkaJavadoc) {
-    classifier = 'javadoc'
+task dokkaJavadocJar(type: Jar, dependsOn: dokka) {
+    archiveClassifier.set('javadoc')
     from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives dokkaJavadocJar
 }
 
 publishing {
@@ -71,10 +68,8 @@ publishing {
         kotshi(MavenPublication) {
             version VERSION_NAME
             from components.java
-            afterEvaluate {
-                artifact sourcesJar
-                artifact dokkaJavadocJar
-            }
+            artifact sourcesJar
+            artifact dokkaJavadocJar
 
             pom {
                 name = project.name
