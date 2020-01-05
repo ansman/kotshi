@@ -15,8 +15,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
-import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -60,10 +58,7 @@ class FactoryProcessingStep(
     }
 
     private fun generateFactory(element: TypeElement) {
-        val metadata = element.kotlinMetadata as KotlinClassMetadata?
-            ?: throw ProcessingError("Factories must be written in Kotlin", element)
-
-        val elementClassName = metadata.asClassName()
+        val elementClassName = element.asClassName()
         val generatedName = elementClassName.let {
             ClassName(it.packageName, "Kotshi${it.simpleNames.joinToString("_")}")
         }

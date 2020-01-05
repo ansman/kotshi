@@ -2,27 +2,28 @@ package se.ansman.kotshi
 
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ARRAY
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.moshi.Types
-import javax.lang.model.element.Element
 
 data class AdapterKey(
     val type: TypeName,
-    val jsonQualifiers: List<Element>
+    val jsonQualifiers: Set<AnnotationSpec>
 )
 
 fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
     type.asRuntimeType(typeVariableAccessor)
 
 val AdapterKey.suggestedAdapterName: String
-    get() = "${jsonQualifiers.joinToString("") { it.simpleName }}${type.baseAdapterName}Adapter".decapitalize()
+    get() = "${jsonQualifiers.joinToString("") { it.className.simpleName }}${type.baseAdapterName}Adapter".decapitalize()
 
 private val TypeName.baseAdapterName: String
     get() {
@@ -60,6 +61,16 @@ private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> C
             outTypes[0] == ANY -> ANY.asRuntimeType(typeVariableAccessor)
             else -> outTypes[0].asRuntimeType(typeVariableAccessor)
         }
+        is LambdaTypeName -> asParameterizedTypeName().asRuntimeType(typeVariableAccessor)
         is TypeVariableName -> typeVariableAccessor(this)
         else -> CodeBlock.of("%T::class.javaObjectType", notNull())
     }
+
+private fun LambdaTypeName.asParameterizedTypeName(): ParameterizedTypeName {
+    val parameters = mutableListOf<TypeName>()
+    receiver?.let(parameters::add)
+    parameters.addAll(parameters)
+    parameters.add(returnType)
+    return ClassName("kotlin", "Function${parameters.size + (if (receiver == null) 0 else 1)}")
+        .parameterizedBy(parameters)
+}

@@ -18,7 +18,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.NameAllocator
 import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SHORT
@@ -28,14 +28,18 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.throws
+import com.squareup.kotlinpoet.metadata.isData
+import com.squareup.kotlinpoet.metadata.isInner
+import com.squareup.kotlinpoet.metadata.isInternal
+import com.squareup.kotlinpoet.metadata.isLocal
+import com.squareup.kotlinpoet.metadata.isPublic
+import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
+import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
-import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
-import me.eugeniomarletti.kotlin.metadata.isDataClass
-import me.eugeniomarletti.kotlin.metadata.isPrimary
-import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import java.io.IOException
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
@@ -43,8 +47,6 @@ import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
@@ -52,6 +54,7 @@ import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
     override val processor: KotshiProcessor,
+    private val classInspector: ClassInspector,
     private val messager: Messager,
     override val filer: Filer,
     private val adapters: MutableList<GeneratedAdapter>,
@@ -84,43 +87,34 @@ class AdaptersProcessingStep(
         val enclosingClass = MoreElements.asType(element)
         val typeMirror = enclosingClass.asType()
 
-        val metadata = element.kotlinMetadata as KotlinClassMetadata? ?: printNonDataClassError(element)
-        val nameResolver = metadata.data.nameResolver
-        val classProto = metadata.data.classProto
+        val metadata = element.metadata.toImmutableKmClass()
 
-        if (!classProto.isDataClass) {
+        if (!metadata.isData || metadata.isInner || metadata.isLocal || !metadata.isPublic && !metadata.isInternal) {
             printNonDataClassError(element)
         }
 
-        val typeName = classProto.asTypeName(nameResolver)
-        val className = (typeName as? ParameterizedTypeName)?.rawType ?: typeName as ClassName
-        val primaryConstructor = classProto.constructorList.single { it.isPrimary }
-        val constructor = classProto.fqName
-            .let(nameResolver::getString)
-            .replace('/', '.')
-            .let(elements::getTypeElement)
-            .enclosedElements
-            .first { it.kind == ElementKind.CONSTRUCTOR } as ExecutableElement
-
-        val properties = primaryConstructor.valueParameterList.mapIndexed { index, valueParameter ->
+        val elementTypeSpec = metadata.toTypeSpec(classInspector)
+        val className = enclosingClass.asClassName()
+        val primaryConstructor = elementTypeSpec.primaryConstructor!!
+        val properties = primaryConstructor.parameters.map { parameter ->
             Property.create(
-                classProto = classProto,
-                nameResolver = nameResolver,
+                elements = elements,
+                typeSpec = elementTypeSpec,
                 globalConfig = globalConfig,
                 enclosingClass = enclosingClass,
-                parameter = constructor.parameters[index],
-                valueParameter = valueParameter
+                parameter = parameter
             )
         }
 
-        val typeVariables: List<TypeVariableName> = (typeName as? ParameterizedTypeName)
-            ?.typeArguments
-            ?.map {
-                val typeVariableName = it as TypeVariableName
-                // Removes the variance
-                TypeVariableName(typeVariableName.name, *typeVariableName.bounds.toTypedArray())
-            }
-            ?: emptyList()
+        val typeVariables: List<TypeVariableName> = elementTypeSpec.typeVariables
+            // Removes the variance
+            .map { TypeVariableName(it.name, *it.bounds.toTypedArray()) }
+
+        val typeName = if (typeVariables.isEmpty()) {
+            className
+        } else {
+            className.parameterizedBy(typeVariables)
+        }
 
         val adapterClassName = ClassName(className.packageName, "Kotshi${className.simpleNames.joinToString("_")}JsonAdapter")
 
@@ -171,7 +165,7 @@ class AdaptersProcessingStep(
             .superclass(NamedJsonAdapter::class.asClassName().plusParameter(typeName))
             .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
             .addProperties(adapterKeys.values)
-            .addToJson(typeName, properties, adapterKeys, imports)
+            .addToJson(element, typeName, properties, adapterKeys, imports)
             .addFromJson(typeName, nameAllocator, typeMirror, properties, adapterKeys, options, imports)
             .applyIf(jsonNames.isNotEmpty()) {
                 addType(TypeSpec.companionObjectBuilder()
@@ -204,13 +198,13 @@ class AdaptersProcessingStep(
     ): Map<AdapterKey, PropertySpec> {
         fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
             0 -> CodeBlock.of("")
-            1 -> CodeBlock.of(", %T::class.java", jsonQualifiers.first())
+            1 -> CodeBlock.of(", %T::class.java", jsonQualifiers.first().className)
             else -> CodeBlock.builder()
                 .add(", setOf(")
                 .applyEachIndexed(jsonQualifiers) { index, qualifier ->
                     if (index > 0) add(", ")
                     imports += kotshiUtilsCreateJsonQualifierImplementation
-                    add("%T::class.java.createJsonQualifierImplementation()", qualifier)
+                    add("%T::class.java.createJsonQualifierImplementation()", qualifier.className)
                 }
                 .add(")")
                 .build()
@@ -241,6 +235,7 @@ class AdaptersProcessingStep(
     }
 
     private fun TypeSpec.Builder.addToJson(
+        element: Element,
         typeName: TypeName,
         properties: Collection<Property>,
         adapterKeys: Map<AdapterKey, PropertySpec>,
@@ -295,7 +290,7 @@ class AdaptersProcessingStep(
                             imports += kotshiUtilsValue
                             addStatement("%N.value(%L)", writer, getter)
                         }
-                        else -> throw ProcessingError("Property is not primitive ${property.type} but requested non adapter use", property.parameter)
+                        else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
                     }
                 }
                 .addCode("\n")

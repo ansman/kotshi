@@ -1,6 +1,12 @@
 apply from: rootProject.file("gradle/kotlin.gradle")
 apply from: rootProject.file("gradle/maven-kotlin.gradle")
 
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs += "-Xuse-experimental=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview"
+    }
+}
+
 dependencies {
     implementation project(':api')
     implementation libraries.autoservice_api
@@ -9,6 +15,8 @@ dependencies {
     kapt libraries.incap_compiler
     implementation libraries.autocommon
     implementation libraries.kotlinpoet
-    implementation libraries.kotlin_metadata
+    implementation libraries.kotlinpoet_metadata
+    implementation libraries.kotlinpoet_metadata_specs
+    implementation libraries.kotlinpoet_classinspector
     implementation libraries.moshi
 }

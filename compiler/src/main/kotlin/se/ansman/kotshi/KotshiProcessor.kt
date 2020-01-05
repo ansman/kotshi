@@ -6,10 +6,11 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
-import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
-import me.eugeniomarletti.kotlin.processing.KotlinAbstractProcessor
+import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
+import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
+import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
@@ -24,11 +25,10 @@ import javax.lang.model.util.SimpleElementVisitor6
 
 @AutoService(Processor::class)
 @IncrementalAnnotationProcessor(AGGREGATING)
-class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
+class KotshiProcessor : AbstractProcessor() {
     private lateinit var elements: Elements
+    private lateinit var classInspector: ClassInspector
     private lateinit var steps: ImmutableList<out ProcessingStep>
-    private val processingEnvironment: ProcessingEnvironment
-        get() = (this as KotlinAbstractProcessor).processingEnv
 
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latestSupported()
 
@@ -37,19 +37,20 @@ class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
         return listOf(
             AdaptersProcessingStep(
                 processor = this,
-                messager = processingEnvironment.messager,
-                filer = processingEnvironment.filer,
+                classInspector = classInspector,
+                messager = processingEnv.messager,
+                filer = processingEnv.filer,
                 adapters = adapters,
-                elements = processingEnvironment.elementUtils,
-                sourceVersion = processingEnvironment.sourceVersion
+                elements = processingEnv.elementUtils,
+                sourceVersion = processingEnv.sourceVersion
             ),
             FactoryProcessingStep(
                 processor = this,
-                messager = processingEnvironment.messager,
-                filer = processingEnvironment.filer,
-                types = processingEnvironment.typeUtils,
-                elements = processingEnvironment.elementUtils,
-                sourceVersion = processingEnvironment.sourceVersion,
+                messager = processingEnv.messager,
+                filer = processingEnv.filer,
+                types = processingEnv.typeUtils,
+                elements = processingEnv.elementUtils,
+                sourceVersion = processingEnv.sourceVersion,
                 adapters = adapters
             )
         )
@@ -59,6 +60,7 @@ class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         elements = processingEnv.elementUtils
+        classInspector = ElementsClassInspector.create(elements, processingEnv.typeUtils)
         steps = ImmutableList.copyOf(initSteps())
     }
 
@@ -138,7 +140,7 @@ class KotshiProcessor : KotlinAbstractProcessor(), KotlinMetadataUtils {
         protected abstract val processor: KotshiProcessor
     }
 
-    private data class ElementName(private val kind: ElementName.Kind, val name: String) {
+    private data class ElementName(private val kind: Kind, val name: String) {
         private enum class Kind {
             PACKAGE_NAME,
             TYPE_NAME
