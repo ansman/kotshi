@@ -362,10 +362,10 @@ class AdaptersProcessingStep(
                     variables.entries.forEachIndexed { index, (property, variable) ->
                         addWhenBranch("%L", index) {
                             if (property.shouldUseAdapter) {
-                                addStatement("%N = %N.fromJson(%N)", variable.value, adapters.getValue(property.adapterKey), reader)
+                                addStatement("%N·= %N.fromJson(%N)", variable.value, adapters.getValue(property.adapterKey), reader)
                                 if (variable.helper != null) {
                                     if (property.type.isNullable) {
-                                        addStatement("%N = true", variable.helper)
+                                        addStatement("%N·= true", variable.helper)
                                     } else {
                                         addStatement("?.also { %N = true }", variable.helper)
                                     }
@@ -376,13 +376,13 @@ class AdaptersProcessingStep(
                                         addStatement("%N.skipValue()", reader)
                                     }
                                     addElse {
-                                        addStatement("%N = %N.$functionName()", variable.value, reader)
+                                        addStatement("%N·= %N.$functionName()", variable.value, reader)
                                         if (variable.helper != null && !property.type.isNullable) {
-                                            addStatement("%N = true", variable.helper)
+                                            addStatement("%N·= true", variable.helper)
                                         }
                                     }
                                     if (variable.helper != null && property.type.isNullable) {
-                                        addStatement("%N = true", variable.helper)
+                                        addStatement("%N·= true", variable.helper)
                                     }
                                 }
 
@@ -455,14 +455,14 @@ class AdaptersProcessingStep(
                     it.hasDefaultValue && !it.isTransient
                 }
 
-                addCode("«return %T(", type)
+                addCode("«return·%T(", type)
                 constructorProperties.forEachIndexed { index, property ->
                     val variable = variables.getValue(property)
 
                     if (index > 0) {
                         addCode(",")
                     }
-                    addCode("\n%N = %N", property.name, variable.value.name)
+                    addCode("\n%N·= %N", property.name, variable.value.name)
                     if (variable.value.type.isNullable && !property.type.isNullable) {
                         addCode("!!")
                     }
