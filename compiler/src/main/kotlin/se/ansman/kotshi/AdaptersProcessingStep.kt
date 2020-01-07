@@ -196,9 +196,11 @@ class AdaptersProcessingStep(
         typeVariables: List<TypeVariableName>,
         imports: MutableSet<Import>
     ): Map<AdapterKey, PropertySpec> {
-        fun AdapterKey.annotations(): CodeBlock = when (jsonQualifiers.size) {
-            0 -> CodeBlock.of("")
-            1 -> CodeBlock.of(", %T::class.java", jsonQualifiers.first().className)
+        fun AdapterKey.annotations(): CodeBlock = when {
+            jsonQualifiers.isEmpty() -> CodeBlock.of("")
+            jsonQualifiers.any { it.members.isNotEmpty() } ->
+                throw ProcessingError("Json qualifiers with parameters are not supported yet", enclosingClass)
+            jsonQualifiers.size == 1 -> CodeBlock.of(", %T::class.java", jsonQualifiers.first().className)
             else -> CodeBlock.builder()
                 .add(", setOf(")
                 .applyEachIndexed(jsonQualifiers) { index, qualifier ->
