@@ -5,5 +5,5 @@ enum class SomeEnum {
     VALUE2,
     VALUE3,
     VALUE4,
-    VALUE5
+    VALUE5;
 }

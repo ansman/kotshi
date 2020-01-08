@@ -1,7 +1,6 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonQualifier
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Types
@@ -35,10 +34,9 @@ object KotshiUtils {
         }.append(propertyName)
 
     @JvmStatic
-    fun <T : Annotation> Class<T>.createJsonQualifierImplementation(): T {
+    @JvmOverloads
+    fun <T : Annotation> Class<T>.createJsonQualifierImplementation(annotationArguments: Map<String, Any> = emptyMap()): T {
         require(isAnnotation) { "$this must be an annotation." }
-        require(isAnnotationPresent(JsonQualifier::class.java)) { "$this must be annotated with @JsonQualifier" }
-        require(declaredMethods.isEmpty()) { "$this must not declare methods" }
         @Suppress("UNCHECKED_CAST")
         return Proxy.newProxyInstance(classLoader, arrayOf<Class<*>>(this)) { proxy, method, args ->
             when (method.name) {
@@ -46,7 +44,7 @@ object KotshiUtils {
                 "equals" -> isInstance(args[0])
                 "hashCode" -> 0
                 "toString" -> "@$name()"
-                else -> method.invoke(proxy, *args)
+                else -> annotationArguments[method.name] ?:method.invoke(proxy, *args)
             }
         } as T
     }
