@@ -17,9 +17,11 @@ import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonQualifier
 import javax.lang.model.SourceVersion
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.util.Elements
 import kotlin.reflect.KClass
 
@@ -28,8 +30,9 @@ val JSON: ClassName = Json::class.java.asClassName()
 val JSON_QUALIFIER = JsonQualifier::class.java
 
 fun List<AnnotationSpec>?.jsonName(): String? =
-    this?.find { it.className == JSON }?.let {
-        it.members[0].toString().removePrefix("name = \"").removeSuffix("\"")
+    this?.find { it.className == JSON }?.let { spec ->
+        val mirror = requireNotNull(spec.tag<AnnotationMirror>())
+        mirror.elementValues.entries.single { it.key.simpleName.contentEquals("name") }.value.value as String
     }
 
 fun List<AnnotationSpec>?.qualifiers(elements: Elements): Set<AnnotationSpec> {
