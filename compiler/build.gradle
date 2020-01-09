@@ -4,6 +4,7 @@ apply from: rootProject.file("gradle/maven-kotlin.gradle")
 compileKotlin {
     kotlinOptions {
         freeCompilerArgs += "-Xuse-experimental=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview"
+        freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
     }
 }
 

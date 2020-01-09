@@ -19,5 +19,5 @@ enum class SomeEnumWithFallback {
     @JsonDefaultValue
     VALUE3,
     VALUE4,
-    VALUE5
+    VALUE5;
 }

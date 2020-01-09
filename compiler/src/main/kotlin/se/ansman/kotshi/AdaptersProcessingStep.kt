@@ -18,6 +18,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.NameAllocator
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
@@ -37,6 +38,7 @@ import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
@@ -48,8 +50,12 @@ import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
+import javax.lang.model.element.AnnotationMirror
+import javax.lang.model.element.AnnotationValue
+import javax.lang.model.element.AnnotationValueVisitor
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.tools.Diagnostic
@@ -324,16 +330,17 @@ class AdaptersProcessingStep(
     ): Map<AdapterKey, PropertySpec> {
         fun AdapterKey.annotations(): CodeBlock = when {
             jsonQualifiers.isEmpty() -> CodeBlock.of("")
-            jsonQualifiers.any { it.members.isNotEmpty() } ->
-                throw ProcessingError("Json qualifiers with parameters are not supported yet", enclosingClass)
-            jsonQualifiers.size == 1 -> CodeBlock.of(", %T::class.java", jsonQualifiers.first().className)
+            jsonQualifiers.singleOrNull()?.members?.isEmpty() == true ->
+                CodeBlock.of(", %T::class.java", jsonQualifiers.single().className)
             else -> CodeBlock.builder()
                 .add(", setOf(")
+                .applyIf(jsonQualifiers.size > 1) { add("⇥\n") }
                 .applyEachIndexed(jsonQualifiers) { index, qualifier ->
-                    if (index > 0) add(", ")
-                    imports += kotshiUtilsCreateJsonQualifierImplementation
-                    add("%T::class.java.createJsonQualifierImplementation()", qualifier.className)
+                    if (index > 0) add(",\n")
+                    val annotation = requireNotNull(qualifier.tag<AnnotationMirror>())
+                    add(annotation, imports)
                 }
+                .applyIf(jsonQualifiers.size > 1) { add("⇤\n") }
                 .add(")")
                 .build()
         }
@@ -651,6 +658,118 @@ private fun Property.createVariables(nameAllocator: NameAllocator) =
         }
     )
 
+@UseExperimental(ExperimentalStdlibApi::class)
+fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror, imports: MutableCollection<Import>): CodeBlock.Builder = apply {
+    value.accept(object : AnnotationValueVisitor<Unit, Nothing?> {
+        override fun visitFloat(f: Float, p: Nothing?) {
+            add("${f}f")
+        }
+
+        override fun visitByte(b: Byte, p: Nothing?) {
+            add("(${b}).toByte()")
+        }
+
+        override fun visitShort(s: Short, p: Nothing?) {
+            add("($s).toShort()")
+        }
+
+        override fun visitChar(c: Char, p: Nothing?) {
+            add("'$c'")
+        }
+
+        override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
+
+        override fun visit(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
+
+        override fun visit(av: AnnotationValue?) =throw AssertionError()
+
+        override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
+            val arrayCreator = when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
+                BYTE -> "byteArrayOf"
+                CHAR -> "charArrayOf"
+                SHORT -> "shortArrayOf"
+                INT -> "intArrayOf"
+                LONG -> "longArrayOf"
+                FLOAT -> "floatArrayOf"
+                DOUBLE -> "doubleArrayOf"
+                BOOLEAN -> "booleanArrayOf"
+                else -> "arrayOf"
+            }
+
+            if (vals.isEmpty()) {
+                add("$arrayCreator()")
+            } else {
+                add("$arrayCreator(")
+                if (vals.size > 1) {
+                    add("⇥\n")
+                }
+                vals.forEachIndexed { i, value ->
+                    if (i > 0) {
+                        add(",\n")
+                    }
+                    value.accept(this, null)
+                }
+                if (vals.size > 1) {
+                    add("⇤\n")
+                }
+                add(")")
+            }
+        }
+
+        override fun visitBoolean(b: Boolean, p: Nothing?) {
+            add(if (b) "true" else "false")
+        }
+
+        override fun visitLong(i: Long, p: Nothing?) {
+            add("${i}L")
+        }
+
+        override fun visitType(t: TypeMirror, p: Nothing?) {
+            add("%T::class.java", t.asTypeName())
+        }
+
+        override fun visitString(s: String, p: Nothing?) {
+            add("%S", s)
+        }
+
+        override fun visitDouble(d: Double, p: Nothing?) {
+            val s = d.toString()
+            add(s)
+            if ('.' !in s) add(".0")
+        }
+
+        override fun visitEnumConstant(c: VariableElement, p: Nothing?) {
+            add("%T.%N", c.asType().asTypeName(), c.simpleName)
+        }
+
+        override fun visitAnnotation(a: AnnotationMirror, p: Nothing?) {
+            add(a, imports)
+        }
+
+        override fun visitInt(i: Int, p: Nothing?) {
+            add("$i")
+        }
+    }, null)
+}
+
+fun CodeBlock.Builder.add(annotation: AnnotationMirror, imports: MutableCollection<Import>): CodeBlock.Builder = apply {
+    imports += kotshiUtilsCreateJsonQualifierImplementation
+    if (annotation.elementValues.isEmpty()) {
+        add("%T::class.java.createJsonQualifierImplementation()", annotation.annotationType.asTypeName())
+    } else {
+        add("%T::class.java.createJsonQualifierImplementation(mapOf(⇥", annotation.annotationType.asTypeName())
+        annotation.elementValues.entries.forEachIndexed { i, (element, value) ->
+            if (i > 0) {
+                add(",")
+            }
+            add("\n")
+            add("%S·to·", element.simpleName)
+            add(value, element.returnType, imports)
+            add("")
+        }
+        add("⇤\n))")
+    }
+}
 
 private data class PropertyVariables(
     val value: PropertySpec,
