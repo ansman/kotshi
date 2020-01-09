@@ -2,7 +2,8 @@ package se.ansman.kotshi
 
 @JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
 data class ClassWithWeirdNames(
-    val OPTIONS: Int,
+    val options: Int,
+    val it: Int,
     val writer: Boolean,
     val value: String,
     val reader: Char,

@@ -30,6 +30,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.isData
+import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isLocal
@@ -39,6 +40,7 @@ import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
@@ -95,22 +97,19 @@ class AdaptersProcessingStep(
 
         val metadata = element.metadata.toImmutableKmClass()
 
-        if (!metadata.isData || metadata.isInner || metadata.isLocal || !metadata.isPublic && !metadata.isInternal) {
-            printNonDataClassError(element)
+        when {
+            !metadata.isData && !metadata.isEnum ->
+                throw ProcessingError("@JsonSerializable can't be applied to $element: must be a Kotlin data class or enum", element)
+            metadata.isInner ->
+                throw ProcessingError("@JsonSerializable can't be applied to inner classes", element)
+            metadata.isLocal ->
+                throw ProcessingError("@JsonSerializable can't be applied to local classes", element)
+            !metadata.isPublic && !metadata.isInternal ->
+                throw ProcessingError("Classes annotated with @JsonSerializable must public or internal", element)
         }
 
         val elementTypeSpec = metadata.toTypeSpec(classInspector)
         val className = enclosingClass.asClassName()
-        val primaryConstructor = elementTypeSpec.primaryConstructor!!
-        val properties = primaryConstructor.parameters.map { parameter ->
-            Property.create(
-                elements = elements,
-                typeSpec = elementTypeSpec,
-                globalConfig = globalConfig,
-                enclosingClass = enclosingClass,
-                parameter = parameter
-            )
-        }
 
         val typeVariables: List<TypeVariableName> = elementTypeSpec.typeVariables
             // Removes the variance
@@ -137,42 +136,51 @@ class AdaptersProcessingStep(
         val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class))
             .build()
 
-        val adapterKeys = properties
-            .asSequence()
-            .filter { it.shouldUseAdapter }
-            .map { it.adapterKey }
-            .generatePropertySpecs(enclosingClass, moshiParameter, typesParameter, nameAllocator, typeVariables, imports)
+        val jsonNames: Collection<String>
 
-        val jsonNames = properties
-            .asSequence()
-            .filterNot { it.isTransient }
-            .map { it.jsonName }
-            .toList()
-
-        val stringArguments = jsonNames.asSequence().map { "%S" }.joinToString(",\n")
-        val options = PropertySpec.builder("options", JsonReader.Options::class, KModifier.PRIVATE)
-            .addAnnotation(JvmStatic::class)
-            .initializer("%T.of(\n$stringArguments)", JsonReader.Options::class, *jsonNames.toTypedArray())
-            .build()
-
-        val typeSpec = TypeSpec.classBuilder(adapterClassName)
+        val typeSpecBuilder = TypeSpec.classBuilder(adapterClassName)
             .addModifiers(KModifier.INTERNAL)
             .addOriginatingElement(element)
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
-            .primaryConstructor(FunSpec.constructorBuilder()
-                .applyIf(adapterKeys.isNotEmpty()) {
-                    addParameter(moshiParameter)
-                }
-                .applyIf(typeVariables.isNotEmpty()) {
-                    addParameter(typesParameter)
-                }
-                .build())
             .superclass(NamedJsonAdapter::class.asClassName().plusParameter(typeName))
             .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
-            .addProperties(adapterKeys.values)
-            .addToJson(element, typeName, properties, adapterKeys, imports)
-            .addFromJson(typeName, nameAllocator, typeMirror, properties, adapterKeys, options, imports)
+
+        if (metadata.isEnum) {
+            jsonNames = typeSpecBuilder.addMethodsForEnum(elementTypeSpec, enclosingClass, typeName, className)
+        } else {
+            jsonNames = typeSpecBuilder.addMethodsForDataClass(
+                elementTypeSpec = elementTypeSpec,
+                globalConfig = globalConfig,
+                enclosingClass = enclosingClass,
+                moshiParameter = moshiParameter,
+                typesParameter = typesParameter,
+                nameAllocator = nameAllocator,
+                typeVariables = typeVariables,
+                imports = imports,
+                element = element,
+                typeName = typeName,
+                typeMirror = typeMirror
+            )
+        }
+
+        val options = PropertySpec.builder("options", JsonReader.Options::class, KModifier.PRIVATE)
+            .addAnnotation(JvmStatic::class)
+            .initializer(CodeBlock.Builder()
+                .add("«%T.of(", jsonReaderOptions)
+                .applyIf(jsonNames.size > 1) { add("\n") }
+                .applyEachIndexed(jsonNames) { index, name ->
+                    if (index > 0) {
+                        add(",\n")
+                    }
+                    add("%S", name)
+                }
+                .applyIf(jsonNames.size > 1) { add("\n") }
+                .add(")»")
+                .build())
+            .build()
+
+        val typeSpec = typeSpecBuilder
             .applyIf(jsonNames.isNotEmpty()) {
                 addType(TypeSpec.companionObjectBuilder()
                     .addModifiers(KModifier.PRIVATE)
@@ -181,7 +189,15 @@ class AdaptersProcessingStep(
             }
             .build()
 
-        adapters += GeneratedAdapter(className, adapterClassName, typeVariables, requiresMoshi = adapterKeys.isNotEmpty())
+        adapters += GeneratedAdapter(
+            targetType = className,
+            className = adapterClassName,
+            typeVariables = typeVariables,
+            requiresMoshi = typeSpec.primaryConstructor
+                ?.parameters
+                ?.contains(moshiParameter)
+                ?: false
+        )
 
         FileSpec.builder(adapterClassName.packageName, adapterClassName.simpleName)
             .addComment("Code generated by Kotshi. Do not edit.")
@@ -191,8 +207,118 @@ class AdaptersProcessingStep(
             .writeTo(filer)
     }
 
-    private fun printNonDataClassError(element: Element): Nothing =
-        throw ProcessingError("@${JsonSerializable::class.java.simpleName} can't be applied to $element: must be a Kotlin data class", element)
+    private fun TypeSpec.Builder.addMethodsForEnum(
+        elementTypeSpec: TypeSpec,
+        enclosingClass: TypeElement,
+        typeName: TypeName,
+        className: ClassName
+    ): Collection<String> {
+        val enumToJsonName = elementTypeSpec.enumConstants.mapValues { (name, type) ->
+            type.annotationSpecs.jsonName() ?: name
+        }
+
+        var defaultValue: String? = null
+        for ((entry, spec) in elementTypeSpec.enumConstants) {
+            if (spec.annotationSpecs.any { it.className == jsonDefaultValue }) {
+                if (defaultValue != null) {
+                    throw ProcessingError("Only one enum entry can be annotated with @JsonDefaultValue", enclosingClass)
+                }
+                defaultValue = entry
+            }
+        }
+
+        val writer = ParameterSpec.builder("writer", JsonWriter::class.java)
+            .build()
+        val value = ParameterSpec.builder("value", typeName.nullable())
+            .build()
+        val reader = ParameterSpec.builder("reader", JsonReader::class.java)
+            .build()
+
+        addFunction(FunSpec.builder("toJson")
+            .addModifiers(KModifier.OVERRIDE)
+            .throws(IOException::class.java)
+            .addParameter(writer)
+            .addParameter(value)
+            .addWhen("%N", value) {
+                for ((entry, name) in enumToJsonName) {
+                    addStatement("%T.%N·-> %N.value(%S)", className, entry, writer, name)
+                }
+                addStatement("null·-> %N.nullValue()", writer)
+            }
+            .build())
+            .addFunction(FunSpec.builder("fromJson")
+                .addModifiers(KModifier.OVERRIDE)
+                .throws(IOException::class.java)
+                .addParameter(reader)
+                .returns(typeName.nullable())
+                .addControlFlow("return if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
+                    addStatement("%N.nextNull()", reader)
+                }
+                .addNextControlFlow("else when (%N.selectString(options))", reader) {
+                    enumToJsonName.keys.forEachIndexed { index, entry ->
+                        addStatement("$index·-> %T.%N", className, entry)
+                    }
+                    if (defaultValue == null) {
+                        addStatement("else·-> throw·%T(%P)", jsonDataException, "Expected one of ${enumToJsonName.values} but was \${${reader.name}.nextString()} at path \${${reader.name}.path}")
+                    } else {
+                        addControlFlow("else·->") {
+                            addStatement("%N.skipValue()", reader)
+                            addStatement("%T.%N", className, defaultValue)
+                        }
+                    }
+                }
+                .build())
+        return enumToJsonName.values
+    }
+
+    private fun TypeSpec.Builder.addMethodsForDataClass(
+        elementTypeSpec: TypeSpec,
+        globalConfig: GlobalConfig,
+        enclosingClass: TypeElement,
+        moshiParameter: ParameterSpec,
+        typesParameter: ParameterSpec,
+        nameAllocator: NameAllocator,
+        typeVariables: List<TypeVariableName>,
+        imports: MutableSet<Import>,
+        element: Element,
+        typeName: TypeName,
+        typeMirror: TypeMirror
+    ): Collection<String> {
+        val properties = elementTypeSpec.primaryConstructor!!.parameters.map { parameter ->
+            Property.create(
+                elements = elements,
+                typeSpec = elementTypeSpec,
+                globalConfig = globalConfig,
+                enclosingClass = enclosingClass,
+                parameter = parameter
+            )
+        }
+
+        val adapterKeys = properties
+            .asSequence()
+            .filter { it.shouldUseAdapter }
+            .map { it.adapterKey }
+            .generatePropertySpecs(enclosingClass, moshiParameter, typesParameter, nameAllocator, typeVariables, imports)
+
+        primaryConstructor(FunSpec.constructorBuilder()
+            .applyIf(adapterKeys.isNotEmpty()) {
+                addParameter(moshiParameter)
+            }
+            .applyIf(typeVariables.isNotEmpty()) {
+                addParameter(typesParameter)
+            }
+            .build())
+            .addProperties(adapterKeys.values)
+            .addToJson(element, typeName, properties, adapterKeys, imports)
+            .addFromJson(typeName, nameAllocator, typeMirror, properties, adapterKeys, imports)
+            .build()
+
+        return properties
+            .asSequence()
+            .filterNot { it.isTransient }
+            .map { it.jsonName }
+            .toList()
+    }
 
     private fun Sequence<AdapterKey>.generatePropertySpecs(
         enclosingClass: TypeElement,
@@ -314,7 +440,6 @@ class AdaptersProcessingStep(
         type: TypeMirror,
         properties: Collection<Property>,
         adapters: Map<AdapterKey, PropertySpec>,
-        optionsProperty: PropertySpec,
         imports: MutableCollection<Import>
     ): TypeSpec.Builder {
         val reader = ParameterSpec.builder("reader", JsonReader::class.java)
@@ -362,7 +487,7 @@ class AdaptersProcessingStep(
             .addCode("\n")
             .addStatement("%N.beginObject()", reader)
             .addWhile("%N.hasNext()", reader) {
-                addWhen("%N.selectName(%N)", reader, optionsProperty) {
+                addWhen("%N.selectName(options)", reader) {
                     variables.entries.forEachIndexed { index, (property, variable) ->
                         addWhenBranch("%L", index) {
                             if (property.shouldUseAdapter) {
@@ -685,3 +810,6 @@ private val kotshiUtilsNextShort = KotshiUtils::class.import("nextShort")
 private val kotshiUtilsNextChar = KotshiUtils::class.import("nextChar")
 private val kotshiUtilsAppendNullableError = KotshiUtils::class.import("appendNullableError")
 private val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.import("createJsonQualifierImplementation")
+private val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
+private val jsonDataException = JsonDataException::class.java.asClassName()
+private val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
