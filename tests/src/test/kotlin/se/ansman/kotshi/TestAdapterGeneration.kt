@@ -129,10 +129,10 @@ class TestAdapterGeneration {
 
     @Test
     fun testCustomNames() {
-        val json = """{"jsonProp1":"value1","jsonProp2":"value2"}"""
+        val json = """{"jsonProp1":"value1","jsonProp2":"value2","\"weird\"":"weird"}"""
         val adapter = moshi.adapter(CustomNames::class.java)
         val actual = adapter.fromJson(json)
-        val expected = CustomNames("value1", "value2")
+        val expected = CustomNames("value1", "value2", "weird")
         assertEquals(expected, actual)
         assertEquals(json, adapter.toJson(actual))
     }
