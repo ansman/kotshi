@@ -3,7 +3,7 @@ package se.ansman.kotshi
 /**
  * Annotation to be placed on classes that Kotshi should generate [JsonAdapters][com.squareup.moshi.JsonAdapter] for.
  *
- * The annotation should only be placed on Kotlin data classes.
+ * The annotation should only be placed on Kotlin data classes or Kotlin enums.
  * [JsonQualifiers][com.squareup.moshi.JsonQualifier] are supported and so is the [Json][com.squareup.moshi.Json]
  * annotation. They can be placed on either the property field or the property parameter.
  *

@@ -1,10 +1,7 @@
 Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
 ===
 
-An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from immutable Kotlin data classes.
-
-Moshi's default reflective adapters assume your classes are compiled from Java code which causes problem for Kotlin
-data classes.
+An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin enum and data classes
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
 increase the binary size which in a constrained environment such as Android is something is not preferable.
@@ -12,12 +9,12 @@ increase the binary size which in a constrained environment such as Android is s
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
 hand written them yourself. It will automatically regenerate the adapters when you modify your class.
 
-It's made to work with Kotlin data classes with minimal setup, through there are [limitations](#limitations).
-Most of the limitations will be addressed when the support for Kotlin annotation processors improves.
+It's made to work with enum and data classes with minimal setup, through there are [limitations](#limitations).
+Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
 
 Usage
 ---
-First you must annotate your Kotlin data classes with the `@JsonSerializable` annotation:
+First you must annotate your enum or data classes with the `@JsonSerializable` annotation:
 ```kotlin
 @JsonSerializable
 data class Person(
@@ -36,14 +33,16 @@ Then create a class that will be your factory:
 ```kotlin
 @KotshiJsonAdapterFactory
 abstract class ApplicationJsonAdapterFactory : JsonAdapter.Factory {
-  val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory
+    companion object {
+        val INSTANCE: ApplicationJsonAdapterFactory = KotshiApplicationJsonAdapterFactory
+    }
 }
 ```
 
 Lastly just add the factory to your Moshi instance and you're all set:
 ```kotlin
 val moshi = Moshi.Builder()
-    .add(ApplicationJsonAdapterFactory)
+    .add(ApplicationJsonAdapterFactory.INSTANCE)
     .build()
 ```
 
@@ -56,42 +55,54 @@ by passing the same argument to `@JsonSerializable` (the default is to follow
 the module wide setting).
 
 ### Annotations
-* `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on Kotlin data classes.
+* `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on enum or data classes.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
+* `@JsonDefaultValue` can be used to annotated a fallback for enums when an unknown entry is encountered. The default is to thrown an exception.
 
-### Default values
+### Default Values
 You can use default values just like you normally would in Kotlin.
 
 Due to limitations in Kotlin two instances of the object will be created when a class uses default values
 ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)). This also means that composite default values are not
 supported (for example a `fullName` property that is `"$firstName $lastName"`).
 
-### Transient Values
+For enum entries you may annotate a single enum entry with `@JsonDefaultValue` to indicate that the entry should be used
+when an unknown enum entry is encountered (by default an exception is thrown).
 
+### Transient Values
 Properties marked with `@Transient` are not serialized. All transient properties must have a default value.
 
 Only properties declared in the constructor needs to be annotated since other properties are ignores.
 
+### Custom Names
+By default the property or enum entry name is used when reading and writing JSON. To change the name used you may use
+the regular `@Json` annotation from Moshi to annotate the property or enum entry.
+
+### Json Qualifiers
+Kotshi has full support for `@JsonQualifier`, both plain and those with arguments. Simply annotate a property with the
+desired qualifiers and Kotshi will pick them up.
+
 Limitations
 ---
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
-* Only data classes are supported.
+* Only enum and data classes are supported.
   - Only constructor properties will be serialized.
+  - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
 * Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
 * Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 
 Download
 ---
 ```groovy
-implementation 'se.ansman.kotshi:api:2.0.3'
-kapt 'se.ansman.kotshi:compiler:2.0.3'
+implementation "se.ansman.kotshi:api:2.0.3"
+kapt "se.ansman.kotshi:compiler:2.0.3"
 ```
 Snapshots of the development version are available in [jfrogs's snapshots repository](https://oss.jfrog.org/artifactory/oss-snapshot-local/se/ansman/kotshi/).
 
 License
 ---
 ```text
-Copyright 2017-2019 Nicklas Ansman Giertz.
+Copyright 2017-2020 Nicklas Ansman Giertz.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
