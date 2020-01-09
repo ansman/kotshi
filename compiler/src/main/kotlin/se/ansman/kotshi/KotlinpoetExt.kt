@@ -97,7 +97,7 @@ inline fun FunSpec.Builder.addNextControlFlow(
 /**
  * Adds a switch branch.
  *
- * A trailing : and a break is automatically inserted
+ * A trailing -> is automatically inserted
  */
 inline fun FunSpec.Builder.addWhenBranch(
     branch: String,
@@ -112,7 +112,7 @@ inline fun FunSpec.Builder.addWhenBranch(
 /**
  * Adds a switch default.
  *
- * A trailing : and a break is automatically inserted
+ * A trailing -> is automatically inserted
  */
 inline fun FunSpec.Builder.addWhenElse(block: FunSpec.Builder.() -> Unit): FunSpec.Builder {
     beginControlFlow("else ->")

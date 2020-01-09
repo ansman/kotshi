@@ -15,6 +15,7 @@ buildscript {
 
 allprojects {
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 }
@@ -26,7 +27,7 @@ subprojects {
 ext {
     autoServiceVersion = "1.0-rc5"
     incapVersion = "0.2"
-    kotlinPoetVersion = "1.4.4"
+    kotlinPoetVersion = "1.5.0"
     libraries = [
             kotlinpoet               : "com.squareup:kotlinpoet:$kotlinPoetVersion",
             kotlinpoet_metadata      : "com.squareup:kotlinpoet-metadata:$kotlinPoetVersion",
