@@ -2,6 +2,7 @@ package se.ansman.kotshi
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
@@ -10,6 +11,7 @@ import com.squareup.moshi.Types
 import okio.Buffer
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 
 class TestAdapterGeneration {
@@ -105,25 +107,10 @@ class TestAdapterGeneration {
 
     @Test
     fun testNull() {
-        try {
+        val message = "The following properties were null: string, integer, isBoolean, aShort, aByte, aChar, " +
+            "list, nestedList, abstractProperty, customName, annotated, anotherAnnotated, genericClass (at path $)"
+        assertFailsWith<JsonDataException>(message) {
             moshi.adapter(TestClass::class.java).fromJson("{}")
-        } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: " +
-                "string, " +
-                "integer, " +
-                "isBoolean, " +
-                "aShort, " +
-                "aByte, " +
-                "aChar, " +
-                "list, " +
-                "nestedList, " +
-                "abstractProperty, " +
-                "customName, " +
-                "annotated, " +
-                "anotherAnnotated, " +
-                "genericClass " +
-                "(at path $)",
-                e.message)
         }
     }
 

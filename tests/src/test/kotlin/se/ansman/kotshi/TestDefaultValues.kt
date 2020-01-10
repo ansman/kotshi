@@ -1,6 +1,7 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
@@ -11,7 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.assertEquals
-import kotlin.test.fail
+import kotlin.test.assertFailsWith
 
 class TestDefaultValues {
     private lateinit var moshi: Moshi
@@ -93,12 +94,9 @@ class TestDefaultValues {
     }
 
     @Test
-    fun throwsNPEWhenNotUsingDefaultValues() {
-        try {
+    fun throwsJsonDataExceptionWhenNotUsingDefaultValues() {
+        assertFailsWith<JsonDataException>("The following properties were null: v10 (at path $)") {
             moshi.adapter(ClassWithDefaultValues::class.java).fromJson("{}")
-            fail()
-        } catch (e: NullPointerException) {
-            assertEquals("The following properties were null: v10 (at path $)", e.message)
         }
     }
 

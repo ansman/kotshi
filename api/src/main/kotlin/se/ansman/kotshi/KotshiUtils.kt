@@ -26,12 +26,18 @@ object KotshiUtils {
                 """.trimIndent())
 
     @JvmStatic
-    fun StringBuilder?.appendNullableError(propertyName: String): StringBuilder =
+    fun StringBuilder?.appendNullableError(propertyName: String, jsonName: String): StringBuilder =
         if (this == null) {
             StringBuilder("The following properties were null: ")
         } else {
             append(", ")
-        }.append(propertyName)
+        }
+            .append(propertyName)
+            .apply {
+                if (jsonName != propertyName) {
+                    append(" (JSON name ").append(jsonName).append(')')
+                }
+            }
 
     @JvmStatic
     @JvmOverloads
