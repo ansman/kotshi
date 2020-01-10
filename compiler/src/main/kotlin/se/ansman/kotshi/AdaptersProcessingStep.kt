@@ -251,7 +251,7 @@ class AdaptersProcessingStep(
                 .throws(IOException::class.java)
                 .addParameter(reader)
                 .returns(typeName.nullable())
-                .addControlFlow("return if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
+                .addControlFlow("return·if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
                     addStatement("%N.nextNull()", reader)
                 }
                 .addNextControlFlow("else when (%N.selectString(options))", reader) {
@@ -565,13 +565,13 @@ class AdaptersProcessingStep(
                     for ((property, variable) in propertiesToCheck) {
                         addIf("%L", variable.isNotSet) {
                             imports += kotshiUtilsAppendNullableError
-                            addStatement("%N = %N.appendNullableError(%S)", stringBuilder, stringBuilder, property.name)
+                            addStatement("%N = %N.appendNullableError(%S, %S)", stringBuilder, stringBuilder, property.name, property.jsonName)
                         }
                     }
 
                     addIf("%N != null", stringBuilder) {
                         addStatement("%N.append(\" (at path \").append(%N.path).append(')')", stringBuilder, reader)
-                        addStatement("throw NullPointerException(%N.toString())", stringBuilder)
+                        addStatement("throw %T(%N.toString())", jsonDataException, stringBuilder)
                     }
                     addCode("\n")
                 }
