@@ -1,6 +1,5 @@
 package se.ansman.kotshi
 
-import com.google.auto.common.SuperficialValidation.validateElement
 import com.google.auto.service.AutoService
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSetMultimap
@@ -17,7 +16,6 @@ import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
 import javax.lang.model.element.PackageElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
@@ -83,40 +81,9 @@ class KotshiProcessor : AbstractProcessor() {
 
     private fun validElements(roundEnv: RoundEnvironment): ImmutableSetMultimap<Class<out Annotation>, Element> {
         val validElements = ImmutableSetMultimap.builder<Class<out Annotation>, Element>()
-
-        val validElementNames = LinkedHashSet<ElementName>()
-
-        // Look at the elements we've found and the new elements from this round and validate them.
         for (annotationClass in getSupportedAnnotationClasses()) {
-            // This should just call roundEnv.getElementsAnnotatedWith(Class) directly, but there is a bug
-            // in some versions of eclipse that cause that method to crash.
-            val annotationType = elements.getTypeElement(annotationClass.canonicalName)
-            val elementsAnnotatedWith = if (annotationType == null) {
-                emptySet()
-            } else {
-                roundEnv.getElementsAnnotatedWith(annotationType)
-            }
-            for (annotatedElement in elementsAnnotatedWith) {
-                if (annotatedElement.kind == ElementKind.PACKAGE) {
-                    val annotatedPackageElement = annotatedElement as PackageElement
-                    val annotatedPackageName = ElementName.forPackageName(annotatedPackageElement.qualifiedName.toString())
-                    val validPackage = validElementNames.contains(annotatedPackageName) || validateElement(annotatedPackageElement)
-                    if (validPackage) {
-                        validElements.put(annotationClass, annotatedPackageElement)
-                        validElementNames.add(annotatedPackageName)
-                    }
-                } else {
-                    val enclosingType = getEnclosingType(annotatedElement)
-                    val enclosingTypeName = ElementName.forTypeName(enclosingType.qualifiedName.toString())
-                    val validEnclosingType = validElementNames.contains(enclosingTypeName) || validateElement(enclosingType)
-                    if (validEnclosingType) {
-                        validElements.put(annotationClass, annotatedElement)
-                        validElementNames.add(enclosingTypeName)
-                    }
-                }
-            }
+            validElements.putAll(annotationClass, roundEnv.getElementsAnnotatedWith(annotationClass))
         }
-
         return validElements.build()
     }
 
