@@ -51,7 +51,7 @@ class DataClassAdapterGenerator(
 
     private val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class)).build()
 
-    override fun TypeSpec.Builder.addMethods(): Collection<String> {
+    override fun TypeSpec.Builder.addMethods() {
         val properties = elementTypeSpec.primaryConstructor!!.parameters.map { parameter ->
             Property.create(
                 elements = elements,
@@ -81,11 +81,11 @@ class DataClassAdapterGenerator(
             .addFromJson(properties, adapterKeys)
             .build()
 
-        return properties
+        maybeAddCompanion(properties
             .asSequence()
             .filterNot { it.isTransient }
             .map { it.jsonName }
-            .toList()
+            .toList())
     }
 
     private fun Sequence<AdapterKey>.generatePropertySpecs(): Map<AdapterKey, PropertySpec> {
@@ -293,7 +293,7 @@ class DataClassAdapterGenerator(
                     it.hasDefaultValue && !it.isTransient
                 }
 
-                addCode("«return·%T(", typeName)
+                addCode("return·%T(«", typeName)
                 constructorProperties.forEachIndexed { index, property ->
                     val variable = variables.getValue(property)
 
@@ -305,10 +305,12 @@ class DataClassAdapterGenerator(
                         addCode("!!")
                     }
                 }
-                addCode(")»")
+                addCode("»")
+                if (constructorProperties.isNotEmpty()) addCode("\n")
+                addCode(")")
                 if (copyProperties.isNotEmpty()) {
                     addControlFlow(".let") {
-                        addCode("«it.copy(")
+                        addCode("it.copy(«")
                         copyProperties.forEachIndexed { index, property ->
                             val variable = variables.getValue(property)
 
@@ -323,10 +325,9 @@ class DataClassAdapterGenerator(
                                 addCode("if (%L) %N else it.%N", variable.isSet, variable.value, property.name)
                             }
                         }
-                        addCode(")\n»")
+                        addCode("»\n)\n")
                     }
                 }
-                addCode("\n")
             }
             .build())
     }

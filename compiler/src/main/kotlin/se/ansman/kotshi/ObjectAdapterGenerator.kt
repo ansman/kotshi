@@ -23,7 +23,7 @@ class ObjectAdapterGenerator(
         require(metadata.isObject)
     }
 
-    override fun TypeSpec.Builder.addMethods(): Collection<String> {
+    override fun TypeSpec.Builder.addMethods() {
         this
             .addFunction(FunSpec.builder("toJson")
                 .addModifiers(KModifier.OVERRIDE)
@@ -55,6 +55,5 @@ class ObjectAdapterGenerator(
                     addStatement("%T", typeName)
                 }
                 .build())
-        return emptyList()
     }
 }

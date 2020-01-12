@@ -23,7 +23,7 @@ class EnumAdapterGenerator(
         require(metadata.isEnum)
     }
 
-    override fun TypeSpec.Builder.addMethods(): Collection<String> {
+    override fun TypeSpec.Builder.addMethods() {
         val enumToJsonName = elementTypeSpec.enumConstants.mapValues { (name, type) ->
             type.annotationSpecs.jsonName() ?: name
         }
@@ -73,6 +73,6 @@ class EnumAdapterGenerator(
                     }
                 }
                 .build())
-        return enumToJsonName.values
+            .maybeAddCompanion(enumToJsonName.values)
     }
 }
