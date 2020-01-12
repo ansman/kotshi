@@ -21,7 +21,7 @@ package se.ansman.kotshi
  * }
  * ```
  */
-@Target(AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
 annotation class JsonDefaultValue
