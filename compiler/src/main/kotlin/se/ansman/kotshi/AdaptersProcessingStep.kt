@@ -44,6 +44,9 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
+import se.ansman.kotshi.SerializeNulls.DEFAULT
+import se.ansman.kotshi.SerializeNulls.DISABLED
+import se.ansman.kotshi.SerializeNulls.ENABLED
 import java.io.IOException
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
@@ -128,6 +131,7 @@ class AdaptersProcessingStep(
         nameAllocator.newName("writer")
         nameAllocator.newName("reader")
         nameAllocator.newName("stringBuilder")
+        nameAllocator.newName("serializeNulls")
         nameAllocator.newName("it")
 
         val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java)
@@ -158,7 +162,6 @@ class AdaptersProcessingStep(
                 nameAllocator = nameAllocator,
                 typeVariables = typeVariables,
                 imports = imports,
-                element = element,
                 typeName = typeName,
                 typeMirror = typeMirror
             )
@@ -280,10 +283,11 @@ class AdaptersProcessingStep(
         nameAllocator: NameAllocator,
         typeVariables: List<TypeVariableName>,
         imports: MutableSet<Import>,
-        element: Element,
         typeName: TypeName,
         typeMirror: TypeMirror
     ): Collection<String> {
+        val annoation = requireNotNull(enclosingClass.getAnnotation(JsonSerializable::class.java))
+
         val properties = elementTypeSpec.primaryConstructor!!.parameters.map { parameter ->
             Property.create(
                 elements = elements,
@@ -293,6 +297,11 @@ class AdaptersProcessingStep(
                 parameter = parameter
             )
         }
+
+        val serializeNulls = annoation
+            .serializeNulls
+            .takeUnless { it == DEFAULT }
+            ?: globalConfig.serializeNulls
 
         val adapterKeys = properties
             .asSequence()
@@ -309,7 +318,7 @@ class AdaptersProcessingStep(
             }
             .build())
             .addProperties(adapterKeys.values)
-            .addToJson(element, typeName, properties, adapterKeys, imports)
+            .addToJson(enclosingClass, typeName, properties, adapterKeys, imports, serializeNulls)
             .addFromJson(typeName, nameAllocator, typeMirror, properties, adapterKeys, imports)
             .build()
 
@@ -374,7 +383,8 @@ class AdaptersProcessingStep(
         typeName: TypeName,
         properties: Collection<Property>,
         adapterKeys: Map<AdapterKey, PropertySpec>,
-        imports: MutableCollection<Import>
+        imports: MutableCollection<Import>,
+        serializeNulls: SerializeNulls
     ): TypeSpec.Builder {
         val writer = ParameterSpec.builder("writer", JsonWriter::class.java)
             .build()
@@ -385,6 +395,11 @@ class AdaptersProcessingStep(
             .throws(IOException::class.java)
             .addParameter(writer)
             .addParameter(value)
+        val serializeNullsEnabled = when (serializeNulls) {
+            DEFAULT -> null
+            ENABLED -> true
+            DISABLED -> false
+        }
 
         if (properties.isEmpty()) {
             builder
@@ -396,40 +411,55 @@ class AdaptersProcessingStep(
                 }
 
         } else {
+            fun FunSpec.Builder.addBody(): FunSpec.Builder =
+                addStatement("%N.beginObject()", writer)
+                    .addCode("\n")
+                    .applyEach(properties.filterNot { it.isTransient }) { property ->
+                        addStatement("%N.name(%S)", writer, property.jsonName)
+                        val getter = CodeBlock.of("%N.%L", value, property.name)
+
+                        if (property.shouldUseAdapter) {
+                            addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writer).addCode(getter).addCode(")\n")
+                        } else when (property.type.notNull()) {
+                            STRING,
+                            INT,
+                            LONG,
+                            FLOAT,
+                            DOUBLE,
+                            SHORT,
+                            BOOLEAN -> addStatement("%N.value(%L)", writer, getter)
+                            BYTE -> {
+                                imports += kotshiUtilsByteValue
+                                addStatement("%N.byteValue(%L)", writer, getter)
+                            }
+                            CHAR -> {
+                                imports += kotshiUtilsValue
+                                addStatement("%N.value(%L)", writer, getter)
+                            }
+                            else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
+                        }
+                    }
+                    .addCode("\n")
+                    .addStatement("%N.endObject()", writer)
+
             builder
                 .addIf("%N == null", value) {
                     addStatement("%N.nullValue()", writer)
                     addStatement("return")
                 }
-                .addStatement("%N.beginObject()", writer)
-                .addCode("\n")
-                .applyEach(properties.filterNot { it.isTransient }) { property ->
-                    addStatement("%N.name(%S)", writer, property.jsonName)
-                    val getter = CodeBlock.of("%N.%L", value, property.name)
 
-                    if (property.shouldUseAdapter) {
-                        addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writer).addCode(getter).addCode(")\n")
-                    } else when (property.type.notNull()) {
-                        STRING,
-                        INT,
-                        LONG,
-                        FLOAT,
-                        DOUBLE,
-                        SHORT,
-                        BOOLEAN -> addStatement("%N.value(%L)", writer, getter)
-                        BYTE -> {
-                            imports += kotshiUtilsByteValue
-                            addStatement("%N.byteValue(%L)", writer, getter)
-                        }
-                        CHAR -> {
-                            imports += kotshiUtilsValue
-                            addStatement("%N.value(%L)", writer, getter)
-                        }
-                        else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
-                    }
-                }
-                .addCode("\n")
-                .addStatement("%N.endObject()", writer)
+            if (serializeNullsEnabled != null) {
+                builder
+                    .addStatement("val serializeNulls = %N.serializeNulls", writer)
+                    .addStatement("%N.serializeNulls = %L", writer, serializeNullsEnabled)
+                    .beginControlFlow("try")
+                    .addBody()
+                    .nextControlFlow("finally")
+                    .addStatement("%N.serializeNulls = serializeNulls", writer)
+                    .endControlFlow()
+            } else {
+                builder.addBody()
+            }
         }
         return addFunction(builder.build())
     }
@@ -681,7 +711,7 @@ fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror, imports
 
         override fun visit(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
 
-        override fun visit(av: AnnotationValue?) =throw AssertionError()
+        override fun visit(av: AnnotationValue?) = throw AssertionError()
 
         override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
             val arrayCreator = when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
@@ -793,12 +823,16 @@ private data class PropertyVariables(
 }
 
 data class GlobalConfig(
-    val useAdaptersForPrimitives: Boolean
+    val useAdaptersForPrimitives: Boolean,
+    val serializeNulls: SerializeNulls
 ) {
-    constructor(factory: KotshiJsonAdapterFactory) : this(factory.useAdaptersForPrimitives)
+    constructor(factory: KotshiJsonAdapterFactory) : this(
+        useAdaptersForPrimitives = factory.useAdaptersForPrimitives,
+        serializeNulls = factory.serializeNulls
+    )
 
     companion object {
-        val DEFAULT = GlobalConfig(false)
+        val DEFAULT = GlobalConfig(false, SerializeNulls.DEFAULT)
     }
 }
 

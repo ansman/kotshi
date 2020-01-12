@@ -1,5 +1,7 @@
 package se.ansman.kotshi
 
+import com.squareup.moshi.JsonWriter
+
 /**
  * Annotation to be placed on classes that Kotshi should generate [JsonAdapters][com.squareup.moshi.JsonAdapter] for.
  *
@@ -28,10 +30,13 @@ package se.ansman.kotshi
  * @param useAdaptersForPrimitives A flag to enable/disable the use of adapters to read and write primitive values.
  *                                 The default value is the same as [KotshiJsonAdapterFactory.useAdaptersForPrimitives].
  *                                 If you don't actually need it it's better to not use adapters for performance reasons.
+ * @param serializeNulls Enable or disable [null serialization][JsonWriter.serializeNulls] for this adapter and child
+ *                       adapters (unless they override it).
  */
 @Target(AnnotationTarget.CLASS)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
 annotation class JsonSerializable(
-    val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT
+    val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT,
+    val serializeNulls: SerializeNulls = SerializeNulls.DEFAULT
 )
