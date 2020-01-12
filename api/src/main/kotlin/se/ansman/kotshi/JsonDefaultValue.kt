@@ -8,10 +8,6 @@ package se.ansman.kotshi
  *
  * If no entry is annotated the adapter will throw an exception if an unknown constant is encountered.
  *
- * The annotation should only be placed on Kotlin data classes.
- * [JsonQualifiers][com.squareup.moshi.JsonQualifier] are supported and so is the [Json][com.squareup.moshi.Json]
- * annotation. They can be placed on either the property field or the property parameter.
- *
  * Example:
  * ```
  * @JsonSerializable
@@ -20,7 +16,7 @@ package se.ansman.kotshi
  *     SOME_VALUE,
  *     @Json(name = "some-other-value")
  *     SOME_OTHER_VALUE,
- *     @JsonDefault
+ *     @JsonDefaultValue
  *     UNKNOWN
  * }
  * ```
@@ -28,6 +24,4 @@ package se.ansman.kotshi
 @Target(AnnotationTarget.FIELD)
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)
-annotation class JsonDefaultValue(
-    val useAdaptersForPrimitives: PrimitiveAdapters = PrimitiveAdapters.DEFAULT
-)
+annotation class JsonDefaultValue
