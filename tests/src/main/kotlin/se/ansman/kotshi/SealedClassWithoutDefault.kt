@@ -13,5 +13,5 @@ sealed class SealedClassWithoutDefault {
 
     @JsonSerializable
     @PolymorphicLabel("type3")
-    data class Subclass3(val baz: String) : SealedClassWithoutDefault()
+    data class Subclass3(val baz: String, val type: String) : SealedClassWithoutDefault()
 }

@@ -89,6 +89,7 @@ class SealedClassAdapterGenerator(
             .receiver(JsonReader::class.java)
             .returns(Int::class.javaPrimitiveType!!)
             .addControlFlow("return peekJson().use { reader ->") {
+                addStatement("reader.setFailOnUnknown(false)")
                 addStatement("reader.beginObject()")
                 addWhile("reader.hasNext()") {
                     addIf("reader.selectName(%N) == -1", labelKeyOptions) {

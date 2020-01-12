@@ -28,4 +28,10 @@ class SealedClassWithoutDefaultTest {
     fun writing_normal() {
         assertEquals("""{"bar":"bar2"}""", adapter.toJson(SealedClassWithoutDefault.Subclass2("bar2")))
     }
+
+    @Test
+    fun failOnUnknown() {
+        val json = """{"baz":"baz3","type":"type3"}"""
+        assertEquals(SealedClassWithoutDefault.Subclass3("baz3", "type3"), adapter.failOnUnknown().fromJson(json))
+    }
 }
