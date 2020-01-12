@@ -48,8 +48,11 @@ class DataClassAdapterGenerator(
     }
 
     private val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
-
     private val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class)).build()
+    private val serializeNulls = element.getAnnotation(JsonSerializable::class.java)!!
+        .serializeNulls
+        .takeUnless { it == SerializeNulls.DEFAULT }
+        ?: globalConfig.serializeNulls
 
     override fun TypeSpec.Builder.addMethods() {
         val properties = elementTypeSpec.primaryConstructor!!.parameters.map { parameter ->
@@ -150,34 +153,52 @@ class DataClassAdapterGenerator(
                 }
 
         } else {
+            fun FunSpec.Builder.addBody(): FunSpec.Builder =
+                addStatement("%N.beginObject()", writer)
+                    .applyEach(properties.filterNot { it.isTransient }) { property ->
+                        addStatement("%N.name(%S)", writer, property.jsonName)
+                        val getter = CodeBlock.of("%N.%L", value, property.name)
+
+                        if (property.shouldUseAdapter) {
+                            addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writer).addCode(getter).addCode(")\n")
+                        } else when (property.type.notNull()) {
+                            STRING,
+                            INT,
+                            LONG,
+                            FLOAT,
+                            DOUBLE,
+                            SHORT,
+                            BOOLEAN -> addStatement("%N.value(%L)", writer, getter)
+                            BYTE -> addStatement("%N.%M(%L)", writer, kotshiUtilsByteValue, getter)
+                            CHAR -> addStatement("%N.%M(%L)", writer, kotshiUtilsValue, getter)
+                            else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
+                        }
+                    }
+                    .addStatement("%N.endObject()", writer)
+
             builder
                 .addIf("%N == null", value) {
                     addStatement("%N.nullValue()", writer)
                     addStatement("return")
                 }
-                .addStatement("%N.beginObject()", writer)
-                .addCode("\n")
-                .applyEach(properties.filterNot { it.isTransient }) { property ->
-                    addStatement("%N.name(%S)", writer, property.jsonName)
-                    val getter = CodeBlock.of("%N.%L", value, property.name)
 
-                    if (property.shouldUseAdapter) {
-                        addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writer).addCode(getter).addCode(")\n")
-                    } else when (property.type.notNull()) {
-                        STRING,
-                        INT,
-                        LONG,
-                        FLOAT,
-                        DOUBLE,
-                        SHORT,
-                        BOOLEAN -> addStatement("%N.value(%L)", writer, getter)
-                        BYTE -> addStatement("%N.%M(%L)", writer, kotshiUtilsByteValue, getter)
-                        CHAR -> addStatement("%N.%M(%L)", writer, kotshiUtilsValue, getter)
-                        else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
-                    }
-                }
-                .addCode("\n")
-                .addStatement("%N.endObject()", writer)
+            val serializeNullsEnabled = when (serializeNulls) {
+                SerializeNulls.DEFAULT -> null
+                SerializeNulls.ENABLED -> true
+                SerializeNulls.DISABLED -> false
+            }
+            if (serializeNullsEnabled != null) {
+                builder
+                    .addStatement("val serializeNulls = %N.serializeNulls", writer)
+                    .addStatement("%N.serializeNulls = %L", writer, serializeNullsEnabled)
+                    .beginControlFlow("try")
+                    .addBody()
+                    .nextControlFlow("finally")
+                    .addStatement("%N.serializeNulls = serializeNulls", writer)
+                    .endControlFlow()
+            } else {
+                builder.addBody()
+            }
         }
         return addFunction(builder.build())
     }

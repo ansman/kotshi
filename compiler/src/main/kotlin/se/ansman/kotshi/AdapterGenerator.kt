@@ -144,11 +144,18 @@ val jsonDataException = JsonDataException::class.java.asClassName()
 val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
 
 data class GlobalConfig(
-    val useAdaptersForPrimitives: Boolean
+    val useAdaptersForPrimitives: Boolean,
+    val serializeNulls: SerializeNulls
 ) {
-    constructor(factory: KotshiJsonAdapterFactory) : this(factory.useAdaptersForPrimitives)
+    constructor(factory: KotshiJsonAdapterFactory) : this(
+        useAdaptersForPrimitives = factory.useAdaptersForPrimitives,
+        serializeNulls = factory.serializeNulls
+    )
 
     companion object {
-        val DEFAULT = GlobalConfig(false)
+        val DEFAULT = GlobalConfig(
+            useAdaptersForPrimitives = false,
+            serializeNulls = SerializeNulls.DEFAULT
+        )
     }
 }
