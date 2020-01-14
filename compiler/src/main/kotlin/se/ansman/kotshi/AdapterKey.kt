@@ -12,6 +12,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.Types
 
 data class AdapterKey(
@@ -42,7 +43,7 @@ private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> C
     when (this) {
         is ParameterizedTypeName ->
             CodeBlock.builder()
-                .add("%T.newParameterizedType(%T::class.javaObjectType", Types::class.java, if (rawType == ARRAY) {
+                .add("%T.newParameterizedType(%T::class.javaObjectType", moshiTypes, if (rawType == ARRAY) {
                     // Arrays are special, you cannot just do Array::class.java
                     this
                 } else {
@@ -65,6 +66,8 @@ private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> C
         is TypeVariableName -> typeVariableAccessor(this)
         else -> CodeBlock.of("%T::class.javaObjectType", notNull())
     }
+
+val moshiTypes = Types::class.java.asClassName()
 
 private fun LambdaTypeName.asParameterizedTypeName(): ParameterizedTypeName {
     val parameters = mutableListOf<TypeName>()

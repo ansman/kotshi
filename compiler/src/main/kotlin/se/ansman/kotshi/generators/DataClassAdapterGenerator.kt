@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.generators
 
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -16,17 +16,33 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.tag
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.Moshi
-import java.io.IOException
+import se.ansman.kotshi.AdapterKey
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.Property
+import se.ansman.kotshi.STRING
+import se.ansman.kotshi.SerializeNulls
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.addElse
+import se.ansman.kotshi.addIf
+import se.ansman.kotshi.addIfElse
+import se.ansman.kotshi.addWhen
+import se.ansman.kotshi.addWhenBranch
+import se.ansman.kotshi.addWhile
+import se.ansman.kotshi.applyEach
+import se.ansman.kotshi.applyEachIndexed
+import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.asRuntimeType
+import se.ansman.kotshi.isPrimitive
+import se.ansman.kotshi.notNull
+import se.ansman.kotshi.nullable
+import se.ansman.kotshi.suggestedAdapterName
 import java.lang.reflect.Type
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -47,8 +63,6 @@ class DataClassAdapterGenerator(
         require(metadata.isData)
     }
 
-    private val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
-    private val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class)).build()
     private val serializeNulls = element.getAnnotation(JsonSerializable::class.java)!!
         .serializeNulls
         .takeUnless { it == SerializeNulls.DEFAULT }
@@ -113,7 +127,7 @@ class DataClassAdapterGenerator(
             PropertySpec
                 .builder(
                     nameAllocator.newName(adapterKey.suggestedAdapterName),
-                    JsonAdapter::class.java.asClassName().plusParameter(adapterKey.type),
+                    jsonAdapter.plusParameter(adapterKey.type),
                     KModifier.PRIVATE
                 )
                 .initializer(CodeBlock.builder()
@@ -139,28 +153,28 @@ class DataClassAdapterGenerator(
     ): TypeSpec.Builder {
         val builder = FunSpec.builder("toJson")
             .addModifiers(KModifier.OVERRIDE)
-            .throws(IOException::class.java)
-            .addParameter(writer)
+            .throws(ioException)
+            .addParameter(writerParameter)
             .addParameter(value)
 
         if (properties.isEmpty()) {
             builder
                 .addIfElse("%N == null", value) {
-                    addStatement("%N.nullValue()", writer)
+                    addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    addStatement("%N\n.beginObject()\n.endObject()", writer)
+                    addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
                 }
 
         } else {
             fun FunSpec.Builder.addBody(): FunSpec.Builder =
-                addStatement("%N.beginObject()", writer)
+                addStatement("%N.beginObject()", writerParameter)
                     .applyEach(properties.filterNot { it.isTransient }) { property ->
-                        addStatement("%N.name(%S)", writer, property.jsonName)
+                        addStatement("%N.name(%S)", writerParameter, property.jsonName)
                         val getter = CodeBlock.of("%N.%L", value, property.name)
 
                         if (property.shouldUseAdapter) {
-                            addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writer).addCode(getter).addCode(")\n")
+                            addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writerParameter).addCode(getter).addCode(")\n")
                         } else when (property.type.notNull()) {
                             STRING,
                             INT,
@@ -168,17 +182,17 @@ class DataClassAdapterGenerator(
                             FLOAT,
                             DOUBLE,
                             SHORT,
-                            BOOLEAN -> addStatement("%N.value(%L)", writer, getter)
-                            BYTE -> addStatement("%N.%M(%L)", writer, kotshiUtilsByteValue, getter)
-                            CHAR -> addStatement("%N.%M(%L)", writer, kotshiUtilsValue, getter)
+                            BOOLEAN -> addStatement("%N.value(%L)", writerParameter, getter)
+                            BYTE -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsByteValue, getter)
+                            CHAR -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsValue, getter)
                             else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
                         }
                     }
-                    .addStatement("%N.endObject()", writer)
+                    .addStatement("%N.endObject()", writerParameter)
 
             builder
                 .addIf("%N == null", value) {
-                    addStatement("%N.nullValue()", writer)
+                    addStatement("%N.nullValue()", writerParameter)
                     addStatement("return")
                 }
 
@@ -189,12 +203,12 @@ class DataClassAdapterGenerator(
             }
             if (serializeNullsEnabled != null) {
                 builder
-                    .addStatement("val serializeNulls = %N.serializeNulls", writer)
-                    .addStatement("%N.serializeNulls = %L", writer, serializeNullsEnabled)
+                    .addStatement("val serializeNulls = %N.serializeNulls", writerParameter)
+                    .addStatement("%N.serializeNulls = %L", writerParameter, serializeNullsEnabled)
                     .beginControlFlow("try")
                     .addBody()
                     .nextControlFlow("finally")
-                    .addStatement("%N.serializeNulls = serializeNulls", writer)
+                    .addStatement("%N.serializeNulls = serializeNulls", writerParameter)
                     .endControlFlow()
             } else {
                 builder.addBody()
@@ -209,8 +223,8 @@ class DataClassAdapterGenerator(
     ): TypeSpec.Builder {
         val builder = FunSpec.builder("fromJson")
             .addModifiers(KModifier.OVERRIDE)
-            .throws(IOException::class.java)
-            .addParameter(reader)
+            .throws(ioException)
+            .addParameter(readerParameter)
             .returns(typeName.nullable())
 
         val variables = properties
@@ -219,7 +233,7 @@ class DataClassAdapterGenerator(
             .associateBy({ it }, { it.createVariables() })
 
         return addFunction(builder
-            .addStatement("if (%N.peek() == %T.NULL) return %N.nextNull()", reader, JsonReader.Token::class.java, reader)
+            .addStatement("if (%N.peek() == %T.NULL) return %N.nextNull()", readerParameter, jsonReaderToken, readerParameter)
             .addCode("\n")
             .applyEach(variables.values) { variable ->
                 addCode("%L", variable.value)
@@ -228,13 +242,13 @@ class DataClassAdapterGenerator(
                 }
             }
             .addCode("\n")
-            .addStatement("%N.beginObject()", reader)
-            .addWhile("%N.hasNext()", reader) {
-                addWhen("%N.selectName(options)", reader) {
+            .addStatement("%N.beginObject()", readerParameter)
+            .addWhile("%N.hasNext()", readerParameter) {
+                addWhen("%N.selectName(options)", readerParameter) {
                     variables.entries.forEachIndexed { index, (property, variable) ->
                         addWhenBranch("%L", index) {
                             if (property.shouldUseAdapter) {
-                                addStatement("%N·= %N.fromJson(%N)", variable.value, adapters.getValue(property.adapterKey), reader)
+                                addStatement("%N·= %N.fromJson(%N)", variable.value, adapters.getValue(property.adapterKey), readerParameter)
                                 if (variable.helper != null) {
                                     if (property.type.isNullable) {
                                         addStatement("%N·= true", variable.helper)
@@ -244,11 +258,11 @@ class DataClassAdapterGenerator(
                                 }
                             } else {
                                 fun FunSpec.Builder.readPrimitive(functionName: String, vararg args: Any) {
-                                    addIfElse("%N.peek() == %T.NULL", reader, JsonReader.Token::class.java) {
-                                        addStatement("%N.skipValue()", reader)
+                                    addIfElse("%N.peek() == %T.NULL", readerParameter, jsonReaderToken) {
+                                        addStatement("%N.skipValue()", readerParameter)
                                     }
                                     addElse {
-                                        addStatement("%N·= %N.$functionName()", variable.value, reader, *args)
+                                        addStatement("%N·= %N.$functionName()", variable.value, readerParameter, *args)
                                         if (variable.helper != null && !property.type.isNullable) {
                                             addStatement("%N·= true", variable.helper)
                                         }
@@ -273,12 +287,12 @@ class DataClassAdapterGenerator(
                         }
                     }
                     addWhenBranch("-1") {
-                        addStatement("%N.skipName()", reader)
-                        addStatement("%N.skipValue()", reader)
+                        addStatement("%N.skipName()", readerParameter)
+                        addStatement("%N.skipValue()", readerParameter)
                     }
                 }
             }
-            .addStatement("%N.endObject()", reader)
+            .addStatement("%N.endObject()", readerParameter)
             .addCode("\n")
             .apply {
                 val propertiesToCheck = variables.entries
@@ -300,7 +314,7 @@ class DataClassAdapterGenerator(
                     }
 
                     addIf("%N != null", stringBuilder) {
-                        addStatement("%N.append(\" (at path \").append(%N.path).append(')')", stringBuilder, reader)
+                        addStatement("%N.append(\" (at path \").append(%N.path).append(')')", stringBuilder, readerParameter)
                         addStatement("throw %T(%N.toString())", jsonDataException, stringBuilder)
                     }
                     addCode("\n")
@@ -387,6 +401,7 @@ class DataClassAdapterGenerator(
                 null
             }
         )
+}
 
     private data class PropertyVariables(
         val value: PropertySpec,
@@ -520,4 +535,5 @@ class DataClassAdapterGenerator(
             add("⇤\n))")
         }
     }
-}
+
+private val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class)).build()

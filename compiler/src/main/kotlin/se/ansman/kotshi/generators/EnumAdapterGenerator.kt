@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.generators
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -7,8 +7,12 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.moshi.JsonReader
-import java.io.IOException
+import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.addNextControlFlow
+import se.ansman.kotshi.addWhen
+import se.ansman.kotshi.jsonName
+import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 
@@ -41,33 +45,33 @@ class EnumAdapterGenerator(
         this
             .addFunction(FunSpec.builder("toJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(writer)
+                .throws(ioException)
+                .addParameter(writerParameter)
                 .addParameter(value)
                 .addWhen("%N", value) {
                     for ((entry, name) in enumToJsonName) {
-                        addStatement("%T.%N·-> %N.value(%S)", className, entry, writer, name)
+                        addStatement("%T.%N·-> %N.value(%S)", className, entry, writerParameter, name)
                     }
-                    addStatement("null·-> %N.nullValue()", writer)
+                    addStatement("null·-> %N.nullValue()", writerParameter)
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(reader)
+                .throws(ioException)
+                .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
-                    addStatement("%N.nextNull()", reader)
+                .addControlFlow("return·if (%N.peek() == %T.NULL)", readerParameter, jsonReaderToken, close = false) {
+                    addStatement("%N.nextNull()", readerParameter)
                 }
-                .addNextControlFlow("else when (%N.selectString(options))", reader) {
+                .addNextControlFlow("else when (%N.selectString(options))", readerParameter) {
                     enumToJsonName.keys.forEachIndexed { index, entry ->
                         addStatement("$index·-> %T.%N", className, entry)
                     }
                     if (defaultValue == null) {
-                        addStatement("else·-> throw·%T(%P)", jsonDataException, "Expected one of ${enumToJsonName.values} but was \${${reader.name}.nextString()} at path \${${reader.name}.path}")
+                        addStatement("else·-> throw·%T(%P)", jsonDataException, "Expected one of ${enumToJsonName.values} but was \${${readerParameter.name}.nextString()} at path \${${readerParameter.name}.path}")
                     } else {
                         addControlFlow("else·->") {
-                            addStatement("%N.skipValue()", reader)
+                            addStatement("%N.skipValue()", readerParameter)
                             addStatement("%T.%N", className, defaultValue)
                         }
                     }

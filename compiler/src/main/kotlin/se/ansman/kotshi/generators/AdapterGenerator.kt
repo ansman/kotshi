@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.generators
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -21,9 +21,23 @@ import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.Moshi
+import se.ansman.kotshi.GeneratedAdapter
+import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.KotshiUtils
+import se.ansman.kotshi.NamedJsonAdapter
+import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.SerializeNulls
+import se.ansman.kotshi.applyEachIndexed
+import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.maybeAddGeneratedAnnotation
+import se.ansman.kotshi.nullable
+import java.io.IOException
 import javax.annotation.processing.Filer
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
@@ -57,9 +71,7 @@ abstract class AdapterGenerator(
         className.parameterizedBy(typeVariables)
     }
 
-    protected val writer = ParameterSpec.builder("writer", JsonWriter::class.java).build()
     protected val value = ParameterSpec.builder("value", typeName.nullable()).build()
-    protected val reader = ParameterSpec.builder("reader", JsonReader::class.java).build()
 
     fun generateAdapter(
         sourceVersion: SourceVersion,
@@ -81,7 +93,7 @@ abstract class AdapterGenerator(
             .addOriginatingElement(element)
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
-            .superclass(NamedJsonAdapter::class.asClassName().plusParameter(typeName))
+            .superclass(namedJsonAdapter.plusParameter(typeName))
             .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
             .apply { addMethods() }
             .build()
@@ -114,8 +126,8 @@ abstract class AdapterGenerator(
         }
 
     protected fun TypeSpec.Builder.addOptions(jsonNames: Collection<String>): TypeSpec.Builder =
-        addProperty(PropertySpec.builder("options", JsonReader.Options::class, KModifier.PRIVATE)
-            .addAnnotation(JvmStatic::class)
+        addProperty(PropertySpec.builder("options", jsonReaderOptions, KModifier.PRIVATE)
+            .addAnnotation(jvmStatic)
             .initializer(CodeBlock.Builder()
                 .add("%T.of(«", jsonReaderOptions)
                 .applyIf(jsonNames.size > 1) { add("\n") }
@@ -139,9 +151,23 @@ val kotshiUtilsNextShort = KotshiUtils::class.member("nextShort")
 val kotshiUtilsNextChar = KotshiUtils::class.member("nextChar")
 val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableError")
 val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
+
+val jvmStatic = JvmStatic::class.java.asClassName()
+val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
+val jsonAdapter = JsonAdapter::class.java.asClassName()
+val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()
 val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
 val jsonDataException = JsonDataException::class.java.asClassName()
 val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
+val jsonReaderToken = JsonReader.Token::class.java.asClassName()
+val ioException = IOException::class.java.asClassName()
+val stringBuilder = ClassName("kotlin.text", "StringBuilder")
+val jsonWriter = JsonWriter::class.java.asClassName()
+val jsonReader = JsonReader::class.java.asClassName()
+
+val writerParameter = ParameterSpec.builder("writer", jsonWriter).build()
+val readerParameter = ParameterSpec.builder("reader", jsonReader).build()
+val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
 
 data class GlobalConfig(
     val useAdaptersForPrimitives: Boolean,

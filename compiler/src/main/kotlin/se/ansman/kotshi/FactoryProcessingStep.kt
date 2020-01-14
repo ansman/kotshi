@@ -16,6 +16,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
+import se.ansman.kotshi.generators.jsonAdapterFactory
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -69,7 +70,7 @@ class FactoryProcessingStep(
                 .superclass(elementClassName)
         } else {
             TypeSpec.objectBuilder(generatedName)
-                .addSuperinterface(JsonAdapter.Factory::class.java)
+                .addSuperinterface(jsonAdapterFactory)
         }
 
         typeSpecBuilder
@@ -118,7 +119,7 @@ class FactoryProcessingStep(
         return createSpec
             .addStatement("if (%N.isNotEmpty()) return null", annotationsParam)
             .addCode("\n")
-            .addControlFlow("return when (%T.getRawType(%N))", com.squareup.moshi.Types::class.java, typeParam) {
+            .addControlFlow("return when (%T.getRawType(%N))", moshiTypes, typeParam) {
                 for (adapter in adapters.sortedBy { it.className }) {
                     addCode("«%T::class.java ->\n%T", adapter.targetType, adapter.className)
                     if (adapter.typeVariables.isNotEmpty()) {

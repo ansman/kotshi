@@ -1,11 +1,11 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.generators
 
 import com.google.auto.common.MoreTypes
 import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -16,10 +16,20 @@ import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.Moshi
-import java.io.IOException
+import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
+import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.addElse
+import se.ansman.kotshi.addIf
+import se.ansman.kotshi.addIfElse
+import se.ansman.kotshi.addNextControlFlow
+import se.ansman.kotshi.addWhile
+import se.ansman.kotshi.applyEachIndexed
+import se.ansman.kotshi.metadata
+import se.ansman.kotshi.nullable
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
@@ -46,8 +56,8 @@ class SealedClassAdapterGenerator(
         ?: throw ProcessingError("Sealed classes must be annotated with @Polymorphic", element)
 
     private val labelKeyOptions = PropertySpec
-        .builder(nameAllocator.newName("labelKeyOptions"), JsonReader.Options::class.java, KModifier.PRIVATE)
-        .addAnnotation(JvmStatic::class)
+        .builder(nameAllocator.newName("labelKeyOptions"), jsonReaderOptions, KModifier.PRIVATE)
+        .addAnnotation(jvmStatic)
         .initializer("%T.of(%S)", jsonReaderOptions, labelKey)
         .build()
 
@@ -86,8 +96,8 @@ class SealedClassAdapterGenerator(
 
         val peekLabelIndex = FunSpec.builder("peeklabelIndex")
             .addModifiers(KModifier.PRIVATE)
-            .receiver(JsonReader::class.java)
-            .returns(Int::class.javaPrimitiveType!!)
+            .receiver(jsonReader)
+            .returns(INT)
             .addControlFlow("return peekJson().use { reader ->") {
                 addStatement("reader.setFailOnUnknown(false)")
                 addStatement("reader.beginObject()")
@@ -115,9 +125,7 @@ class SealedClassAdapterGenerator(
             }
             .build()
 
-        val moshi = ParameterSpec.builder("moshi", Moshi::class.java).build()
-
-        val adapterType = JsonAdapter::class.java.asClassName().plusParameter(typeName)
+        val adapterType = jsonAdapter.plusParameter(typeName)
         val adapters = PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
             .initializer(CodeBlock.builder()
                 .add("arrayOf(«")
@@ -125,7 +133,7 @@ class SealedClassAdapterGenerator(
                     if (index > 0) {
                         add(",")
                     }
-                    add("\n%N.adapter<%T>(%T::class.java)", moshi, typeName, subtype.className)
+                    add("\n%N.adapter<%T>(%T::class.java)", moshiParameter, typeName, subtype.className)
                 }
                 .add("»\n)\n")
                 .build())
@@ -147,15 +155,15 @@ class SealedClassAdapterGenerator(
         }
 
         this
-            .primaryConstructor(FunSpec.constructorBuilder().addParameter(moshi).build())
+            .primaryConstructor(FunSpec.constructorBuilder().addParameter(moshiParameter).build())
             .addProperty(adapters)
             .addFunction(FunSpec.builder("toJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(writer)
+                .throws(ioException)
+                .addParameter(writerParameter)
                 .addParameter(value)
                 .addIfElse("%N == null", value) {
-                    addStatement("%N.nullValue()", writer)
+                    addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
                     addControlFlow("val adapter = when (%N)", value) {
@@ -166,25 +174,25 @@ class SealedClassAdapterGenerator(
                             addStatement("is %T·-> %L", defaultType, defaultAdapter)
                         }
                     }
-                    addStatement("adapter.toJson(%N, %N)", writer, value)
+                    addStatement("adapter.toJson(%N, %N)", writerParameter, value)
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(reader)
+                .throws(ioException)
+                .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
-                    addStatement("%N.nextNull()", reader)
+                .addControlFlow("return·if (%N.peek() == %T.NULL)", readerParameter, jsonReaderToken, close = false) {
+                    addStatement("%N.nextNull()", readerParameter)
                 }
                 .addNextControlFlow("else") {
-                    addStatement("val·labelIndex·=·%N.%N()", reader, peekLabelIndex)
+                    addStatement("val·labelIndex·=·%N.%N()", readerParameter, peekLabelIndex)
                     if (defaultAdapter != null) {
                         addStatement("val·adapter·=·if·(labelIndex·==·-1)·%L·else·adapters[labelIndex]", defaultAdapter)
                     } else {
                         addStatement("val·adapter·=·adapters[labelIndex]")
                     }
-                    addStatement("adapter.fromJson(%N)", reader)
+                    addStatement("adapter.fromJson(%N)", readerParameter)
                 }
                 .build())
             .addFunction(peekLabelIndex)

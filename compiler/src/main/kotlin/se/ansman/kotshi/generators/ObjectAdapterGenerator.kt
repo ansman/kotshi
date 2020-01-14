@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.generators
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -7,8 +7,12 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.moshi.JsonReader
-import java.io.IOException
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.addElse
+import se.ansman.kotshi.addIfElse
+import se.ansman.kotshi.addNextControlFlow
+import se.ansman.kotshi.addWhile
+import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 
@@ -27,31 +31,31 @@ class ObjectAdapterGenerator(
         this
             .addFunction(FunSpec.builder("toJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(writer)
+                .throws(ioException)
+                .addParameter(writerParameter)
                 .addParameter(value)
                 .addIfElse("%N == null", value) {
-                    addStatement("%N.nullValue()", writer)
+                    addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    addStatement("%N.beginObject().endObject()", writer)
+                    addStatement("%N.beginObject().endObject()", writerParameter)
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")
                 .addModifiers(KModifier.OVERRIDE)
-                .throws(IOException::class.java)
-                .addParameter(reader)
+                .throws(ioException)
+                .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if (%N.peek() == %T.NULL)", reader, JsonReader.Token::class.java, close = false) {
-                    addStatement("%N.nextNull()", reader)
+                .addControlFlow("return·if (%N.peek() == %T.NULL)", readerParameter, jsonReaderToken, close = false) {
+                    addStatement("%N.nextNull()", readerParameter)
                 }
                 .addNextControlFlow("else") {
-                    addStatement("%N.beginObject()", reader)
-                    addWhile("%N.hasNext()", reader) {
-                        addStatement("%N.skipName()", reader)
-                        addStatement("%N.skipValue()", reader)
+                    addStatement("%N.beginObject()", readerParameter)
+                    addWhile("%N.hasNext()", readerParameter) {
+                        addStatement("%N.skipName()", readerParameter)
+                        addStatement("%N.skipValue()", readerParameter)
                     }
-                    addStatement("%N.endObject()", reader)
+                    addStatement("%N.endObject()", readerParameter)
                     addStatement("%T", typeName)
                 }
                 .build())
