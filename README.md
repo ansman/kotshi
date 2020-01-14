@@ -1,7 +1,7 @@
 Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
 ===
 
-An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin enum and data classes
+An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
 increase the binary size which in a constrained environment such as Android is something is not preferable.
@@ -9,12 +9,12 @@ increase the binary size which in a constrained environment such as Android is s
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
 hand written them yourself. It will automatically regenerate the adapters when you modify your class.
 
-It's made to work with enum and data classes with minimal setup, through there are [limitations](#limitations).
+It's made to work with minimal setup, through there are [limitations](#limitations).
 Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
 
 Usage
 ---
-First you must annotate your enum or data classes with the `@JsonSerializable` annotation:
+First you must annotate your objects with the `@JsonSerializable` annotation:
 ```kotlin
 @JsonSerializable
 data class Person(
@@ -28,6 +28,12 @@ data class Person(
     val jobTitle: String? = null
 )
 ```
+
+The following types are supported:
+* `object` (serialized as an empty JSON object)
+* `data class`
+* `enum class`
+* `sealed class`
 
 Then create a class that will be your factory:
 ```kotlin
@@ -51,9 +57,9 @@ by passing the same argument to `@JsonSerializable` (the default is to follow
 the module wide setting).
 
 ### Annotations
-* `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on enum or data classes.
+* `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on data classes, enums, sealed classes and objects.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
-* `@JsonDefaultValue` can be used to annotated a fallback for enums when an unknown entry is encountered. The default is to thrown an exception.
+* `@JsonDefaultValue` can be used to annotated a fallback for enums or sealed classes when an unknown entry is encountered. The default is to thrown an exception.
 
 ### Default Values
 You can use default values just like you normally would in Kotlin.
@@ -62,8 +68,8 @@ Due to limitations in Kotlin two instances of the object will be created when a 
 ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)). This also means that composite default values are not
 supported (for example a `fullName` property that is `"$firstName $lastName"`).
 
-For enum entries you may annotate a single enum entry with `@JsonDefaultValue` to indicate that the entry should be used
-when an unknown enum entry is encountered (by default an exception is thrown).
+For enum entries and sealed classes you may annotate a single type with `@JsonDefaultValue` to indicate that the entry
+should be used when an unknown value is encountered (by default an exception is thrown).
 
 ### Transient Values
 Properties marked with `@Transient` are not serialized. All transient properties must have a default value.
@@ -81,7 +87,7 @@ desired qualifiers and Kotshi will pick them up.
 Limitations
 ---
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
-* Only enum and data classes are supported.
+* Only data classes, enums, sealed classes and objects are supported.
   - Only constructor properties will be serialized.
   - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
 * Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.

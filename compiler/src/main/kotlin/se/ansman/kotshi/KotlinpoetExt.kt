@@ -9,7 +9,6 @@ import com.squareup.kotlinpoet.CHAR
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
 import com.squareup.kotlinpoet.FLOAT
-import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LONG
@@ -20,10 +19,10 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonQualifier
+import java.time.Instant
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.util.Elements
-import kotlin.reflect.KClass
 
 val STRING: ClassName = ClassName("kotlin", "String")
 val JSON: ClassName = Json::class.java.asClassName()
@@ -68,7 +67,9 @@ fun TypeSpec.Builder.maybeAddGeneratedAnnotation(elements: Elements, sourceVersi
         val typeElement = elements.getTypeElement(generatedName)
         if (typeElement != null) {
             addAnnotation(AnnotationSpec.builder(typeElement.asClassName())
-                .addMember("%S", "se.ansman.kotshi.KotshiProcessor")
+                .addMember("%S", KotshiProcessor::class.java.canonicalName)
+                .addMember("date = %S", Instant.now().toString())
+                .addMember("comments = %S", "https://github.com/ansman/kotshi")
                 .build())
         }
     }
@@ -160,16 +161,3 @@ inline fun FunSpec.Builder.addWhen(
     block: FunSpec.Builder.() -> Unit
 ): FunSpec.Builder =
     addControlFlow("when ($subject)", *args, block = block)
-
-fun FileSpec.Builder.addImport(import: Import) = addImport(import.className, *import.simpleNames.toTypedArray())
-fun FileSpec.Builder.addImports(imports: Iterable<Import>) = applyEach(imports) { addImport(it) }
-
-data class Import(val className: ClassName, val simpleNames: List<String>) {
-    constructor(className: KClass<*>, vararg simpleNames: String) : this(className.asClassName(), simpleNames.asList())
-    constructor(className: Class<*>, vararg simpleNames: String) : this(className.asClassName(), simpleNames.asList())
-    constructor(className: ClassName, vararg simpleNames: String) : this(className, simpleNames.asList())
-}
-
-inline fun KClass<*>.import(vararg simpleNames: String) = Import(this, *simpleNames)
-inline fun Class<*>.import(vararg simpleNames: String) = Import(this, *simpleNames)
-inline fun ClassName.import(vararg simpleNames: String) = Import(this, *simpleNames)
