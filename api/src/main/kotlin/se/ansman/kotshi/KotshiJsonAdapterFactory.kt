@@ -1,10 +1,11 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.JsonAdapter
 
 /**
  * Annotation to be applied on an abstract class that implements
- * [JsonAdapter.Factory][com.squareup.moshi.JsonAdapter.Factory] to tell Kotshi to generate a factory containing
+ * [JsonAdapter.Factory] to tell Kotshi to generate a factory containing
  * all adapters in this module.
  *
  * Example:
