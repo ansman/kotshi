@@ -23,5 +23,5 @@ compileTestKotlin {
 
 dependencies {
     api libraries.kotlin_stdlib
-    testCompile libraries.kotlin_junit
+    testImplementation libraries.kotlin_junit
 }
