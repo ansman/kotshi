@@ -14,7 +14,6 @@ import java.lang.reflect.Type
  * These functions should not be considered public and are subject to change without notice.
  */
 object KotshiUtils {
-    private const val ERROR_FORMAT = "Expected %s but was %s at path %s"
 
     @JvmStatic
     val Type.typeArgumentsOrFail: Array<Type>
@@ -28,11 +27,7 @@ object KotshiUtils {
     @JvmStatic
     @JvmOverloads
     fun StringBuilder?.appendNullableError(propertyName: String, jsonName: String = propertyName): StringBuilder =
-        if (this == null) {
-            StringBuilder("The following properties were null: ")
-        } else {
-            append(", ")
-        }
+        (if (this == null) StringBuilder("The following properties were null: ") else append(", "))
             .append(propertyName)
             .apply {
                 if (jsonName != propertyName) {
@@ -51,20 +46,19 @@ object KotshiUtils {
                 "equals" -> isInstance(args[0])
                 "hashCode" -> 0
                 "toString" -> "@$name()"
-                else -> annotationArguments[method.name] ?:method.invoke(proxy, *args)
+                else -> annotationArguments[method.name] ?: method.invoke(proxy, *args)
             }
         } as T
     }
 
     @JvmStatic
-    fun JsonReader.nextFloat(): Float {
-        val value = nextDouble().toFloat()
-        // Double check for infinity after float conversion; many doubles > Float.MAX
-        if (!isLenient && value.isInfinite()) {
-            throw JsonDataException("JSON forbids NaN and infinities: $value at path $path")
+    fun JsonReader.nextFloat(): Float =
+        nextDouble().toFloat().also {
+            // Double check for infinity after float conversion; many doubles > Float.MAX
+            if (!isLenient && it.isInfinite()) {
+                throw JsonDataException("JSON forbids NaN and infinities: $it at path $path")
+            }
         }
-        return value
-    }
 
     @JvmStatic
     fun JsonReader.nextByte(): Byte = nextIntInRange("a byte", -128, 255).toByte()
@@ -73,13 +67,14 @@ object KotshiUtils {
     fun JsonReader.nextShort(): Short = nextIntInRange("a short", -32768, 32767).toShort()
 
     @JvmStatic
-    fun JsonReader.nextChar(): Char {
-        val value = nextString()
-        if (value.length != 1) {
-            throw JsonDataException(ERROR_FORMAT.format("a char", value, path))
-        }
-        return value[0]
-    }
+    fun JsonReader.nextChar(): Char =
+        nextString()
+            .also {
+                if (it.length != 1) {
+                    throw JsonDataException("Expected a char but was $it at path $path")
+                }
+            }
+            .single()
 
     @JvmStatic
     fun JsonWriter.byteValue(byte: Byte): JsonWriter = value(byte.toInt() and 0xff)
@@ -94,11 +89,10 @@ object KotshiUtils {
     fun JsonWriter.value(char: Char?): JsonWriter = if (char == null) nullValue() else value(char)
 
     @JvmStatic
-    private fun JsonReader.nextIntInRange(typeMessage: String, min: Int, max: Int): Int {
-        val value = nextInt()
-        if (value < min || value > max) {
-            throw JsonDataException(ERROR_FORMAT.format(typeMessage, value, path))
+    private fun JsonReader.nextIntInRange(typeMessage: String, min: Int, max: Int): Int =
+        nextInt().also {
+            if (it !in min..max) {
+                throw JsonDataException("Expected $typeMessage but was $it at path $path")
+            }
         }
-        return value
-    }
 }
