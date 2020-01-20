@@ -63,7 +63,8 @@ class TestAdapterGeneration {
         |      "val1",
         |      "val2"
         |    ],
-        |    "value": "val3"
+        |    "value": "val3",
+        |    "valueWithTypeAnnotation": "val4"
         |  }
         |}""".trimMargin()
         val adapter = moshi.adapter(TestClass::class.java)
@@ -92,7 +93,7 @@ class TestAdapterGeneration {
             customName = "other_value",
             annotated = "Hello, World!",
             anotherAnnotated = "Hello, Other World!",
-            genericClass = GenericClass(listOf("val1", "val2"), "val3"))
+            genericClass = GenericClass(listOf("val1", "val2"), "val3", "val4"))
 
         assertEquals(expected, actual)
         assertEquals(json, Buffer()

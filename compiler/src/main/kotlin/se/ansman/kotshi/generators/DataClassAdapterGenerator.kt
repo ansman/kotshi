@@ -133,9 +133,9 @@ class DataClassAdapterGenerator(
                 .initializer(CodeBlock.builder()
                     .add("«%N.adapter(", moshiParameter)
                     .add(adapterKey.asRuntimeType { typeVariableName ->
-                        val genericIndex = elementTypeSpec.typeVariables.indexOf(typeVariableName.notNull())
+                        val genericIndex = elementTypeSpec.typeVariables.indexOfFirst { it.name == typeVariableName.name }
                         if (genericIndex == -1) {
-                            throw ProcessingError("Element is generic but if an unknown type", element)
+                            throw ProcessingError("Element is generic but is of an unknown type", element)
                         } else {
                             CodeBlock.of("%N[$genericIndex]", typesParameter)
                         }
