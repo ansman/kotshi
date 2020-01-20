@@ -83,6 +83,7 @@ class DataClassAdapterGenerator(
             .asSequence()
             .filter { it.shouldUseAdapter }
             .map { it.adapterKey }
+            .distinct()
             .generatePropertySpecs()
 
         primaryConstructor(FunSpec.constructorBuilder()
@@ -141,7 +142,7 @@ class DataClassAdapterGenerator(
                         }
                     })
                     .add(adapterKey.annotations())
-                    .add(")\n»")
+                    .add(")»")
                     .build())
                 .build()
         }
