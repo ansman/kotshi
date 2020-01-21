@@ -160,7 +160,7 @@ class DataClassAdapterGenerator(
 
         if (properties.isEmpty()) {
             builder
-                .addIfElse("%N == null", value) {
+                .addIfElse("%N·==·null", value) {
                     addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
@@ -204,12 +204,12 @@ class DataClassAdapterGenerator(
             }
             if (serializeNullsEnabled != null) {
                 builder
-                    .addStatement("val serializeNulls = %N.serializeNulls", writerParameter)
-                    .addStatement("%N.serializeNulls = %L", writerParameter, serializeNullsEnabled)
+                    .addStatement("val·serializeNulls·= %N.serializeNulls", writerParameter)
+                    .addStatement("%N.serializeNulls·= %L", writerParameter, serializeNullsEnabled)
                     .beginControlFlow("try")
                     .addBody()
                     .nextControlFlow("finally")
-                    .addStatement("%N.serializeNulls = serializeNulls", writerParameter)
+                    .addStatement("%N.serializeNulls·= serializeNulls", writerParameter)
                     .endControlFlow()
             } else {
                 builder.addBody()
