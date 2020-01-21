@@ -30,7 +30,10 @@ class Property private constructor(
         ): Property {
             val name = parameter.name
             val type = parameter.type
-            val adapterKey = AdapterKey(type.notNull(), parameter.annotations.qualifiers(elements))
+            val adapterKey = AdapterKey(
+                type = type.copy(nullable = false, annotations = emptyList()),
+                jsonQualifiers = parameter.annotations.qualifiers(elements)
+            )
 
             val useAdaptersForPrimitives = when (enclosingClass.getAnnotation(JsonSerializable::class.java).useAdaptersForPrimitives) {
                 PrimitiveAdapters.DEFAULT -> globalConfig.useAdaptersForPrimitives
