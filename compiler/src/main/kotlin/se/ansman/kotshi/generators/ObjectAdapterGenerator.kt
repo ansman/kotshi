@@ -10,8 +10,6 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
-import se.ansman.kotshi.addNextControlFlow
-import se.ansman.kotshi.addWhile
 import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
@@ -46,17 +44,13 @@ class ObjectAdapterGenerator(
                 .throws(ioException)
                 .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if (%N.peek() == %T.NULL)", readerParameter, jsonReaderToken, close = false) {
-                    addStatement("%N.nextNull()", readerParameter)
-                }
-                .addNextControlFlow("else") {
-                    addStatement("%N.beginObject()", readerParameter)
-                    addWhile("%N.hasNext()", readerParameter) {
-                        addStatement("%N.skipName()", readerParameter)
+                .addControlFlow("return when·(%N.peek())", readerParameter) {
+                    addStatement("%T.NULL·-> %N.nextNull()", jsonReaderToken, readerParameter)
+                    addControlFlow("%T.BEGIN_OBJECT·->", jsonReaderToken) {
                         addStatement("%N.skipValue()", readerParameter)
+                        addStatement("%T", typeName)
                     }
-                    addStatement("%N.endObject()", readerParameter)
-                    addStatement("%T", typeName)
+                    addStatement("else·-> throw·%T(%P)", jsonDataException, "Expected BEGIN_OBJECT but was \${${readerParameter.name}.peek()} at path \${${readerParameter.name}.path}")
                 }
                 .build())
     }
