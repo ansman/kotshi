@@ -38,7 +38,7 @@ annotation class Polymorphic(
     val onInvalid: Fallback = Fallback.DEFAULT
 ) {
     /**
-     * Specifies what happens if the polymorphic label is invalid or missing.
+     * Specifies what happens if the polymorphic label is invalid or missing during parsing of a sealed class.
      */
     enum class Fallback {
         /**
