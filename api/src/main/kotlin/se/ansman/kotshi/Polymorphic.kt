@@ -1,5 +1,7 @@
 package se.ansman.kotshi
 
+import com.squareup.moshi.JsonDataException
+
 /**
  * Annotation to be placed on a sealed class to describe how it should be parsed.
  *
@@ -26,9 +28,30 @@ package se.ansman.kotshi
  * data class HoldemHand(val hiddenCards: List<Card>) : HandOfCards()
  * ```
  *
- * @param labelKey The key in the json that describes which subtype the object should be decoded as.
+ * @param labelKey the key in the json that describes which subtype the object should be decoded as.
+ * @param onMissing defined what happens if [labelKey] is missing from the JSON.
+ * @param onInvalid defined what happens if [labelKey] is present but invalid (unknown).
  */
-annotation class Polymorphic(val labelKey: String)
+annotation class Polymorphic(
+    val labelKey: String,
+    val onMissing: Fallback = Fallback.DEFAULT,
+    val onInvalid: Fallback = Fallback.DEFAULT
+) {
+    /**
+     * Specifies what happens if the polymorphic label is invalid or missing.
+     */
+    enum class Fallback {
+        /**
+         * The default behavior which is to use the class annotated with [JsonDefaultValue] if it exists, otherwise
+         * it behaves like [FAIL].
+         */
+        DEFAULT,
+        /** Throw a [JsonDataException]. */
+        FAIL,
+        /** Return `null` */
+        NULL
+    }
+}
 
 /**
  * An annotation must be applied to subtypes of a sealed class to specify the value that represents the type.
