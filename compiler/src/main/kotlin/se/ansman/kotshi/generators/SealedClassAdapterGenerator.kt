@@ -4,7 +4,6 @@ import com.google.auto.common.MoreTypes
 import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
@@ -25,7 +24,6 @@ import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIf
 import se.ansman.kotshi.addIfElse
-import se.ansman.kotshi.addNextControlFlow
 import se.ansman.kotshi.addWhile
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.metadata
@@ -49,11 +47,16 @@ class SealedClassAdapterGenerator(
         if (metadata.sealedSubclasses.isEmpty()) {
             throw ProcessingError("Sealed classes without implementations are not supported", element)
         }
+
+        nameAllocator.newName("peek")
+        nameAllocator.newName("labelIndex")
+        nameAllocator.newName("adapter")
     }
 
-    private val labelKey = element.getAnnotation(Polymorphic::class.java)
-        ?.labelKey
+    private val annotation = element.getAnnotation(Polymorphic::class.java)
         ?: throw ProcessingError("Sealed classes must be annotated with @Polymorphic", element)
+
+    private val labelKey = annotation.labelKey
 
     private val labelKeyOptions = PropertySpec
         .builder(nameAllocator.newName("labelKeyOptions"), jsonReaderOptions, KModifier.PRIVATE)
@@ -94,36 +97,9 @@ class SealedClassAdapterGenerator(
                 }
             }
 
-        val peekLabelIndex = FunSpec.builder("peeklabelIndex")
-            .addModifiers(KModifier.PRIVATE)
-            .receiver(jsonReader)
-            .returns(INT)
-            .addControlFlow("return peekJson().use { reader ->") {
-                addStatement("reader.setFailOnUnknown(false)")
-                addStatement("reader.beginObject()")
-                addWhile("reader.hasNext()") {
-                    addIf("reader.selectName(%N) == -1", labelKeyOptions) {
-                        addStatement("reader.skipName()")
-                        addStatement("reader.skipValue()")
-                        addStatement("continue")
-                    }
-                    if (defaultType == null) {
-                        addStatement("val labelIndex = reader.selectString(options)")
-                        addIf("labelIndex == -1") {
-                            addStatement("throw·%T(%S + reader.nextString())", jsonDataException, "Expected one of $labels for key '$labelKey' but found ")
-                        }
-                        addStatement("return·labelIndex")
-                    } else {
-                        addStatement("return·reader.selectString(options)")
-                    }
-                }
-                if (defaultType == null) {
-                    addStatement("throw·%T(%S)", jsonDataException, "Missing label for $labelKey")
-                } else {
-                    addStatement("-1")
-                }
-            }
-            .build()
+        if (defaultType != null && annotation.onMissing != Polymorphic.Fallback.DEFAULT && annotation.onInvalid != Polymorphic.Fallback.DEFAULT) {
+            throw ProcessingError("@JsonDefaultValue cannot be used in combination with onMissing=${annotation.onMissing} and onInvalid=${annotation.onInvalid}", defaultType)
+        }
 
         val adapterType = jsonAdapter.plusParameter(typeName)
         val adapters = PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
@@ -182,20 +158,47 @@ class SealedClassAdapterGenerator(
                 .throws(ioException)
                 .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if (%N.peek() == %T.NULL)", readerParameter, jsonReaderToken, close = false) {
+                .addControlFlow("return·if·(%N.peek()·==·%T.NULL)", readerParameter, jsonReaderToken, close = false) {
                     addStatement("%N.nextNull()", readerParameter)
                 }
-                .addNextControlFlow("else") {
-                    addStatement("val·labelIndex·=·%N.%N()", readerParameter, peekLabelIndex)
-                    if (defaultAdapter != null) {
-                        addStatement("val·adapter·=·if·(labelIndex·==·-1)·%L·else·adapters[labelIndex]", defaultAdapter)
-                    } else {
-                        addStatement("val·adapter·=·adapters[labelIndex]")
+                .addElse {
+                    addControlFlow("%N.peekJson().use·{·peek·->", readerParameter) {
+                        addStatement("peek.setFailOnUnknown(false)")
+                        addStatement("peek.beginObject()")
+                        addWhile("peek.hasNext()") {
+                            addIf("peek.selectName(%N)·==·-1", labelKeyOptions) {
+                                addStatement("peek.skipName()")
+                                addStatement("peek.skipValue()")
+                                addStatement("continue")
+                            }
+                            addStatement("val·labelIndex·= peek.selectString(options)")
+                            addControlFlow("val·adapter·= if·(labelIndex·==·-1)", close = false) {
+                                if (annotation.onInvalid == Polymorphic.Fallback.FAIL || defaultType == null && annotation.onInvalid == Polymorphic.Fallback.DEFAULT) {
+                                    addStatement("throw·%T(%S·+ peek.nextString())", jsonDataException, "Expected one of $labels for key '$labelKey' but found ")
+                                } else if (annotation.onInvalid == Polymorphic.Fallback.NULL) {
+                                    addStatement("%N.skipValue()", readerParameter)
+                                    addStatement("return·null")
+                                } else {
+                                    addStatement("%L", defaultAdapter ?: throw AssertionError("Unhandled case"))
+                                }
+                            }
+                            addElse {
+                                addStatement("adapters[labelIndex]")
+                            }
+                            addStatement("return·adapter.fromJson(%N)", readerParameter)
+                        }
+
+                        if (annotation.onMissing == Polymorphic.Fallback.FAIL || defaultType == null && annotation.onMissing == Polymorphic.Fallback.DEFAULT) {
+                            addStatement("throw·%T(%S)", jsonDataException, "Missing label for $labelKey")
+                        } else if (annotation.onMissing == Polymorphic.Fallback.NULL) {
+                            addStatement("%N.skipValue()", readerParameter)
+                            addStatement("null")
+                        } else {
+                            addStatement("%L.fromJson(%N)", defaultAdapter ?: throw AssertionError("Unhandled case"), readerParameter)
+                        }
                     }
-                    addStatement("adapter.fromJson(%N)", readerParameter)
                 }
                 .build())
-            .addFunction(peekLabelIndex)
             .addType(TypeSpec.companionObjectBuilder()
                 .addOptions(labels)
                 .addProperty(labelKeyOptions)
