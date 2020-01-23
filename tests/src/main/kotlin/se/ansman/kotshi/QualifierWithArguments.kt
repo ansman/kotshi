@@ -62,3 +62,33 @@ data class ClassWithQualifierWithArguments(
     )
     val foo: String
 )
+
+@JsonSerializable
+data class ClassWithQualifierWithEscapedArguments(
+    @QualifierWithArguments(
+        "\"\"",
+        booleanArg = true,
+        byteArg = 254.toByte(),
+        shortArg = 10_000,
+        charArg = '\'',
+        intArg = 100_000,
+        longArg = 100_000_000_000_000,
+        floatArg = 1f,
+        doubleArg = 2.0,
+        stringArg = "\"\"",
+        emptyArray = [],
+        booleanArrayArg = [true],
+        byteArrayArg = [254.toByte()],
+        shortArrayArg = [10_000],
+        charArrayArg = ['\''],
+        intArrayArg = [100_000],
+        longArrayArg = [100_000_000_000_000],
+        floatArrayArg = [47.11f],
+        doubleArrayArg = [13.37],
+        stringArrayArg = ["\"\""],
+        classArg = QualifierWithArguments::class,
+        nestedArg = QualifierWithArguments.Nested("\"\""),
+        enumArg = SomeEnum.VALUE3
+    )
+    val foo: String
+)
