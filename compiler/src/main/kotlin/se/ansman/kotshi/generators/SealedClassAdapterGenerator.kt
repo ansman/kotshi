@@ -79,6 +79,10 @@ class SealedClassAdapterGenerator(
             }
             .toList()
 
+        if (subtypes.isEmpty()) {
+            throw ProcessingError("No classes annotated with @PolymorphicLabel", element)
+        }
+
         val labels = subtypes.map { it.label }
 
         for ((label, types) in subtypes.groupBy { it.label }.entries) {
