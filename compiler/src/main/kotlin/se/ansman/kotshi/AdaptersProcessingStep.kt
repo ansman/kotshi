@@ -86,7 +86,7 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig
                     )
                     else -> throw ProcessingError(
-                        "@JsonSerializable can only be applied to enums, objects, data classes",
+                        "@JsonSerializable can only be applied to enums, objects, sealed classes and data classes",
                         typeElement
                     )
                 }
