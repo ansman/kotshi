@@ -441,7 +441,11 @@ class DataClassAdapterGenerator(
             }
 
             override fun visitChar(c: Char, p: Nothing?) {
-                add("'$c'")
+                if (c == '\'') {
+                    add("'\\''")
+                } else {
+                    add("'$c'")
+                }
             }
 
             override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
