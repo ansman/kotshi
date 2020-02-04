@@ -92,6 +92,7 @@ Limitations
   - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
 * Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
 * Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
+* Due to a KAPT bug/limitation you cannot add qualifiers to parameters that are inline classes ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-36352)).
 
 Download
 ---
