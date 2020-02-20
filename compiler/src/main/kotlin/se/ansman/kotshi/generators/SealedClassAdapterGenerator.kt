@@ -60,7 +60,6 @@ class SealedClassAdapterGenerator(
 
     private val labelKeyOptions = PropertySpec
         .builder(nameAllocator.newName("labelKeyOptions"), jsonReaderOptions, KModifier.PRIVATE)
-        .addAnnotation(jvmStatic)
         .initializer("%T.of(%S)", jsonReaderOptions, labelKey)
         .build()
 
@@ -203,10 +202,8 @@ class SealedClassAdapterGenerator(
                     }
                 }
                 .build())
-            .addType(TypeSpec.companionObjectBuilder()
-                .addOptions(labels)
-                .addProperty(labelKeyOptions)
-                .build())
+            .addOptions(labels)
+            .addProperty(labelKeyOptions)
     }
 
     private fun ImmutableKmClass.findSealedClassImplementations(supertype: TypeName): Sequence<TypeElement> =

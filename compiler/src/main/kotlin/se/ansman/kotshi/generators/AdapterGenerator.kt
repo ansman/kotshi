@@ -119,15 +119,11 @@ abstract class AdapterGenerator(
 
     protected fun TypeSpec.Builder.maybeAddCompanion(jsonNames: Collection<String>): TypeSpec.Builder =
         applyIf(jsonNames.isNotEmpty()) {
-            addType(TypeSpec.companionObjectBuilder()
-                .addModifiers(KModifier.PRIVATE)
-                .addOptions(jsonNames)
-                .build())
+            addOptions(jsonNames)
         }
 
     protected fun TypeSpec.Builder.addOptions(jsonNames: Collection<String>): TypeSpec.Builder =
         addProperty(PropertySpec.builder("options", jsonReaderOptions, KModifier.PRIVATE)
-            .addAnnotation(jvmStatic)
             .initializer(CodeBlock.Builder()
                 .add("%T.of(«", jsonReaderOptions)
                 .applyIf(jsonNames.size > 1) { add("\n") }
@@ -152,7 +148,6 @@ val kotshiUtilsNextChar = KotshiUtils::class.member("nextChar")
 val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableError")
 val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
 
-val jvmStatic = JvmStatic::class.java.asClassName()
 val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
 val jsonAdapter = JsonAdapter::class.java.asClassName()
 val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()
@@ -161,7 +156,6 @@ val jsonDataException = JsonDataException::class.java.asClassName()
 val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
 val jsonReaderToken = JsonReader.Token::class.java.asClassName()
 val ioException = IOException::class.java.asClassName()
-val stringBuilder = ClassName("kotlin.text", "StringBuilder")
 val jsonWriter = JsonWriter::class.java.asClassName()
 val jsonReader = JsonReader::class.java.asClassName()
 
