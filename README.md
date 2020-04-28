@@ -1,7 +1,7 @@
 Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
 ===
 
-An annotations processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
+An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
 increase the binary size which in a constrained environment such as Android is something is not preferable.
