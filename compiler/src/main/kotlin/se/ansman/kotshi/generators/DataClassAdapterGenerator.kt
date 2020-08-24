@@ -283,6 +283,7 @@ class DataClassAdapterGenerator(
                                     CHAR -> readPrimitive("%M", kotshiUtilsNextChar)
                                     FLOAT -> readPrimitive("%M", kotshiUtilsNextFloat)
                                     DOUBLE -> readPrimitive("nextDouble")
+                                    else -> throw ProcessingError("Internal Kotshi error. Expected property type to be a primitive but was ${property.type}. Please open an issue here: https://github.com/ansman/kotshi/issues/new", element)
                                 }
                             }
                         }
@@ -425,7 +426,7 @@ class DataClassAdapterGenerator(
         }
     }
 
-    @UseExperimental(ExperimentalStdlibApi::class)
+    @OptIn(ExperimentalStdlibApi::class)
     private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror): CodeBlock.Builder = apply {
         value.accept(object : AnnotationValueVisitor<Unit, Nothing?> {
             override fun visitFloat(f: Float, p: Nothing?) {

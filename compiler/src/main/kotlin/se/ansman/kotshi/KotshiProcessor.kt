@@ -16,10 +16,8 @@ import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
-import javax.lang.model.element.PackageElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
-import javax.lang.model.util.SimpleElementVisitor6
 
 @AutoService(Processor::class)
 @IncrementalAnnotationProcessor(AGGREGATING)
@@ -107,41 +105,4 @@ class KotshiProcessor : AbstractProcessor() {
         protected abstract val processor: KotshiProcessor
     }
 
-    private data class ElementName(private val kind: Kind, val name: String) {
-        private enum class Kind {
-            PACKAGE_NAME,
-            TYPE_NAME
-        }
-
-        companion object {
-            /**
-             * An [ElementName] for a package.
-             */
-            internal fun forPackageName(packageName: String): ElementName = ElementName(Kind.PACKAGE_NAME, packageName)
-
-            /**
-             * An [ElementName] for a type.
-             */
-            internal fun forTypeName(typeName: String): ElementName = ElementName(Kind.TYPE_NAME, typeName)
-
-        }
-    }
-}
-
-
-/**
- * Returns the nearest enclosing [TypeElement] to the current element, throwing
- * an [IllegalArgumentException] if the provided [Element] is a
- * [PackageElement] or is otherwise not enclosed by a type.
- */
-private fun getEnclosingType(element: Element): TypeElement {
-    return element.accept(object : SimpleElementVisitor6<TypeElement, Void>() {
-        override fun defaultAction(e: Element, p: Void?): TypeElement = e.enclosingElement.accept(this, p)
-
-        override fun visitType(e: TypeElement, p: Void?): TypeElement = e
-
-        override fun visitPackage(e: PackageElement, p: Void?): Nothing {
-            throw IllegalArgumentException()
-        }
-    }, null)
 }

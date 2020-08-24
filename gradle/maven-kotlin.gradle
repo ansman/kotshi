@@ -29,12 +29,11 @@ artifactory {
     }
 }
 
-dokka {
-    outputFormat = 'html'
+tasks.named("dokkaHtml") {
     outputDirectory = javadoc.destinationDir
     inputs.dir 'src/main/kotlin'
 
-    configuration {
+    dokkaSourceSets.configureEach {
         reportUndocumented = false
         externalDocumentationLink {
             url = new URL("https://square.github.io/moshi/1.x/moshi/")
@@ -58,7 +57,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task dokkaJavadocJar(type: Jar, dependsOn: dokka) {
+task dokkaJavadocJar(type: Jar, dependsOn: dokkaHtml) {
     archiveClassifier.set('javadoc')
     from javadoc.destinationDir
 }
