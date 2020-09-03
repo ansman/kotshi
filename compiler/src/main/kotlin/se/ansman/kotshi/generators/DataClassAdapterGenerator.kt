@@ -311,7 +311,11 @@ class DataClassAdapterGenerator(
                     addCode("%L", stringBuilder)
                     for ((property, variable) in propertiesToCheck) {
                         addIf("%L", variable.isNotSet) {
-                            addStatement("%N = %N.%M(%S, %S)", stringBuilder, stringBuilder, kotshiUtilsAppendNullableError, property.name, property.jsonName)
+                            if (property.name == property.jsonName) {
+                                addStatement("%N = %N.%M(%S)", stringBuilder, stringBuilder, kotshiUtilsAppendNullableError, property.name)
+                            } else {
+                                addStatement("%N = %N.%M(%S, %S)", stringBuilder, stringBuilder, kotshiUtilsAppendNullableError, property.name, property.jsonName)
+                            }
                         }
                     }
 
