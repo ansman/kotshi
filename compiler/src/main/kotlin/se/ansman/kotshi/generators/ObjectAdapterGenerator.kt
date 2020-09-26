@@ -7,20 +7,24 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 class ObjectAdapterGenerator(
     classInspector: ClassInspector,
+    types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
     globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, elements, element, metadata, globalConfig) {
+) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isObject)
     }
@@ -36,7 +40,15 @@ class ObjectAdapterGenerator(
                     addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    addStatement("%N.beginObject().endObject()", writerParameter)
+                    val label = element.getAnnotation(PolymorphicLabel::class.java)?.value
+                    val labelKey = types.asElement(element.superclass)?.getAnnotation(Polymorphic::class.java)?.labelKey
+                    if (label != null && labelKey != null) {
+                        addStatement("%N.beginObject()", writerParameter)
+                        addStatement("%N.name(%S).value(%S)", writerParameter, labelKey, label)
+                        addStatement("%N.endObject()", writerParameter)
+                    } else {
+                        addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
+                    }
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")

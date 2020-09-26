@@ -15,14 +15,16 @@ import se.ansman.kotshi.jsonName
 import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 class EnumAdapterGenerator(
     classInspector: ClassInspector,
+    types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
     globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, elements, element, metadata, globalConfig) {
+) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isEnum)
     }

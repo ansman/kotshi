@@ -42,9 +42,11 @@ import javax.annotation.processing.Filer
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 abstract class AdapterGenerator(
     classInspector: ClassInspector,
+    protected val types: Types,
     protected val elements: Elements,
     protected val element: TypeElement,
     protected val metadata: ImmutableKmClass,

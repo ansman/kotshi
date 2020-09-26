@@ -24,6 +24,8 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.tag
 import se.ansman.kotshi.AdapterKey
 import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.Property
 import se.ansman.kotshi.STRING
@@ -51,14 +53,16 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 class DataClassAdapterGenerator(
     classInspector: ClassInspector,
+    types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
     globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, elements, element, metadata, globalConfig) {
+) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isData)
     }
@@ -158,18 +162,32 @@ class DataClassAdapterGenerator(
             .addParameter(writerParameter)
             .addParameter(value)
 
+        val label = element.getAnnotation(PolymorphicLabel::class.java)?.value
+        val labelKey = types.asElement(element.superclass)?.getAnnotation(Polymorphic::class.java)?.labelKey
+
         if (properties.isEmpty()) {
             builder
                 .addIfElse("%N·==·null", value) {
                     addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
+                    if (label != null && labelKey != null) {
+                        addStatement("%N.beginObject()", writerParameter)
+                        addStatement("%N.name(%S).value(%S)", writerParameter, labelKey, label)
+                        addStatement("%N.endObject()", writerParameter)
+                    } else {
+                        addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
+                    }
                 }
-
         } else {
             fun FunSpec.Builder.addBody(): FunSpec.Builder =
                 addStatement("%N.beginObject()", writerParameter)
+                    .apply {
+                        if (label != null && labelKey != null && labelKey !in properties.map { it.jsonName }) {
+                            addStatement("%N.name(%S)", writerParameter, labelKey)
+                            addStatement("%N.value(%S)", writerParameter, label)
+                        }
+                    }
                     .applyEach(properties.filterNot { it.isTransient }) { property ->
                         addStatement("%N.name(%S)", writerParameter, property.jsonName)
                         val getter = CodeBlock.of("%N.%L", value, property.name)
