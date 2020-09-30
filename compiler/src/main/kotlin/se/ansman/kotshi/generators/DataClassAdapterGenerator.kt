@@ -24,8 +24,6 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.tag
 import se.ansman.kotshi.AdapterKey
 import se.ansman.kotshi.JsonSerializable
-import se.ansman.kotshi.Polymorphic
-import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.Property
 import se.ansman.kotshi.STRING
@@ -81,6 +79,9 @@ class DataClassAdapterGenerator(
                 enclosingClass = element,
                 parameter = parameter
             )
+        }
+        if (properties.isEmpty()) {
+            throw ProcessingError("Could not find any data class properties.", element)
         }
 
         val adapterKeys = properties
@@ -162,76 +163,57 @@ class DataClassAdapterGenerator(
             .addParameter(writerParameter)
             .addParameter(value)
 
-        val label = element.getAnnotation(PolymorphicLabel::class.java)?.value
-        val labelKey = types.asElement(element.superclass)?.getAnnotation(Polymorphic::class.java)?.labelKey
+        val propertyNames = properties.mapTo(mutableSetOf()) { it.jsonName }
+        val labels = getPolymorphicLabels().filterKeys { it !in propertyNames }
 
-        if (properties.isEmpty()) {
-            builder
-                .addIfElse("%N·==·null", value) {
-                    addStatement("%N.nullValue()", writerParameter)
+        fun FunSpec.Builder.addBody(): FunSpec.Builder =
+            addStatement("%N.beginObject()", writerParameter)
+                .applyEach(labels.entries) { (key, value) ->
+                    addStatement("%N.name(%S).value(%S)", writerParameter, key, value)
                 }
-                .addElse {
-                    if (label != null && labelKey != null) {
-                        addStatement("%N.beginObject()", writerParameter)
-                        addStatement("%N.name(%S).value(%S)", writerParameter, labelKey, label)
-                        addStatement("%N.endObject()", writerParameter)
-                    } else {
-                        addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
+                .applyEach(properties.filterNot { it.isTransient }) { property ->
+                    addStatement("%N.name(%S)", writerParameter, property.jsonName)
+                    val getter = CodeBlock.of("%N.%L", value, property.name)
+
+                    if (property.shouldUseAdapter) {
+                        addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writerParameter).addCode(getter).addCode(")\n")
+                    } else when (property.type.notNull()) {
+                        STRING,
+                        INT,
+                        LONG,
+                        FLOAT,
+                        DOUBLE,
+                        SHORT,
+                        BOOLEAN -> addStatement("%N.value(%L)", writerParameter, getter)
+                        BYTE -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsByteValue, getter)
+                        CHAR -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsValue, getter)
+                        else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
                     }
                 }
+                .addStatement("%N.endObject()", writerParameter)
+
+        builder
+            .addIf("%N == null", value) {
+                addStatement("%N.nullValue()", writerParameter)
+                addStatement("return")
+            }
+
+        val serializeNullsEnabled = when (serializeNulls) {
+            SerializeNulls.DEFAULT -> null
+            SerializeNulls.ENABLED -> true
+            SerializeNulls.DISABLED -> false
+        }
+        if (serializeNullsEnabled != null) {
+            builder
+                .addStatement("val·serializeNulls·= %N.serializeNulls", writerParameter)
+                .addStatement("%N.serializeNulls·= %L", writerParameter, serializeNullsEnabled)
+                .beginControlFlow("try")
+                .addBody()
+                .nextControlFlow("finally")
+                .addStatement("%N.serializeNulls·= serializeNulls", writerParameter)
+                .endControlFlow()
         } else {
-            fun FunSpec.Builder.addBody(): FunSpec.Builder =
-                addStatement("%N.beginObject()", writerParameter)
-                    .apply {
-                        if (label != null && labelKey != null && labelKey !in properties.map { it.jsonName }) {
-                            addStatement("%N.name(%S)", writerParameter, labelKey)
-                            addStatement("%N.value(%S)", writerParameter, label)
-                        }
-                    }
-                    .applyEach(properties.filterNot { it.isTransient }) { property ->
-                        addStatement("%N.name(%S)", writerParameter, property.jsonName)
-                        val getter = CodeBlock.of("%N.%L", value, property.name)
-
-                        if (property.shouldUseAdapter) {
-                            addCode("%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey), writerParameter).addCode(getter).addCode(")\n")
-                        } else when (property.type.notNull()) {
-                            STRING,
-                            INT,
-                            LONG,
-                            FLOAT,
-                            DOUBLE,
-                            SHORT,
-                            BOOLEAN -> addStatement("%N.value(%L)", writerParameter, getter)
-                            BYTE -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsByteValue, getter)
-                            CHAR -> addStatement("%N.%M(%L)", writerParameter, kotshiUtilsValue, getter)
-                            else -> throw ProcessingError("Property ${property.name} is not primitive ${property.type} but requested non adapter use", element)
-                        }
-                    }
-                    .addStatement("%N.endObject()", writerParameter)
-
-            builder
-                .addIf("%N == null", value) {
-                    addStatement("%N.nullValue()", writerParameter)
-                    addStatement("return")
-                }
-
-            val serializeNullsEnabled = when (serializeNulls) {
-                SerializeNulls.DEFAULT -> null
-                SerializeNulls.ENABLED -> true
-                SerializeNulls.DISABLED -> false
-            }
-            if (serializeNullsEnabled != null) {
-                builder
-                    .addStatement("val·serializeNulls·= %N.serializeNulls", writerParameter)
-                    .addStatement("%N.serializeNulls·= %L", writerParameter, serializeNullsEnabled)
-                    .beginControlFlow("try")
-                    .addBody()
-                    .nextControlFlow("finally")
-                    .addStatement("%N.serializeNulls·= serializeNulls", writerParameter)
-                    .endControlFlow()
-            } else {
-                builder.addBody()
-            }
+            builder.addBody()
         }
         return addFunction(builder.build())
     }

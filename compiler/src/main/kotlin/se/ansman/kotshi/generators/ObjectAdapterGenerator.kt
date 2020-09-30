@@ -7,8 +7,6 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import se.ansman.kotshi.Polymorphic
-import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
@@ -40,15 +38,11 @@ class ObjectAdapterGenerator(
                     addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    val label = element.getAnnotation(PolymorphicLabel::class.java)?.value
-                    val labelKey = types.asElement(element.superclass)?.getAnnotation(Polymorphic::class.java)?.labelKey
-                    if (label != null && labelKey != null) {
-                        addStatement("%N.beginObject()", writerParameter)
-                        addStatement("%N.name(%S).value(%S)", writerParameter, labelKey, label)
-                        addStatement("%N.endObject()", writerParameter)
-                    } else {
-                        addStatement("%N\n.beginObject()\n.endObject()", writerParameter)
+                    addStatement("%N.beginObject()", writerParameter)
+                    for ((key, value) in getPolymorphicLabels()) {
+                        addStatement("%N.name(%S).value(%S)", writerParameter, key, value)
                     }
+                    addStatement("%N.endObject()", writerParameter)
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")

@@ -25,6 +25,6 @@ class NestedSealedClassTest {
     @Test
     fun nested3() {
         assertEquals(NestedSealedClass.Nested3.NestedChild4("nc4"), adapter.fromJson("""{"type":"nested3","subtype":"nestedChild4","v":"nc4"}"""))
-        assertEquals("""{"subtype":"nestedChild4","v":"nc4"}""", adapter.toJson(NestedSealedClass.Nested3.NestedChild4("nc4")))
+        assertEquals("""{"type":"nested3","subtype":"nestedChild4","v":"nc4"}""", adapter.toJson(NestedSealedClass.Nested3.NestedChild4("nc4")))
     }
 }

@@ -1,5 +1,6 @@
 package se.ansman.kotshi.generators
 
+import com.google.auto.common.MoreElements
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -31,6 +32,8 @@ import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.KotshiUtils
 import se.ansman.kotshi.NamedJsonAdapter
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.applyEachIndexed
@@ -41,9 +44,11 @@ import java.io.IOException
 import javax.annotation.processing.Filer
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeKind
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
+@Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
     classInspector: ClassInspector,
     protected val types: Types,
@@ -139,6 +144,31 @@ abstract class AdapterGenerator(
                 .add("»)")
                 .build())
             .build())
+
+
+    protected fun getPolymorphicLabels(): Map<String, String> = element.getPolymorphicLabels(types)
+
+    private fun TypeElement.getPolymorphicLabels(
+        types: Types,
+        output: MutableMap<String, String> = LinkedHashMap()
+    ): Map<String, String> {
+        if (superclass.kind == TypeKind.DECLARED) {
+            MoreElements.asType(types.asElement(superclass)).getPolymorphicLabels(types, output)
+        }
+        val labelKey = nearestPolymorpic()?.labelKey
+            ?:return output
+        val label = getAnnotation(PolymorphicLabel::class.java)?.value
+            ?: return output
+        output[labelKey] = label
+        return output
+    }
+
+    private fun TypeElement.nearestPolymorpic(): Polymorphic? {
+        if (superclass.kind != TypeKind.DECLARED) return null
+        val superElement = types.asElement(superclass)
+        superElement?.getAnnotation(Polymorphic::class.java)?.let { return it }
+        return MoreElements.asType(superElement).nearestPolymorpic()
+    }
 }
 
 val kotshiUtilsByteValue = KotshiUtils::class.member("byteValue")
