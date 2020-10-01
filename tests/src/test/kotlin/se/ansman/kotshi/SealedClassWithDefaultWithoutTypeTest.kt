@@ -23,7 +23,7 @@ class SealedClassWithDefaultWithoutTypeWithoutTypeTest {
 
     @Test
     fun writing_normal() {
-        assertEquals("""{"bar":"bar2"}""", adapter.toJson(SealedClassWithDefaultWithoutTypeSubclass2("bar2")))
+        assertEquals("""{"type":"type2","bar":"bar2"}""", adapter.toJson(SealedClassWithDefaultWithoutTypeSubclass2("bar2")))
     }
 
     @Test

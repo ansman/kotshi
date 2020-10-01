@@ -13,14 +13,16 @@ import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.nullable
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 class ObjectAdapterGenerator(
     classInspector: ClassInspector,
+    types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
     globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, elements, element, metadata, globalConfig) {
+) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isObject)
     }
@@ -36,7 +38,11 @@ class ObjectAdapterGenerator(
                     addStatement("%N.nullValue()", writerParameter)
                 }
                 .addElse {
-                    addStatement("%N.beginObject().endObject()", writerParameter)
+                    addStatement("%N.beginObject()", writerParameter)
+                    for ((key, value) in getPolymorphicLabels()) {
+                        addStatement("%N.name(%S).value(%S)", writerParameter, key, value)
+                    }
+                    addStatement("%N.endObject()", writerParameter)
                 }
                 .build())
             .addFunction(FunSpec.builder("fromJson")

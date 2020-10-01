@@ -18,11 +18,13 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 @AutoService(Processor::class)
 @IncrementalAnnotationProcessor(AGGREGATING)
 class KotshiProcessor : AbstractProcessor() {
     private lateinit var elements: Elements
+    private lateinit var types: Types
     private lateinit var classInspector: ClassInspector
     private lateinit var steps: ImmutableList<out ProcessingStep>
 
@@ -37,6 +39,7 @@ class KotshiProcessor : AbstractProcessor() {
                 messager = processingEnv.messager,
                 filer = processingEnv.filer,
                 adapters = adapters,
+                types = types,
                 elements = processingEnv.elementUtils,
                 sourceVersion = processingEnv.sourceVersion
             ),
@@ -56,6 +59,7 @@ class KotshiProcessor : AbstractProcessor() {
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         elements = processingEnv.elementUtils
+        types = processingEnv.typeUtils
         classInspector = ElementsClassInspector.create(elements, processingEnv.typeUtils)
         steps = ImmutableList.copyOf(initSteps())
     }

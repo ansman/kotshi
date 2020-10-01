@@ -21,6 +21,7 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
@@ -29,6 +30,7 @@ class AdaptersProcessingStep(
     private val messager: Messager,
     override val filer: Filer,
     private val adapters: MutableList<GeneratedAdapter>,
+    private val types: Types,
     private val elements: Elements,
     private val sourceVersion: SourceVersion
 ) : KotshiProcessor.GeneratingProcessingStep() {
@@ -59,6 +61,7 @@ class AdaptersProcessingStep(
                 val generator = when {
                     metadata.isData -> DataClassAdapterGenerator(
                         classInspector = classInspector,
+                        types = types,
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
@@ -66,6 +69,7 @@ class AdaptersProcessingStep(
                     )
                     metadata.isEnum -> EnumAdapterGenerator(
                         classInspector = classInspector,
+                        types = types,
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
@@ -73,6 +77,7 @@ class AdaptersProcessingStep(
                     )
                     metadata.isObject -> ObjectAdapterGenerator(
                         classInspector = classInspector,
+                        types = types,
                         element = typeElement,
                         metadata = metadata,
                         elements = elements,
@@ -80,6 +85,7 @@ class AdaptersProcessingStep(
                     )
                     metadata.isSealed -> SealedClassAdapterGenerator(
                         classInspector = classInspector,
+                        types = types,
                         element = typeElement,
                         metadata = metadata,
                         elements = elements,
