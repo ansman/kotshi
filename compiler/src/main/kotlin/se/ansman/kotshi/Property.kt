@@ -29,7 +29,8 @@ class Property private constructor(
             parameter: ParameterSpec
         ): Property {
             val name = parameter.name
-            val type = parameter.type
+            val type = parameter.type.unwrapTypeAlias()
+
             val adapterKey = AdapterKey(
                 type = type.copy(nullable = false, annotations = emptyList()),
                 jsonQualifiers = parameter.annotations.qualifiers(elements)
