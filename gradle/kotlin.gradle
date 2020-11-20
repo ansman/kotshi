@@ -21,6 +21,11 @@ compileTestKotlin {
     }
 }
 
+java {
+    sourceCompatibility = "VERSION_1_8"
+    targetCompatibility = "VERSION_1_8"
+}
+
 dependencies {
     api libraries.kotlin_stdlib
     testImplementation libraries.kotlin_junit
