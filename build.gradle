@@ -45,7 +45,7 @@ ext {
             kotlinpoet_metadata      : "com.squareup:kotlinpoet-metadata:$kotlinPoetVersion",
             kotlinpoet_metadata_specs: "com.squareup:kotlinpoet-metadata-specs:$kotlinPoetVersion",
             kotlinpoet_classinspector: "com.squareup:kotlinpoet-classinspector-elements:$kotlinPoetVersion",
-            autocommon               : 'com.google.auto:auto-common:0.8',
+            autocommon               : 'com.google.auto:auto-common:0.11',
             autoservice_compiler     : "com.google.auto.service:auto-service:$autoServiceVersion",
             autoservice_api          : "com.google.auto.service:auto-service-annotations:$autoServiceVersion",
             junit                    : 'junit:junit:4.12',
