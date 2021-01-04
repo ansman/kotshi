@@ -29,7 +29,7 @@ artifactory {
     }
 }
 
-tasks.named("dokkaHtml") {
+tasks.named("dokkaJavadoc") {
     outputDirectory = javadoc.destinationDir
     inputs.dir 'src/main/kotlin'
 
@@ -57,7 +57,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task dokkaJavadocJar(type: Jar, dependsOn: dokkaHtml) {
+task dokkaJavadocJar(type: Jar, dependsOn: dokkaJavadoc) {
     archiveClassifier.set('javadoc')
     from javadoc.destinationDir
 }
