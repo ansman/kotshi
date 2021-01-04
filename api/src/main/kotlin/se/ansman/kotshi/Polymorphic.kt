@@ -1,6 +1,6 @@
 package se.ansman.kotshi
 
-import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.*
 
 /**
  * Annotation to be placed on a sealed class to describe how it should be parsed.
@@ -32,6 +32,9 @@ import com.squareup.moshi.JsonDataException
  * @param onMissing defined what happens if [labelKey] is missing from the JSON.
  * @param onInvalid defined what happens if [labelKey] is present but invalid (unknown).
  */
+@Target(AnnotationTarget.CLASS)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
 annotation class Polymorphic(
     val labelKey: String,
     val onMissing: Fallback = Fallback.DEFAULT,
@@ -58,4 +61,7 @@ annotation class Polymorphic(
  *
  * @see Polymorphic
  */
+@Target(AnnotationTarget.CLASS)
+@MustBeDocumented
+@Retention(AnnotationRetention.SOURCE)
 annotation class PolymorphicLabel(val value: String)
