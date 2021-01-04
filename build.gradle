@@ -10,8 +10,11 @@ buildscript {
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.13.0'
         classpath 'org.jetbrains.dokka:dokka-gradle-plugin:1.4.20'
+        classpath "org.jetbrains.kotlinx:binary-compatibility-validator:0.3.0"
     }
 }
+
+apply plugin: "binary-compatibility-validator"
 
 allprojects {
     repositories {

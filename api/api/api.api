@@ -1,0 +1,71 @@
+public abstract interface annotation class se/ansman/kotshi/JsonDefaultValue : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class se/ansman/kotshi/JsonSerializable : java/lang/annotation/Annotation {
+	public abstract fun serializeNulls ()Lse/ansman/kotshi/SerializeNulls;
+	public abstract fun useAdaptersForPrimitives ()Lse/ansman/kotshi/PrimitiveAdapters;
+}
+
+public abstract interface annotation class se/ansman/kotshi/KotshiJsonAdapterFactory : java/lang/annotation/Annotation {
+	public abstract fun serializeNulls ()Lse/ansman/kotshi/SerializeNulls;
+	public abstract fun useAdaptersForPrimitives ()Z
+}
+
+public final class se/ansman/kotshi/KotshiUtils {
+	public static final field INSTANCE Lse/ansman/kotshi/KotshiUtils;
+	public static final fun appendNullableError (Ljava/lang/StringBuilder;Ljava/lang/String;)Ljava/lang/StringBuilder;
+	public static final fun appendNullableError (Ljava/lang/StringBuilder;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/StringBuilder;
+	public static synthetic fun appendNullableError$default (Ljava/lang/StringBuilder;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/StringBuilder;
+	public static final fun byteValue (Lcom/squareup/moshi/JsonWriter;B)Lcom/squareup/moshi/JsonWriter;
+	public static final fun byteValue (Lcom/squareup/moshi/JsonWriter;Ljava/lang/Byte;)Lcom/squareup/moshi/JsonWriter;
+	public static final fun createJsonQualifierImplementation (Ljava/lang/Class;)Ljava/lang/annotation/Annotation;
+	public static final fun createJsonQualifierImplementation (Ljava/lang/Class;Ljava/util/Map;)Ljava/lang/annotation/Annotation;
+	public static synthetic fun createJsonQualifierImplementation$default (Ljava/lang/Class;Ljava/util/Map;ILjava/lang/Object;)Ljava/lang/annotation/Annotation;
+	public static final fun getTypeArgumentsOrFail (Ljava/lang/reflect/Type;)[Ljava/lang/reflect/Type;
+	public static final fun nextByte (Lcom/squareup/moshi/JsonReader;)B
+	public static final fun nextChar (Lcom/squareup/moshi/JsonReader;)C
+	public static final fun nextFloat (Lcom/squareup/moshi/JsonReader;)F
+	public static final fun nextShort (Lcom/squareup/moshi/JsonReader;)S
+	public static final fun value (Lcom/squareup/moshi/JsonWriter;C)Lcom/squareup/moshi/JsonWriter;
+	public static final fun value (Lcom/squareup/moshi/JsonWriter;Ljava/lang/Character;)Lcom/squareup/moshi/JsonWriter;
+}
+
+public abstract class se/ansman/kotshi/NamedJsonAdapter : com/squareup/moshi/JsonAdapter {
+	protected fun <init> (Ljava/lang/String;)V
+	public final fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class se/ansman/kotshi/Polymorphic : java/lang/annotation/Annotation {
+	public abstract fun labelKey ()Ljava/lang/String;
+	public abstract fun onInvalid ()Lse/ansman/kotshi/Polymorphic$Fallback;
+	public abstract fun onMissing ()Lse/ansman/kotshi/Polymorphic$Fallback;
+}
+
+public final class se/ansman/kotshi/Polymorphic$Fallback : java/lang/Enum {
+	public static final field DEFAULT Lse/ansman/kotshi/Polymorphic$Fallback;
+	public static final field FAIL Lse/ansman/kotshi/Polymorphic$Fallback;
+	public static final field NULL Lse/ansman/kotshi/Polymorphic$Fallback;
+	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/Polymorphic$Fallback;
+	public static fun values ()[Lse/ansman/kotshi/Polymorphic$Fallback;
+}
+
+public abstract interface annotation class se/ansman/kotshi/PolymorphicLabel : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class se/ansman/kotshi/PrimitiveAdapters : java/lang/Enum {
+	public static final field DEFAULT Lse/ansman/kotshi/PrimitiveAdapters;
+	public static final field DISABLED Lse/ansman/kotshi/PrimitiveAdapters;
+	public static final field ENABLED Lse/ansman/kotshi/PrimitiveAdapters;
+	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/PrimitiveAdapters;
+	public static fun values ()[Lse/ansman/kotshi/PrimitiveAdapters;
+}
+
+public final class se/ansman/kotshi/SerializeNulls : java/lang/Enum {
+	public static final field DEFAULT Lse/ansman/kotshi/SerializeNulls;
+	public static final field DISABLED Lse/ansman/kotshi/SerializeNulls;
+	public static final field ENABLED Lse/ansman/kotshi/SerializeNulls;
+	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/SerializeNulls;
+	public static fun values ()[Lse/ansman/kotshi/SerializeNulls;
+}
+
