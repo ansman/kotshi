@@ -6,23 +6,25 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isObject
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.nullable
+import javax.annotation.processing.Messager
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
 class ObjectAdapterGenerator(
-    classInspector: ClassInspector,
+    metadataAccessor: MetadataAccessor,
     types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
+    globalConfig: GlobalConfig,
+    messager: Messager
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
         require(metadata.isObject)
     }

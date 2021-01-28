@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -13,42 +14,40 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isSealed
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.SealedClassSubtype
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIf
 import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.addWhile
 import se.ansman.kotshi.applyEachIndexed
+import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.metadata
 import se.ansman.kotshi.nullable
+import javax.annotation.processing.Messager
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
 class SealedClassAdapterGenerator(
-    classInspector: ClassInspector,
+    metadataAccessor: MetadataAccessor,
     types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
+    globalConfig: GlobalConfig,
+    messager: Messager
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
         require(metadata.isSealed)
-        if (metadata.typeParameters.isNotEmpty()) {
-            throw ProcessingError("Generic sealed classes are not supported yet", element)
-        }
-        if (metadata.sealedSubclasses.isEmpty()) {
-            throw ProcessingError("Sealed classes without implementations are not supported", element)
-        }
 
         nameAllocator.newName("peek")
         nameAllocator.newName("labelIndex")
@@ -68,17 +67,15 @@ class SealedClassAdapterGenerator(
     override fun TypeSpec.Builder.addMethods() {
         val implementations = metadata.findSealedClassImplementations(className).toList()
 
-        val subtypes = implementations
-            .asSequence()
-            .mapNotNull {
-                Subtype(
-                    type = it,
-                    label = it.getAnnotation(PolymorphicLabel::class.java)
-                        ?.value
-                        ?: return@mapNotNull null
-                )
-            }
-            .toList()
+        val subtypes = implementations.mapNotNull {
+            SealedClassSubtype(
+                metadataAccessor = metadataAccessor,
+                type = it,
+                label = it.getAnnotation(PolymorphicLabel::class.java)
+                    ?.value
+                    ?: return@mapNotNull null
+            )
+        }
 
         if (subtypes.isEmpty()) {
             throw ProcessingError("No classes annotated with @PolymorphicLabel", element)
@@ -107,18 +104,31 @@ class SealedClassAdapterGenerator(
         }
 
         val adapterType = jsonAdapter.plusParameter(typeName)
-        val adapters = PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
-            .initializer(CodeBlock.builder()
-                .add("arrayOf(«")
-                .applyEachIndexed(subtypes) { index, subtype ->
-                    if (index > 0) {
-                        add(",")
+        val adapters =
+            PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
+                .initializer(CodeBlock.builder()
+                    .add("arrayOf(")
+                    .indent()
+                    .applyEachIndexed(subtypes) { index, subtype ->
+                        if (index > 0) {
+                            add(",")
+                        }
+                        add("\n%N.adapter<%T>(", moshiParameter, typeName)
+
+                        add(subtype.render(
+                            typeName = if (subtype.typeSpec.typeVariables.isEmpty()) {
+                                subtype.type.asClassName()
+                            } else {
+                                subtype.type.asClassName().parameterizedBy(subtype.typeSpec.typeVariables)
+                            },
+                            forceBox = true
+                        ))
+                        add(")")
                     }
-                    add("\n%N.adapter<%T>(%T::class.java)", moshiParameter, typeName, subtype.className)
-                }
-                .add("»\n)\n")
-                .build())
-            .build()
+                    .unindent()
+                    .add("\n)\n")
+                    .build())
+                .build()
 
         val defaultAdapter = if (defaultType == null) {
             null
@@ -136,7 +146,12 @@ class SealedClassAdapterGenerator(
         }
 
         this
-            .primaryConstructor(FunSpec.constructorBuilder().addParameter(moshiParameter).build())
+            .primaryConstructor(FunSpec.constructorBuilder()
+                .addParameter(moshiParameter)
+                .applyIf(typeVariables.isNotEmpty()) {
+                    addParameter(typesParameter)
+                }
+                .build())
             .addProperty(adapters)
             .addFunction(FunSpec.builder("toJson")
                 .addModifiers(KModifier.OVERRIDE)
@@ -149,7 +164,11 @@ class SealedClassAdapterGenerator(
                 .addElse {
                     addControlFlow("val adapter = when (%N)", value) {
                         subtypes.forEachIndexed { index, subtype ->
-                            addStatement("is %T·-> %N[%L]", subtype.className, adapters, index)
+                            val generics = subtype.typeSpec.typeVariables.map { "*" }
+                                .takeIf { it.isNotEmpty() }
+                                ?.joinToString(", ", prefix = "<", postfix = ">")
+                                ?: ""
+                            addStatement("is %T%L·-> %N[%L]", subtype.className, generics, adapters, index)
                         }
                         if (defaultAdapter != null && defaultType != null && subtypes.none { it.type == defaultType }) {
                             addStatement("is %T·-> %L", defaultType, defaultAdapter)
@@ -163,7 +182,12 @@ class SealedClassAdapterGenerator(
                 .throws(ioException)
                 .addParameter(readerParameter)
                 .returns(typeName.nullable())
-                .addControlFlow("return·if·(%N.peek()·==·%T.NULL)", readerParameter, jsonReaderToken, close = false) {
+                .addControlFlow(
+                    "return·if·(%N.peek()·==·%T.NULL)",
+                    readerParameter,
+                    jsonReaderToken,
+                    close = false
+                ) {
                     addStatement("%N.nextNull()", readerParameter)
                 }
                 .addElse {
@@ -179,7 +203,11 @@ class SealedClassAdapterGenerator(
                             addStatement("val·labelIndex·= peek.selectString(options)")
                             addControlFlow("val·adapter·= if·(labelIndex·==·-1)", close = false) {
                                 if (annotation.onInvalid == Polymorphic.Fallback.FAIL || defaultType == null && annotation.onInvalid == Polymorphic.Fallback.DEFAULT) {
-                                    addStatement("throw·%T(%S·+ peek.nextString())", jsonDataException, "Expected one of $labels for key '$labelKey' but found ")
+                                    addStatement(
+                                        "throw·%T(%S·+ peek.nextString())",
+                                        jsonDataException,
+                                        "Expected one of $labels for key '$labelKey' but found "
+                                    )
                                 } else if (annotation.onInvalid == Polymorphic.Fallback.NULL) {
                                     addStatement("%N.skipValue()", readerParameter)
                                     addStatement("return·null")
@@ -199,7 +227,11 @@ class SealedClassAdapterGenerator(
                             addStatement("%N.skipValue()", readerParameter)
                             addStatement("null")
                         } else {
-                            addStatement("%L.fromJson(%N)", defaultAdapter ?: throw AssertionError("Unhandled case"), readerParameter)
+                            addStatement(
+                                "%L.fromJson(%N)",
+                                defaultAdapter ?: throw AssertionError("Unhandled case"),
+                                readerParameter
+                            )
                         }
                     }
                 }
@@ -221,9 +253,6 @@ class SealedClassAdapterGenerator(
                 if (it.getAnnotation(JsonSerializable::class.java) == null) {
                     throw ProcessingError("All subclasses of a sealed class must be @JsonSerializable", it)
                 }
-                if (it.typeParameters.isNotEmpty()) {
-                    throw ProcessingError("Generic sealed class implementations are not supported", it)
-                }
             }
             .flatMap {
                 if (Modifier.ABSTRACT in it.modifiers) {
@@ -237,27 +266,30 @@ class SealedClassAdapterGenerator(
                     when {
                         polymorphic.labelKey == labelKey -> {
                             if (polymorphicLabel != null) {
-                                throw ProcessingError("Children of a sealed class with the same label key must not be annotated with @PolymorphicLabel", it)
+                                throw ProcessingError(
+                                    "Children of a sealed class with the same label key must not be annotated with @PolymorphicLabel",
+                                    it
+                                )
                             }
                             kmClass.findSealedClassImplementations(it.asClassName())
                         }
                         polymorphicLabel == null -> {
-                            throw ProcessingError("Children of a sealed class with a different label key must be annotated with @PolymorphicLabel", it)
+                            throw ProcessingError(
+                                "Children of a sealed class with a different label key must be annotated with @PolymorphicLabel",
+                                it
+                            )
                         }
                         else -> sequenceOf(it)
                     }
                 } else {
                     if (it.getAnnotation(PolymorphicLabel::class.java) == null && it.getAnnotation(JsonDefaultValue::class.java) == null) {
-                        throw ProcessingError("Subclasses of sealed classes must be annotated with @PolymorphicLabel or @JsonDefaultValue", it)
+                        throw ProcessingError(
+                            "Subclasses of sealed classes must be annotated with @PolymorphicLabel or @JsonDefaultValue",
+                            it
+                        )
                     }
                     sequenceOf(it)
                 }
             }
 
-    private data class Subtype(
-        val type: TypeElement,
-        val label: String
-    ) {
-        val className = type.asClassName()
-    }
 }

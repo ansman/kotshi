@@ -126,9 +126,14 @@ class FactoryProcessingStep(
                         addCode(adapter.typeVariables.joinToString(", ", prefix = "<", postfix = ">") { "Nothing" })
                     }
                     addCode("(")
-                    when {
-                        adapter.requiresTypes -> addCode("%N, %N.%M", moshiParam, typeParam, typeArgumentsOrFail)
-                        adapter.requiresMoshi -> addCode("%N", moshiParam)
+                    if (adapter.requiresMoshi) {
+                        addCode("%N", moshiParam)
+                    }
+                    if (adapter.requiresTypes) {
+                        if (adapter.requiresMoshi) {
+                            addCode(", ")
+                        }
+                        addCode("%N.%M", typeParam, typeArgumentsOrFail)
                     }
                     addCode(")\n»")
                 }

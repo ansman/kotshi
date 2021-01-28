@@ -19,9 +19,7 @@ import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isPublic
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
-import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
@@ -31,6 +29,7 @@ import se.ansman.kotshi.GeneratedAdapter
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.KotshiUtils
+import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.NamedJsonAdapter
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
@@ -41,7 +40,9 @@ import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.nullable
 import java.io.IOException
+import java.lang.reflect.Type
 import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
@@ -50,12 +51,13 @@ import javax.lang.model.util.Types
 
 @Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
-    classInspector: ClassInspector,
+    protected val metadataAccessor: MetadataAccessor,
     protected val types: Types,
     protected val elements: Elements,
     protected val element: TypeElement,
     protected val metadata: ImmutableKmClass,
-    protected val globalConfig: GlobalConfig
+    protected val globalConfig: GlobalConfig,
+    protected val messager: Messager
 ) {
     protected val nameAllocator = NameAllocator().apply {
         newName("options")
@@ -66,7 +68,7 @@ abstract class AdapterGenerator(
         newName("it")
     }
 
-    protected val elementTypeSpec = metadata.toTypeSpec(classInspector)
+    protected val elementTypeSpec = metadataAccessor.getTypeSpec(element)
     protected val className = ClassInspectorUtil.createClassName(metadata.name)
     private val typeVariables = elementTypeSpec.typeVariables
         // Removes the variance
@@ -93,7 +95,8 @@ abstract class AdapterGenerator(
                 throw ProcessingError("Classes annotated with @JsonSerializable must public or internal", element)
         }
 
-        val adapterClassName = ClassName(className.packageName, "Kotshi${className.simpleNames.joinToString("_")}JsonAdapter")
+        val adapterClassName =
+            ClassName(className.packageName, "Kotshi${className.simpleNames.joinToString("_")}JsonAdapter")
 
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
             .addModifiers(KModifier.INTERNAL)
@@ -117,7 +120,11 @@ abstract class AdapterGenerator(
             typeVariables = typeVariables,
             requiresMoshi = typeSpec.primaryConstructor
                 ?.parameters
-                ?.any { it.name == "moshi" }
+                ?.contains(moshiParameter)
+                ?: false,
+            requiresTypes = typeSpec.primaryConstructor
+                ?.parameters
+                ?.contains(typesParameter)
                 ?: false
         )
     }
@@ -156,7 +163,7 @@ abstract class AdapterGenerator(
             MoreElements.asType(types.asElement(superclass)).getPolymorphicLabels(types, output)
         }
         val labelKey = nearestPolymorpic()?.labelKey
-            ?:return output
+            ?: return output
         val label = getAnnotation(PolymorphicLabel::class.java)?.value
             ?: return output
         output[labelKey] = label
@@ -194,6 +201,7 @@ val jsonReader = JsonReader::class.java.asClassName()
 val writerParameter = ParameterSpec.builder("writer", jsonWriter).build()
 val readerParameter = ParameterSpec.builder("reader", jsonReader).build()
 val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
+val typesParameter = ParameterSpec.builder("types", Array::class.plusParameter(Type::class)).build()
 
 data class GlobalConfig(
     val useAdaptersForPrimitives: Boolean,

@@ -8,7 +8,6 @@ import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isSealed
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import se.ansman.kotshi.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.generators.EnumAdapterGenerator
@@ -26,7 +25,7 @@ import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
     override val processor: KotshiProcessor,
-    private val classInspector: ClassInspector,
+    private val metadataAccessor: MetadataAccessor,
     private val messager: Messager,
     override val filer: Filer,
     private val adapters: MutableList<GeneratedAdapter>,
@@ -60,36 +59,40 @@ class AdaptersProcessingStep(
 
                 val generator = when {
                     metadata.isData -> DataClassAdapterGenerator(
-                        classInspector = classInspector,
+                        metadataAccessor = metadataAccessor,
                         types = types,
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        messager = messager
                     )
                     metadata.isEnum -> EnumAdapterGenerator(
-                        classInspector = classInspector,
+                        metadataAccessor = metadataAccessor,
                         types = types,
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        messager = messager
                     )
                     metadata.isObject -> ObjectAdapterGenerator(
-                        classInspector = classInspector,
+                        metadataAccessor = metadataAccessor,
                         types = types,
                         element = typeElement,
                         metadata = metadata,
                         elements = elements,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        messager = messager
                     )
                     metadata.isSealed -> SealedClassAdapterGenerator(
-                        classInspector = classInspector,
+                        metadataAccessor = metadataAccessor,
                         types = types,
                         element = typeElement,
                         metadata = metadata,
                         elements = elements,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        messager = messager
                     )
                     else -> throw ProcessingError(
                         "@JsonSerializable can only be applied to enums, objects, sealed classes and data classes",

@@ -6,25 +6,27 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isEnum
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addNextControlFlow
 import se.ansman.kotshi.addWhen
 import se.ansman.kotshi.jsonName
 import se.ansman.kotshi.nullable
+import javax.annotation.processing.Messager
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
 class EnumAdapterGenerator(
-    classInspector: ClassInspector,
+    metadataAccessor: MetadataAccessor,
     types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
+    globalConfig: GlobalConfig,
+    messager: Messager
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
         require(metadata.isEnum)
     }

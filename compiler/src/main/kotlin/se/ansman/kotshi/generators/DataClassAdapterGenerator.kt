@@ -3,27 +3,32 @@ package se.ansman.kotshi.generators
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.CHAR
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LONG
-import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isData
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.tag
 import se.ansman.kotshi.AdapterKey
 import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.Property
 import se.ansman.kotshi.STRING
@@ -43,7 +48,7 @@ import se.ansman.kotshi.isPrimitive
 import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
 import se.ansman.kotshi.suggestedAdapterName
-import java.lang.reflect.Type
+import javax.annotation.processing.Messager
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
@@ -54,13 +59,14 @@ import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
 class DataClassAdapterGenerator(
-    classInspector: ClassInspector,
+    metadataAccessor: MetadataAccessor,
     types: Types,
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(classInspector, types, elements, element, metadata, globalConfig) {
+    globalConfig: GlobalConfig,
+    messager: Messager
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
         require(metadata.isData)
     }
@@ -95,7 +101,7 @@ class DataClassAdapterGenerator(
             .applyIf(adapterKeys.isNotEmpty()) {
                 addParameter(moshiParameter)
             }
-            .applyIf(typeVariables.isNotEmpty()) {
+            .applyIf(adapterKeys.any { it.key.type.hasTypeVariable }) {
                 addParameter(typesParameter)
             }
             .build())
@@ -409,141 +415,149 @@ class DataClassAdapterGenerator(
         )
 }
 
-    private data class PropertyVariables(
-        val value: PropertySpec,
-        val helper: PropertySpec?
-    ) {
-        val isNotSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
-            if (helper == null) {
-                CodeBlock.of("%N == null", value)
-            } else {
-                CodeBlock.of("!%N", helper)
-            }
-        }
-
-        val isSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
-            if (helper == null) {
-                CodeBlock.of("%N != null", value)
-            } else {
-                CodeBlock.of("%N", helper)
-            }
-        }
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror): CodeBlock.Builder = apply {
-        value.accept(object : AnnotationValueVisitor<Unit, Nothing?> {
-            override fun visitFloat(f: Float, p: Nothing?) {
-                add("${f}f")
-            }
-
-            override fun visitByte(b: Byte, p: Nothing?) {
-                add("(${b}).toByte()")
-            }
-
-            override fun visitShort(s: Short, p: Nothing?) {
-                add("($s).toShort()")
-            }
-
-            override fun visitChar(c: Char, p: Nothing?) {
-                if (c == '\'') {
-                    add("'\\''")
-                } else {
-                    add("'$c'")
-                }
-            }
-
-            override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
-
-            override fun visit(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
-
-            override fun visit(av: AnnotationValue?) =throw AssertionError()
-
-            override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
-                val arrayCreator = when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
-                    BYTE -> "byteArrayOf"
-                    CHAR -> "charArrayOf"
-                    SHORT -> "shortArrayOf"
-                    INT -> "intArrayOf"
-                    LONG -> "longArrayOf"
-                    FLOAT -> "floatArrayOf"
-                    DOUBLE -> "doubleArrayOf"
-                    BOOLEAN -> "booleanArrayOf"
-                    else -> "arrayOf"
-                }
-
-                if (vals.isEmpty()) {
-                    add("$arrayCreator()")
-                } else {
-                    add("$arrayCreator(")
-                    if (vals.size > 1) {
-                        add("⇥\n")
-                    }
-                    vals.forEachIndexed { i, value ->
-                        if (i > 0) {
-                            add(",\n")
-                        }
-                        value.accept(this, null)
-                    }
-                    if (vals.size > 1) {
-                        add("⇤\n")
-                    }
-                    add(")")
-                }
-            }
-
-            override fun visitBoolean(b: Boolean, p: Nothing?) {
-                add(if (b) "true" else "false")
-            }
-
-            override fun visitLong(i: Long, p: Nothing?) {
-                add("${i}L")
-            }
-
-            override fun visitType(t: TypeMirror, p: Nothing?) {
-                add("%T::class.java", t.asTypeName())
-            }
-
-            override fun visitString(s: String, p: Nothing?) {
-                add("%S", s)
-            }
-
-            override fun visitDouble(d: Double, p: Nothing?) {
-                val s = d.toString()
-                add(s)
-                if ('.' !in s) add(".0")
-            }
-
-            override fun visitEnumConstant(c: VariableElement, p: Nothing?) {
-                add("%T.%N", c.asType().asTypeName(), c.simpleName)
-            }
-
-            override fun visitAnnotation(a: AnnotationMirror, p: Nothing?) {
-                add(a)
-            }
-
-            override fun visitInt(i: Int, p: Nothing?) {
-                add("$i")
-            }
-        }, null)
-    }
-
-    private fun CodeBlock.Builder.add(annotation: AnnotationMirror): CodeBlock.Builder = apply {
-        if (annotation.elementValues.isEmpty()) {
-            add("%T::class.java.%M()", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
+private data class PropertyVariables(
+    val value: PropertySpec,
+    val helper: PropertySpec?
+) {
+    val isNotSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
+        if (helper == null) {
+            CodeBlock.of("%N == null", value)
         } else {
-            add("%T::class.java.%M(mapOf(⇥", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
-            annotation.elementValues.entries.forEachIndexed { i, (element, value) ->
-                if (i > 0) {
-                    add(",")
-                }
-                add("\n")
-                add("%S·to·", element.simpleName)
-                add(value, element.returnType)
-                add("")
-            }
-            add("⇤\n))")
+            CodeBlock.of("!%N", helper)
         }
     }
 
-private val typesParameter = ParameterSpec.builder("types", Array<Type>::class.plusParameter(Type::class)).build()
+    val isSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
+        if (helper == null) {
+            CodeBlock.of("%N != null", value)
+        } else {
+            CodeBlock.of("%N", helper)
+        }
+    }
+}
+
+@OptIn(ExperimentalStdlibApi::class)
+private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror): CodeBlock.Builder = apply {
+    value.accept(object : AnnotationValueVisitor<Unit, Nothing?> {
+        override fun visitFloat(f: Float, p: Nothing?) {
+            add("${f}f")
+        }
+
+        override fun visitByte(b: Byte, p: Nothing?) {
+            add("(${b}).toByte()")
+        }
+
+        override fun visitShort(s: Short, p: Nothing?) {
+            add("($s).toShort()")
+        }
+
+        override fun visitChar(c: Char, p: Nothing?) {
+            if (c == '\'') {
+                add("'\\''")
+            } else {
+                add("'$c'")
+            }
+        }
+
+        override fun visitUnknown(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
+
+        override fun visit(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
+
+        override fun visit(av: AnnotationValue?) =throw AssertionError()
+
+        override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
+            val arrayCreator = when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
+                BYTE -> "byteArrayOf"
+                CHAR -> "charArrayOf"
+                SHORT -> "shortArrayOf"
+                INT -> "intArrayOf"
+                LONG -> "longArrayOf"
+                FLOAT -> "floatArrayOf"
+                DOUBLE -> "doubleArrayOf"
+                BOOLEAN -> "booleanArrayOf"
+                else -> "arrayOf"
+            }
+
+            if (vals.isEmpty()) {
+                add("$arrayCreator()")
+            } else {
+                add("$arrayCreator(")
+                if (vals.size > 1) {
+                    add("⇥\n")
+                }
+                vals.forEachIndexed { i, value ->
+                    if (i > 0) {
+                        add(",\n")
+                    }
+                    value.accept(this, null)
+                }
+                if (vals.size > 1) {
+                    add("⇤\n")
+                }
+                add(")")
+            }
+        }
+
+        override fun visitBoolean(b: Boolean, p: Nothing?) {
+            add(if (b) "true" else "false")
+        }
+
+        override fun visitLong(i: Long, p: Nothing?) {
+            add("${i}L")
+        }
+
+        override fun visitType(t: TypeMirror, p: Nothing?) {
+            add("%T::class.java", t.asTypeName())
+        }
+
+        override fun visitString(s: String, p: Nothing?) {
+            add("%S", s)
+        }
+
+        override fun visitDouble(d: Double, p: Nothing?) {
+            val s = d.toString()
+            add(s)
+            if ('.' !in s) add(".0")
+        }
+
+        override fun visitEnumConstant(c: VariableElement, p: Nothing?) {
+            add("%T.%N", c.asType().asTypeName(), c.simpleName)
+        }
+
+        override fun visitAnnotation(a: AnnotationMirror, p: Nothing?) {
+            add(a)
+        }
+
+        override fun visitInt(i: Int, p: Nothing?) {
+            add("$i")
+        }
+    }, null)
+}
+
+private fun CodeBlock.Builder.add(annotation: AnnotationMirror): CodeBlock.Builder = apply {
+    if (annotation.elementValues.isEmpty()) {
+        add("%T::class.java.%M()", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
+    } else {
+        add("%T::class.java.%M(mapOf(⇥", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
+        annotation.elementValues.entries.forEachIndexed { i, (element, value) ->
+            if (i > 0) {
+                add(",")
+            }
+            add("\n")
+            add("%S·to·", element.simpleName)
+            add(value, element.returnType)
+            add("")
+        }
+        add("⇤\n))")
+    }
+}
+
+private val TypeName.hasTypeVariable: Boolean
+    get() = when (this) {
+        is ClassName -> false
+        Dynamic -> false
+        is LambdaTypeName -> receiver?.hasTypeVariable ?: false || parameters.any { it.type.hasTypeVariable } || returnType.hasTypeVariable
+        is ParameterizedTypeName -> typeArguments.any { it.hasTypeVariable }
+        is TypeVariableName -> true
+        is WildcardTypeName -> inTypes.any { it.hasTypeVariable } || outTypes.any { it.hasTypeVariable }
+    }
