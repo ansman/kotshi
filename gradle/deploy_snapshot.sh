@@ -7,7 +7,7 @@
 
 SLUG="ansman/kotshi"
 JDK="openjdk8"
-BRANCH="master"
+BRANCH="main"
 
 set -e
 

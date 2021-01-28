@@ -41,7 +41,7 @@ tasks.named("dokkaJavadoc") {
         }
         sourceLink {
             path = "src/main/kotlin"
-            url = "https://github.com/ansman/kotshi/blob/master/${project.name}/src/main/kotlin"
+            url = "https://github.com/ansman/kotshi/blob/main/${project.name}/src/main/kotlin"
             lineSuffix = "#L"
         }
     }

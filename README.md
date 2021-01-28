@@ -1,4 +1,4 @@
-Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=master)
+Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=main)
 ===
 
 An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
