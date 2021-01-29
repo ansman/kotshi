@@ -28,6 +28,14 @@ subprojects {
     tasks.withType(Javadoc).all { enabled = false }
 }
 
+configure(apiValidation) {
+    allprojects.forEach {
+        if (it.path != ":api") {
+            ignoredProjects += it.name
+        }
+    }
+}
+
 ext {
     autoServiceVersion = "1.0-rc6"
     incapVersion = "0.2"

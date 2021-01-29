@@ -17,7 +17,7 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      run: ./gradlew build :api:apiCheck --stacktrace
+      run: ./gradlew check --stacktrace
     - name: Deploy snapshot
       run: gradle/deploy_snapshot.sh
       if: github.ref == 'main'
