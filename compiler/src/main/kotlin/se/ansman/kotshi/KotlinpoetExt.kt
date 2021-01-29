@@ -2,6 +2,7 @@
 
 package se.ansman.kotshi
 
+import com.google.auto.common.GeneratedAnnotations
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -19,10 +20,10 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonQualifier
-import java.time.Instant
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.util.Elements
+
 
 val STRING: ClassName = ClassName("kotlin", "String")
 val JSON: ClassName = Json::class.java.asClassName()
@@ -59,19 +60,15 @@ fun TypeName.notNull(): TypeName = if (isNullable) copy(nullable = false) else t
 
 fun TypeSpec.Builder.maybeAddGeneratedAnnotation(elements: Elements, sourceVersion: SourceVersion) =
     apply {
-        val generatedName = if (sourceVersion > SourceVersion.RELEASE_8) {
-            "javax.annotation.processing.Generated"
-        } else {
-            "javax.annotation.Generated"
-        }
-        val typeElement = elements.getTypeElement(generatedName)
-        if (typeElement != null) {
-            addAnnotation(AnnotationSpec.builder(typeElement.asClassName())
+        val typeElement = GeneratedAnnotations.generatedAnnotation(elements, sourceVersion)
+            .orElse(null)
+            ?: return@apply
+        addAnnotation(
+            AnnotationSpec.builder(typeElement.asClassName())
                 .addMember("%S", KotshiProcessor::class.java.canonicalName)
-                .addMember("date = %S", Instant.now().toString())
                 .addMember("comments = %S", "https://github.com/ansman/kotshi")
-                .build())
-        }
+                .build()
+        )
     }
 
 inline fun FunSpec.Builder.addControlFlow(
