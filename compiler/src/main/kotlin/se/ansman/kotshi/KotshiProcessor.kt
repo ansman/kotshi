@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
 import javax.annotation.processing.AbstractProcessor
@@ -25,7 +24,7 @@ import javax.lang.model.util.Types
 class KotshiProcessor : AbstractProcessor() {
     private lateinit var elements: Elements
     private lateinit var types: Types
-    private lateinit var classInspector: ClassInspector
+    private lateinit var metadataAccessor: MetadataAccessor
     private lateinit var steps: ImmutableList<out ProcessingStep>
 
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latestSupported()
@@ -35,7 +34,7 @@ class KotshiProcessor : AbstractProcessor() {
         return listOf(
             AdaptersProcessingStep(
                 processor = this,
-                classInspector = classInspector,
+                metadataAccessor = metadataAccessor,
                 messager = processingEnv.messager,
                 filer = processingEnv.filer,
                 adapters = adapters,
@@ -60,7 +59,7 @@ class KotshiProcessor : AbstractProcessor() {
         super.init(processingEnv)
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils
-        classInspector = ElementsClassInspector.create(elements, processingEnv.typeUtils)
+        metadataAccessor = MetadataAccessor(ElementsClassInspector.create(elements, processingEnv.typeUtils))
         steps = ImmutableList.copyOf(initSteps())
     }
 
