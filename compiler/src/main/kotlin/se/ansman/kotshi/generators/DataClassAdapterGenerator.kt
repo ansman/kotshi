@@ -48,7 +48,6 @@ import se.ansman.kotshi.isPrimitive
 import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
 import se.ansman.kotshi.suggestedAdapterName
-import javax.annotation.processing.Messager
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.AnnotationValueVisitor
@@ -64,9 +63,8 @@ class DataClassAdapterGenerator(
     elements: Elements,
     element: TypeElement,
     metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig,
-    messager: Messager
-) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
+    globalConfig: GlobalConfig
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isData)
     }

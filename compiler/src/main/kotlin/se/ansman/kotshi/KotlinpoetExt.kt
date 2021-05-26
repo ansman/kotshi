@@ -30,7 +30,7 @@ val JSON: ClassName = Json::class.java.asClassName()
 val JSON_QUALIFIER = JsonQualifier::class.java
 
 fun List<AnnotationSpec>?.jsonName(): String? =
-    this?.find { it.className == JSON }?.let { spec ->
+    this?.find { it.typeName == JSON }?.let { spec ->
         val mirror = requireNotNull(spec.tag<AnnotationMirror>())
         mirror.elementValues.entries.single { it.key.simpleName.contentEquals("name") }.value.value as String
     }
@@ -38,7 +38,7 @@ fun List<AnnotationSpec>?.jsonName(): String? =
 fun List<AnnotationSpec>?.qualifiers(elements: Elements): Set<AnnotationSpec> {
     if (this == null) return setOf()
     return filterTo(mutableSetOf()) {
-        elements.getTypeElement(it.className.toString()).getAnnotation(JSON_QUALIFIER) != null
+        elements.getTypeElement(it.typeName.toString()).getAnnotation(JSON_QUALIFIER) != null
     }
 }
 

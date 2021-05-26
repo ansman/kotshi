@@ -64,8 +64,7 @@ class AdaptersProcessingStep(
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
-                        globalConfig = globalConfig,
-                        messager = messager
+                        globalConfig = globalConfig
                     )
                     metadata.isEnum -> EnumAdapterGenerator(
                         metadataAccessor = metadataAccessor,

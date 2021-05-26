@@ -14,6 +14,8 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
+import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import se.ansman.kotshi.generators.jsonAdapterFactory
@@ -38,7 +40,8 @@ class FactoryProcessingStep(
     private val types: Types,
     private val elements: Elements,
     private val sourceVersion: SourceVersion,
-    private val adapters: List<GeneratedAdapter>
+    private val adapters: List<GeneratedAdapter>,
+    private val metadataAccessor: MetadataAccessor,
 ) : KotshiProcessor.GeneratingProcessingStep() {
 
     private fun TypeMirror.implements(someType: KClass<*>): Boolean =
@@ -60,7 +63,8 @@ class FactoryProcessingStep(
     }
 
     private fun generateFactory(element: TypeElement) {
-        val elementClassName = element.asClassName()
+        val metadata = element.metadata.toImmutableKmClass()
+        val elementClassName = ClassInspectorUtil.createClassName(metadata.name)
         val generatedName = elementClassName.let {
             ClassName(it.packageName, "Kotshi${it.simpleNames.joinToString("_")}")
         }
