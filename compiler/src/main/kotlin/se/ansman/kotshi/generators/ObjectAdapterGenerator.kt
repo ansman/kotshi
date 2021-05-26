@@ -24,7 +24,7 @@ class ObjectAdapterGenerator(
     metadata: ImmutableKmClass,
     globalConfig: GlobalConfig,
     messager: Messager
-) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
+) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig) {
     init {
         require(metadata.isObject)
     }

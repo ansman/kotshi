@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.Types
+import java.util.Locale
 
 data class AdapterKey(
     val type: TypeName,
@@ -24,7 +25,8 @@ fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlo
     type.asRuntimeType(typeVariableAccessor)
 
 val AdapterKey.suggestedAdapterName: String
-    get() = "${jsonQualifiers.joinToString("") { it.className.simpleName }}${type.baseAdapterName}Adapter".decapitalize()
+    get() = "${jsonQualifiers.joinToString("") { (it.typeName as ClassName).simpleName }}${type.baseAdapterName}Adapter"
+        .replaceFirstChar { it.lowercase(Locale.ROOT) }
 
 private val TypeName.baseAdapterName: String
     get() {

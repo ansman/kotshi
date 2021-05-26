@@ -42,7 +42,6 @@ import se.ansman.kotshi.nullable
 import java.io.IOException
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
-import javax.annotation.processing.Messager
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
@@ -56,8 +55,7 @@ abstract class AdapterGenerator(
     protected val elements: Elements,
     protected val element: TypeElement,
     protected val metadata: ImmutableKmClass,
-    protected val globalConfig: GlobalConfig,
-    protected val messager: Messager
+    protected val globalConfig: GlobalConfig
 ) {
     protected val nameAllocator = NameAllocator().apply {
         newName("options")

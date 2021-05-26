@@ -1,8 +1,9 @@
 buildscript {
-    ext.kotlin_version = "1.4.21"
+    ext.kotlin_version = "1.5.10"
 
     repositories {
         mavenCentral()
+        // TODO: Remove
         jcenter()
     }
     dependencies {
@@ -39,7 +40,7 @@ configure(apiValidation) {
 ext {
     autoServiceVersion = "1.0-rc7"
     incapVersion = "0.2"
-    kotlinPoetVersion = "1.5.0"
+    kotlinPoetVersion = "1.7.2"
     libraries = [
             kotlinpoet               : "com.squareup:kotlinpoet:$kotlinPoetVersion",
             kotlinpoet_metadata      : "com.squareup:kotlinpoet-metadata:$kotlinPoetVersion",
@@ -53,6 +54,7 @@ ext {
             compiletesting           : 'com.google.testing.compile:compile-testing:0.10',
             kotlin_stdlib            : "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version",
             kotlin_junit             : "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version",
+            kotlinx_metadata         : "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.3.0",
             moshi                    : "com.squareup.moshi:moshi:1.8.0",
             findBugs                 : "com.google.code.findbugs:jsr305:3.0.2",
             incap_api                : "net.ltgt.gradle.incap:incap:$incapVersion",
