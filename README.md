@@ -97,15 +97,15 @@ Limitations
 Download
 ---
 ```groovy
-implementation "se.ansman.kotshi:api:2.4.0"
-kapt "se.ansman.kotshi:compiler:2.4.0"
+implementation "se.ansman.kotshi:api:2.5.0"
+kapt "se.ansman.kotshi:compiler:2.5.0"
 ```
 Snapshots of the development version are available in [jfrogs's snapshots repository](https://oss.jfrog.org/artifactory/oss-snapshot-local/se/ansman/kotshi/).
 
 License
 ---
 ```text
-Copyright 2017-2020 Nicklas Ansman Giertz.
+Copyright 2017-2021 Nicklas Ansman Giertz.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
