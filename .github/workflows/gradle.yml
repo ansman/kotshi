@@ -24,3 +24,6 @@ jobs:
     - name: Deploy snapshot
       run: ./gradlew publishAllPublicationsToSonatypeSnapshotsRepository --stacktrace
       if: github.ref == 'main'
+      env:
+        SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

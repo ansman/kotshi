@@ -61,8 +61,12 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
                 repo.name = "mavenCentral"
                 repo.setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
                 with(repo.credentials) {
-                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime().get()
-                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime().get()
+                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime()
+                        .orElse(providers.environmentVariable("SONATYPE_USERNAME").forUseAtConfigurationTime())
+                        .orNull
+                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime()
+                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD").forUseAtConfigurationTime())
+                        .orNull
                 }
             }
 
@@ -70,8 +74,12 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
                 repo.name = "sonatypeSnapshots"
                 repo.setUrl("https://oss.sonatype.org/content/repositories/snapshots/")
                 with(repo.credentials) {
-                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime().get()
-                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime().get()
+                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime()
+                        .orElse(providers.environmentVariable("SONATYPE_USERNAME").forUseAtConfigurationTime())
+                        .orNull
+                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime()
+                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD").forUseAtConfigurationTime())
+                        .orNull
                 }
             }
 
