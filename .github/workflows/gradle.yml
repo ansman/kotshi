@@ -3,6 +3,11 @@ name: Build Gradle
 on:
   push:
     branches:
+      - '*'
+      - '!gh_pages'
+  pull_request:
+    branches:
+      - '*'
       - '!gh_pages'
 
 jobs:
