@@ -2,16 +2,13 @@ package se.ansman.kotshi.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.internal.tasks.userinput.UserInputHandler
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
-import org.gradle.configurationcache.extensions.serviceOf
 import org.gradle.jvm.tasks.Jar
 import org.gradle.plugins.signing.SigningExtension
 import org.jetbrains.dokka.gradle.DokkaTask
-import java.util.Locale
 
 abstract class PublishedLibraryPlugin : Plugin<Project> {
     override fun apply(target: Project): Unit = with(target) {
@@ -125,15 +122,7 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
 
         if (!providers.environmentVariable("CI").forUseAtConfigurationTime().orNull.toBoolean()) {
             with(extensions.getByType(SigningExtension::class.java)) {
-                gradle.taskGraph.whenReady { graph ->
-                    if (graph.hasTask("${path}:sign${publication.name.capitalize(Locale.ROOT)}Publication")) {
-                        rootProject.extensions.extraProperties.getOrPut("signing.gnupg.passphrase") {
-                            val inputHandler = serviceOf<UserInputHandler>()
-                            inputHandler.askQuestion("Signing key passphrase: ", "")
-                        }
-                        useGpgCmd()
-                    }
-                }
+                useGpgCmd()
                 sign(publication.get())
             }
         }
