@@ -1,4 +1,4 @@
-Kotshi ![Build status](https://travis-ci.org/ansman/kotshi.svg?branch=main)
+Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api)
 ===
 
 An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
