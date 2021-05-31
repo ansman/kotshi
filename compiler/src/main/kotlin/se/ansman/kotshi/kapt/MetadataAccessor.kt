@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.kapt
 
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass

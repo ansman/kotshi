@@ -1,4 +1,4 @@
-package se.ansman.kotshi.generators
+package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -6,8 +6,9 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isEnum
-import se.ansman.kotshi.MetadataAccessor
-import se.ansman.kotshi.ProcessingError
+import se.ansman.kotshi.GlobalConfig
+import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addNextControlFlow
 import se.ansman.kotshi.addWhen

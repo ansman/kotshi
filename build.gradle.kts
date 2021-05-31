@@ -4,6 +4,7 @@ plugins {
 
 allprojects {
     repositories {
+        google()
         mavenCentral()
         mavenLocal()
     }

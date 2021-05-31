@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.kapt
 
 import com.google.auto.service.AutoService
 import com.google.common.collect.ImmutableList
@@ -8,6 +8,7 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
+import se.ansman.kotshi.GeneratedAdapter
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment

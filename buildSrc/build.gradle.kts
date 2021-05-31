@@ -34,5 +34,9 @@ gradlePlugin {
             id = name
             implementationClass = "se.ansman.kotshi.gradle.PublishedLibraryPlugin"
         }
+        register("test-library") {
+            id = name
+            implementationClass = "se.ansman.kotshi.gradle.TestLibraryPlugin"
+        }
     }
 }

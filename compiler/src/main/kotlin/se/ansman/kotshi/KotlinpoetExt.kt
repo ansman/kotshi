@@ -20,6 +20,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.tag
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonQualifier
+import se.ansman.kotshi.kapt.KotshiProcessor
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.util.Elements

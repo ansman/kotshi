@@ -24,4 +24,5 @@ dependencies {
     implementation(deps.kotlinpoet.metadataSpecs)
     implementation(deps.kotlinpoet.classinspector)
     implementation(deps.moshi)
+    implementation(deps.ksp.api)
 }
