@@ -1,5 +1,6 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.ksp
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.Dynamic
@@ -8,24 +9,23 @@ import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.tag
-import se.ansman.kotshi.kapt.MetadataAccessor
-import se.ansman.kotshi.kapt.ProcessingError
+import se.ansman.kotshi.TypeRenderer
+import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.kapt.generators.typesParameter
 import java.lang.reflect.ParameterizedType
-import javax.lang.model.element.TypeElement
 
 class SealedClassSubtype(
-    metadataAccessor: MetadataAccessor,
-    val type: TypeElement,
+    val type: KSClassDeclaration,
     val label: String
 ) : TypeRenderer() {
-    val className = type.asClassName()
-    val typeSpec = metadataAccessor.getTypeSpec(type)
+    val className = type.toClassName()
 
     override fun renderTypeVariable(typeVariable: TypeVariableName): CodeBlock {
-        val superParameters = (typeSpec.superclass as? ParameterizedTypeName)
+        val superParameters = type.superTypes
+            .map { it.resolve().toTypeName() }
+            .filterIsInstance<ParameterizedTypeName>()
+            .firstOrNull()
             ?.typeArguments
             ?: emptyList()
 
@@ -81,6 +81,6 @@ class SealedClassSubtype(
                 .unindent()
                 .build()
         }
-        throw ProcessingError("Could not determine type variable type", typeVariable.tag() ?: type)
+        throw KspProcessingError("Could not determine type variable type", typeVariable.tag() ?: type)
     }
 }

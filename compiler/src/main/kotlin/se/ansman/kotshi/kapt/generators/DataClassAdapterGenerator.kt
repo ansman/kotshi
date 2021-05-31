@@ -1,4 +1,4 @@
-package se.ansman.kotshi.generators
+package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
@@ -27,9 +27,8 @@ import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.tag
 import se.ansman.kotshi.AdapterKey
+import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonSerializable
-import se.ansman.kotshi.MetadataAccessor
-import se.ansman.kotshi.ProcessingError
 import se.ansman.kotshi.Property
 import se.ansman.kotshi.STRING
 import se.ansman.kotshi.SerializeNulls
@@ -45,6 +44,8 @@ import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.asRuntimeType
 import se.ansman.kotshi.isPrimitive
+import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
 import se.ansman.kotshi.suggestedAdapterName

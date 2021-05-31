@@ -1,6 +1,13 @@
-package se.ansman.kotshi.generators
+package se.ansman.kotshi.ksp.generators
 
-import com.google.auto.common.MoreElements
+import com.google.devtools.ksp.getAllSuperTypes
+import com.google.devtools.ksp.isInternal
+import com.google.devtools.ksp.isLocal
+import com.google.devtools.ksp.isPublic
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -14,48 +21,36 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
-import com.squareup.kotlinpoet.metadata.isInner
-import com.squareup.kotlinpoet.metadata.isInternal
-import com.squareup.kotlinpoet.metadata.isLocal
-import com.squareup.kotlinpoet.metadata.isPublic
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import se.ansman.kotshi.GeneratedAdapter
-import se.ansman.kotshi.JsonDefaultValue
-import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.KotshiUtils
-import se.ansman.kotshi.MetadataAccessor
 import se.ansman.kotshi.NamedJsonAdapter
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
-import se.ansman.kotshi.ProcessingError
-import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
-import se.ansman.kotshi.maybeAddGeneratedAnnotation
+import se.ansman.kotshi.ksp.KspProcessingError
+import se.ansman.kotshi.ksp.addOriginatingKSFile
+import se.ansman.kotshi.ksp.getAnnotation
+import se.ansman.kotshi.ksp.getValue
+import se.ansman.kotshi.ksp.toClassName
+import se.ansman.kotshi.ksp.toTypeName
+import se.ansman.kotshi.ksp.writeTo
 import se.ansman.kotshi.nullable
 import java.io.IOException
 import java.lang.reflect.Type
-import javax.annotation.processing.Filer
-import javax.lang.model.SourceVersion
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeKind
-import javax.lang.model.util.Elements
-import javax.lang.model.util.Types
 
 @Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
-    protected val metadataAccessor: MetadataAccessor,
-    protected val types: Types,
-    protected val elements: Elements,
-    protected val element: TypeElement,
-    protected val metadata: ImmutableKmClass,
-    protected val globalConfig: GlobalConfig
+    protected val environment: SymbolProcessorEnvironment,
+    protected val resolver: Resolver,
+    protected val element: KSClassDeclaration,
+    protected val globalConfig: GlobalConfig,
 ) {
     protected val nameAllocator = NameAllocator().apply {
         newName("options")
@@ -66,11 +61,16 @@ abstract class AdapterGenerator(
         newName("it")
     }
 
-    protected val elementTypeSpec = metadataAccessor.getTypeSpec(element)
-    protected val className = ClassInspectorUtil.createClassName(metadata.name)
-    private val typeVariables = elementTypeSpec.typeVariables
-        // Removes the variance
-        .map { TypeVariableName(it.name, *it.bounds.toTypedArray()) }
+    protected val className = element.toClassName()
+
+    protected val typeVariables = element.typeParameters.map { typeParameter ->
+        TypeVariableName(
+            typeParameter.name.getShortName(),
+            typeParameter.bounds
+                .map { it.resolve().toTypeName() }
+                .toList(),
+        )
+    }
 
     protected val typeName = if (typeVariables.isEmpty()) {
         className
@@ -80,17 +80,14 @@ abstract class AdapterGenerator(
 
     protected val value = ParameterSpec.builder("value", typeName.nullable()).build()
 
-    fun generateAdapter(
-        sourceVersion: SourceVersion,
-        filer: Filer
-    ): GeneratedAdapter {
+    fun generateAdapter(): GeneratedAdapter {
         when {
-            metadata.isInner ->
-                throw ProcessingError("@JsonSerializable can't be applied to inner classes", element)
-            metadata.isLocal ->
-                throw ProcessingError("@JsonSerializable can't be applied to local classes", element)
-            !metadata.isPublic && !metadata.isInternal ->
-                throw ProcessingError("Classes annotated with @JsonSerializable must public or internal", element)
+            Modifier.INNER in element.modifiers ->
+                throw KspProcessingError("@JsonSerializable can't be applied to inner classes", element)
+            element.isLocal() ->
+                throw KspProcessingError("@JsonSerializable can't be applied to local classes", element)
+            !element.isPublic() && !element.isInternal() ->
+                throw KspProcessingError("Classes annotated with @JsonSerializable must public or internal", element)
         }
 
         val adapterClassName =
@@ -98,8 +95,9 @@ abstract class AdapterGenerator(
 
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
             .addModifiers(KModifier.INTERNAL)
-            .addOriginatingElement(element)
-            .maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .addOriginatingKSFile(element.containingFile!!)
+            // TODO
+//            .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
             .superclass(namedJsonAdapter.plusParameter(typeName))
             .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
@@ -110,7 +108,7 @@ abstract class AdapterGenerator(
             .addComment("Code generated by Kotshi. Do not edit.")
             .addType(typeSpec)
             .build()
-            .writeTo(filer)
+            .writeTo(environment.codeGenerator)
 
         return GeneratedAdapter(
             targetType = className,
@@ -151,28 +149,35 @@ abstract class AdapterGenerator(
             .build())
 
 
-    protected fun getPolymorphicLabels(): Map<String, String> = element.getPolymorphicLabels(types)
+    protected fun getPolymorphicLabels(): Map<String, String> = element.getPolymorphicLabels()
 
-    private fun TypeElement.getPolymorphicLabels(
-        types: Types,
-        output: MutableMap<String, String> = LinkedHashMap()
-    ): Map<String, String> {
-        if (superclass.kind == TypeKind.DECLARED) {
-            MoreElements.asType(types.asElement(superclass)).getPolymorphicLabels(types, output)
+    private fun KSClassDeclaration.getPolymorphicLabels(): Map<String, String> {
+        val output = LinkedHashMap<String, String>()
+        val isPolymorphic = getAnnotation<PolymorphicLabel>() != null
+
+        for (type in getAllSuperTypes().map { it.declaration } + sequenceOf(this)) {
+            if (type is KSClassDeclaration) {
+                val labelKey = type.nearestPolymorpicLabelKey()
+                    ?: continue
+                output[labelKey] = type.getAnnotation<PolymorphicLabel>()?.getValue<String>("value")
+                    ?: continue
+            } else {
+                throw KspProcessingError("Unknown super type ${type.javaClass}", type)
+            }
         }
-        val labelKey = nearestPolymorpic()?.labelKey
-            ?: return output
-        val label = getAnnotation(PolymorphicLabel::class.java)?.value
-            ?: return output
-        output[labelKey] = label
+        if (isPolymorphic && output.isEmpty()) {
+            throw KspProcessingError("Found no polymorphic labels", this)
+        }
         return output
     }
 
-    private fun TypeElement.nearestPolymorpic(): Polymorphic? {
-        if (superclass.kind != TypeKind.DECLARED) return null
-        val superElement = types.asElement(superclass)
-        superElement?.getAnnotation(Polymorphic::class.java)?.let { return it }
-        return MoreElements.asType(superElement).nearestPolymorpic()
+    private fun KSClassDeclaration.nearestPolymorpicLabelKey(): String? {
+        for (superType in getAllSuperTypes()/*.toList().reversed()*/) {
+            superType.declaration.getAnnotation<Polymorphic>()
+                ?.getValue<String>("labelKey")
+                ?.let { return it }
+        }
+        return null
     }
 }
 
@@ -187,8 +192,6 @@ val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("cr
 
 val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
 val jsonAdapter = JsonAdapter::class.java.asClassName()
-val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()
-val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
 val jsonDataException = JsonDataException::class.java.asClassName()
 val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
 val jsonReaderToken = JsonReader.Token::class.java.asClassName()
@@ -201,19 +204,3 @@ val readerParameter = ParameterSpec.builder("reader", jsonReader).build()
 val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
 val typesParameter = ParameterSpec.builder("types", Array::class.plusParameter(Type::class)).build()
 
-data class GlobalConfig(
-    val useAdaptersForPrimitives: Boolean,
-    val serializeNulls: SerializeNulls
-) {
-    constructor(factory: KotshiJsonAdapterFactory) : this(
-        useAdaptersForPrimitives = factory.useAdaptersForPrimitives,
-        serializeNulls = factory.serializeNulls
-    )
-
-    companion object {
-        val DEFAULT = GlobalConfig(
-            useAdaptersForPrimitives = false,
-            serializeNulls = SerializeNulls.DEFAULT
-        )
-    }
-}

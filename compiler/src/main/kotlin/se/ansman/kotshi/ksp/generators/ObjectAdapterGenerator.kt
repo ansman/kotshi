@@ -1,32 +1,27 @@
-package se.ansman.kotshi.generators
+package se.ansman.kotshi.ksp.generators
 
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.jvm.throws
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
-import com.squareup.kotlinpoet.metadata.isObject
-import se.ansman.kotshi.MetadataAccessor
+import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.nullable
-import javax.annotation.processing.Messager
-import javax.lang.model.element.TypeElement
-import javax.lang.model.util.Elements
-import javax.lang.model.util.Types
 
 class ObjectAdapterGenerator(
-    metadataAccessor: MetadataAccessor,
-    types: Types,
-    elements: Elements,
-    element: TypeElement,
-    metadata: ImmutableKmClass,
-    globalConfig: GlobalConfig,
-    messager: Messager
-) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig) {
+    environment: SymbolProcessorEnvironment,
+    resolver: Resolver,
+    element: KSClassDeclaration,
+    globalConfig: GlobalConfig
+) : AdapterGenerator(environment, resolver, element, globalConfig) {
     init {
-        require(metadata.isObject)
+        require(element.classKind == ClassKind.OBJECT)
     }
 
     override fun TypeSpec.Builder.addMethods() {

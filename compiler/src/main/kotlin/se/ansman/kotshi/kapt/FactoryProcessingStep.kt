@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package se.ansman.kotshi
+package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
@@ -18,7 +18,14 @@ import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import se.ansman.kotshi.generators.jsonAdapterFactory
+import se.ansman.kotshi.GeneratedAdapter
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.KotshiUtils
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.kapt.generators.jsonAdapterFactory
+import se.ansman.kotshi.maybeAddGeneratedAnnotation
+import se.ansman.kotshi.moshiTypes
+import se.ansman.kotshi.nullable
 import java.lang.reflect.Type
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager

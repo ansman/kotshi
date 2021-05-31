@@ -30,4 +30,9 @@ object deps {
         const val api = "net.ltgt.gradle.incap:incap:$version"
         const val compiler = "net.ltgt.gradle.incap:incap-processor:$version"
     }
+
+    object ksp {
+        const val version = "1.5.10-1.0.0-beta01"
+        const val api = "com.google.devtools.ksp:symbol-processing-api:$version"
+    }
 }

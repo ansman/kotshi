@@ -1,4 +1,4 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.kapt
 
 import javax.lang.model.element.Element
 

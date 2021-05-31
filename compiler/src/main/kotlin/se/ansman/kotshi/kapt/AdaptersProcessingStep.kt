@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package se.ansman.kotshi
+package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
@@ -9,11 +9,15 @@ import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import se.ansman.kotshi.generators.DataClassAdapterGenerator
-import se.ansman.kotshi.generators.EnumAdapterGenerator
-import se.ansman.kotshi.generators.GlobalConfig
-import se.ansman.kotshi.generators.ObjectAdapterGenerator
-import se.ansman.kotshi.generators.SealedClassAdapterGenerator
+import se.ansman.kotshi.GeneratedAdapter
+import se.ansman.kotshi.GlobalConfig
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.kapt.generators.DataClassAdapterGenerator
+import se.ansman.kotshi.kapt.generators.EnumAdapterGenerator
+import se.ansman.kotshi.kapt.generators.ObjectAdapterGenerator
+import se.ansman.kotshi.kapt.generators.SealedClassAdapterGenerator
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
