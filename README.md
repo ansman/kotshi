@@ -7,7 +7,7 @@ There is a reflective adapter for Kotlin but that requires the kotlin reflection
 increase the binary size which in a constrained environment such as Android is something is not preferable.
 
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
-hand written them yourself. It will automatically regenerate the adapters when you modify your class.
+written them by hand yourself. It will automatically regenerate the adapters when you modify your class.
 
 It's made to work with minimal setup, through there are [limitations](#limitations).
 Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
@@ -96,9 +96,24 @@ Limitations
 
 Download
 ---
-```groovy
-implementation "se.ansman.kotshi:api:2.5.0"
-kapt "se.ansman.kotshi:compiler:2.5.0"
+There is experimental support for [KSP](https://github.com/google/ksp) which promises faster compile times compared to 
+KAPT. Until KSP becomes stable this support in Koshi is experimental and can change at any time.
+
+```kotlin
+plugins {
+    ...
+    kotlin("kapt")
+    // If you are using KSP then use this
+    id("com.google.devtools.ksp") version "<version>"
+}
+
+dependencies {
+    val kotshiVersion = "2.5.0"
+    implementation("se.ansman.kotshi:api:$kotshiVersion")
+    kapt("se.ansman.kotshi:compiler:$kotshiVersion")
+    // If you are using KSP then you use instead
+    ksp("se.ansman.kotshi:compiler:$kotshiVersion")
+}
 ```
 Snapshots of the development version are available in [jfrogs's snapshots repository](https://oss.jfrog.org/artifactory/oss-snapshot-local/se/ansman/kotshi/).
 
