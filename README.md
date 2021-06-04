@@ -94,6 +94,13 @@ Limitations
 * Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 * Due to a KAPT bug/limitation you cannot add qualifiers to parameters that are inline classes ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-36352)).
 
+F.A.Q.
+---
+
+*Q: I can't generate `KotshiJsonAdapterFactory`-annotated class*
+
+**A: make sure to add the `kotlin-kapt` plugin in the `build.gradle` file of your project.**
+
 Download
 ---
 There is experimental support for [KSP](https://github.com/google/ksp) which promises faster compile times compared to 
