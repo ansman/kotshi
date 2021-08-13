@@ -465,22 +465,30 @@ private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror)
         override fun visit(av: AnnotationValue?) =throw AssertionError()
 
         override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
-            val arrayCreator = when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
-                BYTE -> "byteArrayOf"
-                CHAR -> "charArrayOf"
-                SHORT -> "shortArrayOf"
-                INT -> "intArrayOf"
-                LONG -> "longArrayOf"
-                FLOAT -> "floatArrayOf"
-                DOUBLE -> "doubleArrayOf"
-                BOOLEAN -> "booleanArrayOf"
-                else -> "arrayOf"
-            }
-
             if (vals.isEmpty()) {
-                add("$arrayCreator()")
+                add(when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
+                    BYTE -> "byteArrayOf()"
+                    CHAR -> "charArrayOf()"
+                    SHORT -> "shortArrayOf()"
+                    INT -> "intArrayOf()"
+                    LONG -> "longArrayOf()"
+                    FLOAT -> "floatArrayOf()"
+                    DOUBLE -> "doubleArrayOf()"
+                    BOOLEAN -> "booleanArrayOf()"
+                    else -> "emptyArray<Any>()"
+                })
             } else {
-                add("$arrayCreator(")
+                add(when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
+                    BYTE -> "byteArrayOf("
+                    CHAR -> "charArrayOf("
+                    SHORT -> "shortArrayOf("
+                    INT -> "intArrayOf("
+                    LONG -> "longArrayOf("
+                    FLOAT -> "floatArrayOf("
+                    DOUBLE -> "doubleArrayOf("
+                    BOOLEAN -> "booleanArrayOf("
+                    else -> "arrayOf("
+                })
                 if (vals.size > 1) {
                     add("⇥\n")
                 }
