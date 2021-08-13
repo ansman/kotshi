@@ -96,7 +96,7 @@ Limitations
 
 Download
 ---
-There is experimental support for [KSP](https://github.com/google/ksp) which promises faster compile times compared to 
+There is experimental support for [KSP](https://github.com/google/ksp) which promises faster compile times compared to
 KAPT. Until KSP becomes stable this support in Koshi is experimental and can change at any time.
 
 ```kotlin
@@ -108,7 +108,7 @@ plugins {
 }
 
 dependencies {
-    val kotshiVersion = "2.6.0"
+    val kotshiVersion = "2.6.1"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
     // If you are using KSP then you use instead
