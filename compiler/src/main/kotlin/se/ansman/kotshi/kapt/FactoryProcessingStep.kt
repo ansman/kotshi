@@ -4,6 +4,7 @@ package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -19,9 +20,11 @@ import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import se.ansman.kotshi.GeneratedAdapter
+import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.KotshiUtils
 import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.kapt.generators.internalKotshiApi
 import se.ansman.kotshi.kapt.generators.jsonAdapterFactory
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.moshiTypes
@@ -86,6 +89,12 @@ class FactoryProcessingStep(
 
         typeSpecBuilder
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .addAnnotation(AnnotationSpec.builder(suppress)
+                .addMember("%S", "EXPERIMENTAL_IS_NOT_ENABLED")
+                .build())
+            .addAnnotation(AnnotationSpec.builder(optIn)
+                .addMember("%T::class", internalKotshiApi)
+                .build())
             .addModifiers(KModifier.INTERNAL)
             .addOriginatingElement(element)
 
@@ -154,6 +163,9 @@ class FactoryProcessingStep(
     }
 
     companion object {
+        @OptIn(InternalKotshiApi::class)
         private val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
+        val suppress = ClassName("kotlin", "Suppress")
+        val optIn = ClassName("kotlin", "OptIn")
     }
 }

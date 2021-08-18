@@ -12,7 +12,6 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.MemberName.Companion.member
 import com.squareup.kotlinpoet.NameAllocator
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -20,20 +19,17 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.asClassName
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.JsonWriter
-import com.squareup.moshi.Moshi
 import se.ansman.kotshi.GeneratedAdapter
 import se.ansman.kotshi.GlobalConfig
-import se.ansman.kotshi.KotshiUtils
-import se.ansman.kotshi.NamedJsonAdapter
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.kapt.generators.internalKotshiApi
+import se.ansman.kotshi.kapt.generators.jsonReaderOptions
+import se.ansman.kotshi.kapt.generators.moshiParameter
+import se.ansman.kotshi.kapt.generators.namedJsonAdapter
+import se.ansman.kotshi.kapt.generators.typesParameter
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.addOriginatingKSFile
 import se.ansman.kotshi.ksp.getAnnotation
@@ -42,8 +38,6 @@ import se.ansman.kotshi.ksp.toClassName
 import se.ansman.kotshi.ksp.toTypeName
 import se.ansman.kotshi.ksp.writeTo
 import se.ansman.kotshi.nullable
-import java.io.IOException
-import java.lang.reflect.Type
 
 @Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
@@ -96,6 +90,7 @@ abstract class AdapterGenerator(
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
             .addModifiers(KModifier.INTERNAL)
             .addOriginatingKSFile(element.containingFile!!)
+            .addAnnotation(internalKotshiApi)
             // TODO
 //            .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
@@ -180,27 +175,3 @@ abstract class AdapterGenerator(
         return null
     }
 }
-
-val kotshiUtilsByteValue = KotshiUtils::class.member("byteValue")
-val kotshiUtilsValue = KotshiUtils::class.member("value")
-val kotshiUtilsNextFloat = KotshiUtils::class.member("nextFloat")
-val kotshiUtilsNextByte = KotshiUtils::class.member("nextByte")
-val kotshiUtilsNextShort = KotshiUtils::class.member("nextShort")
-val kotshiUtilsNextChar = KotshiUtils::class.member("nextChar")
-val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableError")
-val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
-
-val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
-val jsonAdapter = JsonAdapter::class.java.asClassName()
-val jsonDataException = JsonDataException::class.java.asClassName()
-val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
-val jsonReaderToken = JsonReader.Token::class.java.asClassName()
-val ioException = IOException::class.java.asClassName()
-val jsonWriter = JsonWriter::class.java.asClassName()
-val jsonReader = JsonReader::class.java.asClassName()
-
-val writerParameter = ParameterSpec.builder("writer", jsonWriter).build()
-val readerParameter = ParameterSpec.builder("reader", jsonReader).build()
-val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
-val typesParameter = ParameterSpec.builder("types", Array::class.plusParameter(Type::class)).build()
-

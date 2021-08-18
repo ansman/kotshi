@@ -5,6 +5,7 @@ import okio.Buffer
 import org.junit.Test
 import kotlin.test.assertEquals
 
+@InternalKotshiApi
 class TestClassWithJavaKeyword {
     private val adapter = KotshiClassWithJavaKeywordJsonAdapter()
 

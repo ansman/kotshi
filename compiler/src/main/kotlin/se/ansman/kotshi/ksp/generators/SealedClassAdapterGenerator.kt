@@ -25,6 +25,15 @@ import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.addWhile
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.kapt.generators.ioException
+import se.ansman.kotshi.kapt.generators.jsonAdapter
+import se.ansman.kotshi.kapt.generators.jsonDataException
+import se.ansman.kotshi.kapt.generators.jsonReaderOptions
+import se.ansman.kotshi.kapt.generators.jsonReaderToken
+import se.ansman.kotshi.kapt.generators.moshiParameter
+import se.ansman.kotshi.kapt.generators.readerParameter
+import se.ansman.kotshi.kapt.generators.typesParameter
+import se.ansman.kotshi.kapt.generators.writerParameter
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.SealedClassSubtype
 import se.ansman.kotshi.ksp.getAnnotation

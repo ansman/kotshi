@@ -13,9 +13,10 @@ import java.lang.reflect.Type
  *
  * These functions should not be considered public and are subject to change without notice.
  */
+@InternalKotshiApi
 object KotshiUtils {
-
     @JvmStatic
+    @InternalKotshiApi
     val Type.typeArgumentsOrFail: Array<Type>
         get() = (this as? ParameterizedType)?.actualTypeArguments
             ?: throw IllegalArgumentException("""
@@ -26,6 +27,7 @@ object KotshiUtils {
 
     @JvmStatic
     @JvmOverloads
+    @InternalKotshiApi
     fun StringBuilder?.appendNullableError(propertyName: String, jsonName: String = propertyName): StringBuilder =
         (if (this == null) StringBuilder("The following properties were null: ") else append(", "))
             .append(propertyName)
@@ -37,6 +39,7 @@ object KotshiUtils {
 
     @JvmStatic
     @JvmOverloads
+    @InternalKotshiApi
     fun <T : Annotation> Class<T>.createJsonQualifierImplementation(annotationArguments: Map<String, Any> = emptyMap()): T {
         require(isAnnotation) { "$this must be an annotation." }
         @Suppress("UNCHECKED_CAST")
@@ -52,6 +55,7 @@ object KotshiUtils {
     }
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonReader.nextFloat(): Float =
         nextDouble().toFloat().also {
             // Double check for infinity after float conversion; many doubles > Float.MAX
@@ -61,12 +65,14 @@ object KotshiUtils {
         }
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonReader.nextByte(): Byte = nextIntInRange("a byte", -128, 255).toByte()
 
     @JvmStatic
     fun JsonReader.nextShort(): Short = nextIntInRange("a short", -32768, 32767).toShort()
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonReader.nextChar(): Char =
         nextString()
             .also {
@@ -77,15 +83,19 @@ object KotshiUtils {
             .single()
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonWriter.byteValue(byte: Byte): JsonWriter = value(byte.toInt() and 0xff)
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonWriter.byteValue(byte: Byte?): JsonWriter = if (byte == null) nullValue() else byteValue(byte)
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonWriter.value(char: Char): JsonWriter = value(char.toString())
 
     @JvmStatic
+    @InternalKotshiApi
     fun JsonWriter.value(char: Char?): JsonWriter = if (char == null) nullValue() else value(char)
 
     @JvmStatic

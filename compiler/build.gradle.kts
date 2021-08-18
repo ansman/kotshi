@@ -7,7 +7,7 @@ tasks.compileKotlin {
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + listOf(
             "-Xuse-experimental=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
-            "-Xuse-experimental=kotlin.Experimental",
+            "-Xopt-in=kotlin.RequiresOptIn"
         )
     }
 }

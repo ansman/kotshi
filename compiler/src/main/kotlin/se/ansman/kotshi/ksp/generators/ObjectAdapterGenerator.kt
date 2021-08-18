@@ -12,6 +12,11 @@ import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
 import se.ansman.kotshi.addIfElse
+import se.ansman.kotshi.kapt.generators.ioException
+import se.ansman.kotshi.kapt.generators.jsonDataException
+import se.ansman.kotshi.kapt.generators.jsonReaderToken
+import se.ansman.kotshi.kapt.generators.readerParameter
+import se.ansman.kotshi.kapt.generators.writerParameter
 import se.ansman.kotshi.nullable
 
 class ObjectAdapterGenerator(

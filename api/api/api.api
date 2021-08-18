@@ -1,3 +1,6 @@
+public abstract interface annotation class se/ansman/kotshi/InternalKotshiApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class se/ansman/kotshi/JsonDefaultValue : java/lang/annotation/Annotation {
 }
 
