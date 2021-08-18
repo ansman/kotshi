@@ -15,6 +15,11 @@ import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addNextControlFlow
 import se.ansman.kotshi.addWhen
+import se.ansman.kotshi.kapt.generators.ioException
+import se.ansman.kotshi.kapt.generators.jsonDataException
+import se.ansman.kotshi.kapt.generators.jsonReaderToken
+import se.ansman.kotshi.kapt.generators.readerParameter
+import se.ansman.kotshi.kapt.generators.writerParameter
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getValue

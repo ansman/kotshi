@@ -1,3 +1,5 @@
+@file:OptIn(InternalKotshiApi::class)
+
 package se.ansman.kotshi.kapt.generators
 
 import com.google.auto.common.MoreElements
@@ -27,6 +29,7 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import se.ansman.kotshi.GeneratedAdapter
 import se.ansman.kotshi.GlobalConfig
+import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.KotshiUtils
 import se.ansman.kotshi.NamedJsonAdapter
@@ -98,6 +101,7 @@ abstract class AdapterGenerator(
         val typeSpec = TypeSpec.classBuilder(adapterClassName)
             .addModifiers(KModifier.INTERNAL)
             .addOriginatingElement(element)
+            .addAnnotation(internalKotshiApi)
             .maybeAddGeneratedAnnotation(elements, sourceVersion)
             .addTypeVariables(typeVariables)
             .superclass(namedJsonAdapter.plusParameter(typeName))
@@ -184,6 +188,7 @@ val kotshiUtilsNextChar = KotshiUtils::class.member("nextChar")
 val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableError")
 val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
 
+val internalKotshiApi = ClassName("se.ansman.kotshi", "InternalKotshiApi")
 val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
 val jsonAdapter = JsonAdapter::class.java.asClassName()
 val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()

@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -22,12 +23,15 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import se.ansman.kotshi.GeneratedAdapter
 import se.ansman.kotshi.GlobalConfig
+import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.KotshiUtils
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.kapt.FactoryProcessingStep
+import se.ansman.kotshi.kapt.generators.internalKotshiApi
 import se.ansman.kotshi.ksp.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.ksp.generators.EnumAdapterGenerator
 import se.ansman.kotshi.ksp.generators.ObjectAdapterGenerator
@@ -41,7 +45,10 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
         for (annotated in resolver.getSymbolsWithAnnotation(Polymorphic::class.qualifiedName!!)) {
             require(annotated is KSClassDeclaration)
             if (annotated.getAnnotation<JsonSerializable>() == null) {
-                environment.logger.error("Kotshi: Classes annotated with @Polymorphic must also be annotated with @JsonSerializable", annotated)
+                environment.logger.error(
+                    "Kotshi: Classes annotated with @Polymorphic must also be annotated with @JsonSerializable",
+                    annotated
+                )
             }
         }
 
@@ -111,6 +118,12 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
             .build()
 
         val factory = typeSpecBuilder
+            .addAnnotation(AnnotationSpec.builder(FactoryProcessingStep.suppress)
+                .addMember("%S", "EXPERIMENTAL_IS_NOT_ENABLED")
+                .build())
+            .addAnnotation(AnnotationSpec.builder(FactoryProcessingStep.optIn)
+                .addMember("%T::class", internalKotshiApi)
+                .build())
             .addFunction(makeCreateFunction(typeParam, annotationsParam, moshiParam, adapters))
             .build()
 
@@ -226,6 +239,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
     }
 
     companion object {
+        @OptIn(InternalKotshiApi::class)
         private val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
     }
 }
