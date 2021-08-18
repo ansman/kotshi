@@ -115,7 +115,7 @@ dependencies {
     ksp("se.ansman.kotshi:compiler:$kotshiVersion")
 }
 ```
-Snapshots of the development version are available in [jfrogs's snapshots repository](https://oss.jfrog.org/artifactory/oss-snapshot-local/se/ansman/kotshi/).
+Snapshots of the development version are available in [the sonatype snapshots repository](https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~se/ansman/kotshi/).
 
 License
 ---
