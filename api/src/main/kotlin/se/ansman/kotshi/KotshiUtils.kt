@@ -4,6 +4,8 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Types
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Proxy
 import java.lang.reflect.Type
@@ -19,11 +21,13 @@ object KotshiUtils {
     @InternalKotshiApi
     val Type.typeArgumentsOrFail: Array<Type>
         get() = (this as? ParameterizedType)?.actualTypeArguments
-            ?: throw IllegalArgumentException("""
+            ?: throw IllegalArgumentException(
+                """
                     ${Types.getRawType(this).simpleName} is generic and requires you to specify its type
                     arguments. Don't request an adapter using Type::class.java or value.javaClass but rather using
                     Types.newParameterizedType.
-                """.trimIndent())
+                """.trimIndent()
+            )
 
     @JvmStatic
     @JvmOverloads
@@ -43,15 +47,52 @@ object KotshiUtils {
     fun <T : Annotation> Class<T>.createJsonQualifierImplementation(annotationArguments: Map<String, Any> = emptyMap()): T {
         require(isAnnotation) { "$this must be an annotation." }
         @Suppress("UNCHECKED_CAST")
-        return Proxy.newProxyInstance(classLoader, arrayOf<Class<*>>(this)) { proxy, method, args ->
-            when (method.name) {
-                "annotationType" -> this
-                "equals" -> isInstance(args[0])
-                "hashCode" -> 0
-                "toString" -> "@$name()"
-                else -> annotationArguments[method.name] ?: method.invoke(proxy, *args)
+        return Proxy.newProxyInstance(classLoader, arrayOf<Class<*>>(this), object : InvocationHandler {
+            private val annotationMethods = declaredMethods
+                .onEach { method ->
+                    val value = annotationArguments[method.name]
+                    if (value == null) {
+                        require(method.defaultValue != null) {
+                            "Annotation value for method ${method.name} is missing"
+                        }
+                    } else {
+                        val expectedType = when (val returnType = method.returnType) {
+                            Boolean::class.java -> Boolean::class.javaObjectType
+                            Byte::class.java -> Byte::class.javaObjectType
+                            Char::class.java -> Char::class.javaObjectType
+                            Double::class.java -> Double::class.javaObjectType
+                            Float::class.java -> Float::class.javaObjectType
+                            Int::class.java -> Int::class.javaObjectType
+                            Long::class.java -> Long::class.javaObjectType
+                            Short::class.java -> Short::class.javaObjectType
+                            Void::class.java -> Void::class.javaObjectType
+                            else -> returnType
+                        }
+                        require(expectedType.isInstance(value)) {
+                            "Expected value for method ${method.name} to be of type $expectedType but was ${value.javaClass}"
+                        }
+                    }
+                }
+                .toList()
+
+            init {
+                val extraArguments = annotationArguments.keys - annotationMethods.map { it.name }
+                require(extraArguments.isEmpty()) {
+                    "Found annotation values for unknown methods: $extraArguments"
+                }
             }
-        } as T
+
+            override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
+                when (method.name) {
+                    "annotationType" -> this
+                    "equals" -> args!![0] === proxy || isInstance(args!![0]) && annotationMethods.all { m ->
+                        m.invoke(args[0]) == annotationArguments.getOrDefault(m.name, m.defaultValue)
+                    }
+                    "hashCode" -> annotationArguments.hashCode()
+                    "toString" -> "@$name(${annotationArguments.entries.joinToString()})"
+                    else -> annotationArguments[method.name] ?: method.defaultValue
+                }
+        }) as T
     }
 
     @JvmStatic
