@@ -6,6 +6,8 @@ plugins {
 
 dependencies {
     api(deps.moshi)
+    testImplementation(deps.junit)
+    testImplementation(deps.truth)
 }
 
 tasks.withType<KotlinCompile> {
