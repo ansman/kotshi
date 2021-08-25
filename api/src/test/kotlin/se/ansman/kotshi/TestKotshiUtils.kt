@@ -6,8 +6,8 @@ import org.junit.Test
 import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation
 
 @OptIn(InternalKotshiApi::class)
+@Suppress("DEPRECATION_ERROR")
 class TestKotshiUtils {
-
     @Test
     fun testCreateJsonQualifierImplementation_equals() {
         fun assertEquality(a: TestQualifier, b: TestQualifier = a) {

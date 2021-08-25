@@ -22,8 +22,6 @@ import se.ansman.kotshi.kapt.KotshiProcessor
 import javax.lang.model.SourceVersion
 import javax.lang.model.util.Elements
 
-fun TypeVariableName.withoutVariance(): TypeVariableName = TypeVariableName(name, bounds)
-
 val TypeName.isPrimitive: Boolean
     get() = when (this) {
         BOOLEAN,

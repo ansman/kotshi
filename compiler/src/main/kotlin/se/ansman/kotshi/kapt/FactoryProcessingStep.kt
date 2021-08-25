@@ -60,7 +60,7 @@ class FactoryProcessingStep(
     }
 
     private fun generateFactory(element: TypeElement) {
-        val metadata = metadataAccessor.getMetadata(element)
+        val metadata = metadataAccessor.getKmClass(element)
         val elementClassName = createClassName(metadata.name)
 
         val factory = JsonAdapterFactory(

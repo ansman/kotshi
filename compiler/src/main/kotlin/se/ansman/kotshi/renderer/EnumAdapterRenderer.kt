@@ -17,7 +17,10 @@ class EnumAdapterRenderer(private val adapter: EnumJsonAdapter) : AdapterRendere
         addProperty(optionsProperty)
     }
 
-    override fun FunSpec.Builder.renderToJson(writerParameter: ParameterSpec, valueParameter: ParameterSpec) {
+    override fun FunSpec.Builder.renderToJson(
+        writerParameter: ParameterSpec,
+        valueParameter: ParameterSpec
+    ) {
         addWhen("%N", valueParameter) {
             for (entry in adapter.entries) {
                 addStatement("%T.%N·-> %N.value(%S)", adapter.targetType, entry.name, writerParameter, entry.serializedName)

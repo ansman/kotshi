@@ -26,6 +26,10 @@ import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 
 class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
+    private val createAnnotationsUsingConstructor = environment.options["kotshi.createAnnotationsUsingConstructor"]
+        ?.toBooleanStrict()
+        ?: environment.kotlinVersion.isAtLeast(1, 6)
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         for (annotated in resolver.getSymbolsWithAnnotation(Polymorphic::class.qualifiedName!!)) {
             require(annotated is KSClassDeclaration)
@@ -105,7 +109,8 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                                     environment = environment,
                                     resolver = resolver,
                                     element = annotated,
-                                    globalConfig = globalConfig
+                                    globalConfig = globalConfig,
+                                    createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
                                 )
                             }
                             Modifier.SEALED in annotated.modifiers -> {
@@ -144,7 +149,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     }
                 }
 
-                generator.generateAdapter()
+                generator.generateAdapter(createAnnotationsUsingConstructor)
             } catch (e: KspProcessingError) {
                 environment.logger.error("Kotshi: ${e.message}", e.node)
                 null

@@ -21,7 +21,10 @@ class ObjectAdapterRenderer(private val adapter: ObjectJsonAdapter) : AdapterRen
         }
     }
 
-    override fun FunSpec.Builder.renderToJson(writerParameter: ParameterSpec, valueParameter: ParameterSpec) {
+    override fun FunSpec.Builder.renderToJson(
+        writerParameter: ParameterSpec,
+        valueParameter: ParameterSpec
+    ) {
         this
             .addIfElse("%N·==·null", valueParameter) {
                 addStatement("%N.nullValue()", writerParameter)

@@ -18,11 +18,11 @@ fun List<AnnotationSpec>.jsonName(): String? = find(Types.Moshi.json)?.let { spe
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-fun List<AnnotationSpec>.qualifiers(): Set<AnnotationModel> =
+fun List<AnnotationSpec>.qualifiers(metadataAccessor: MetadataAccessor): Set<AnnotationModel> =
     mapNotNullTo(mutableSetOf()) { spec ->
         val mirror = requireNotNull(spec.tag<AnnotationMirror>())
         if (mirror.annotationType.asElement().getAnnotation(JsonQualifier::class.java) == null) {
             return@mapNotNullTo null
         }
-        mirror.toAnnotationModel()
+        mirror.toAnnotationModel(metadataAccessor)
     }

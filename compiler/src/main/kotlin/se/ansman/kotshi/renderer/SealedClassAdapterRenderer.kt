@@ -155,7 +155,10 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
         }
     }
 
-    override fun FunSpec.Builder.renderToJson(writerParameter: ParameterSpec, valueParameter: ParameterSpec) {
+    override fun FunSpec.Builder.renderToJson(
+        writerParameter: ParameterSpec,
+        valueParameter: ParameterSpec
+    ) {
         this
             .addIfElse("%N == null", value) {
                 addStatement("%N.nullValue()", writerParameter)

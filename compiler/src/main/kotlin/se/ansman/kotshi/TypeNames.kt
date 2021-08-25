@@ -73,3 +73,18 @@ fun TypeName.unwrapTypeAlias(): TypeName =
             else -> throw UnsupportedOperationException("Type '${javaClass.name}' is invalid. Only classes, parameterized types, wildcard types, or type variables are allowed.")
         }
 
+fun TypeName.withoutVariance(): TypeName =
+    when (this) {
+        is ClassName -> this
+        Dynamic -> this
+        is LambdaTypeName -> this
+        is ParameterizedTypeName -> withoutVariance()
+        is TypeVariableName -> withoutVariance()
+        is WildcardTypeName -> withoutVariance()
+    }
+
+fun ParameterizedTypeName.withoutVariance(): ParameterizedTypeName =
+    copy(typeArguments = typeArguments.map { it.withoutVariance() })
+fun TypeVariableName.withoutVariance(): TypeVariableName = TypeVariableName(name, bounds.map { it.withoutVariance() })
+fun WildcardTypeName.withoutVariance(): TypeName =
+    if (this == STAR) STAR else inTypes.getOrNull(0)?.withoutVariance() ?: outTypes[0]

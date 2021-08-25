@@ -98,14 +98,14 @@ class SealedClassAdapterGenerator(
     }
 
     private fun findSealedClassImplementations(): Sequence<TypeElement> =
-        (targetElement to metadata)
+        (targetElement to kmClass)
             .getSealedSubtypes(
                 getSealedSubclasses = {
                     second.sealedSubclasses.asSequence().map {
                         val typeElement = requireNotNull(elements.getTypeElement(it.replace('/', '.'))) {
                             "Could not find element for class $it"
                         }
-                        typeElement to metadataAccessor.getMetadata(typeElement)
+                        typeElement to metadataAccessor.getKmClass(typeElement)
                     }
                 },
                 isSealed = { second.flags.isSealed },

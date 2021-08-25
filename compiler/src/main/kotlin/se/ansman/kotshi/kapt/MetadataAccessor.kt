@@ -14,18 +14,24 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 
 class MetadataAccessor(private val classInspector: ClassInspector) {
-    private val metadataPerType = mutableMapOf<ClassName, KmClass>()
+    private val metadataPerType = mutableMapOf<ClassName, Metadata?>()
+    private val kmClassPerMetadata = mutableMapOf<Metadata, KmClass>()
     private val typeSpecPerKmClass = mutableMapOf<KmClass, TypeSpec>()
 
-    fun getMetadata(type: Element): KmClass =
-        @OptIn(DelicateKotlinPoetApi::class) // OK because we are using the class name for comparisson
+    @OptIn(DelicateKotlinPoetApi::class) // OK because we are using the class name for comparisson
+    fun getMetadataOrNull(type: Element): Metadata? =
         metadataPerType.getOrPut((type as TypeElement).asClassName()) {
             type.getAnnotation(Metadata::class.java)
-                ?.toKmClass()
-                ?: throw KaptProcessingError("Class must be written in Kotlin", type)
         }
 
-    fun getTypeSpec(type: Element): TypeSpec = getTypeSpec(getMetadata(type))
+    fun getMetadata(type: Element): Metadata =
+        getMetadataOrNull(type)
+            ?: throw KaptProcessingError("Class must be written in Kotlin", type)
+
+    fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) { metadata.toKmClass() }
+    fun getKmClass(type: Element): KmClass = getKmClass(getMetadata(type))
+
+    fun getTypeSpec(type: Element): TypeSpec = getTypeSpec(getKmClass(type))
 
     fun getTypeSpec(metadata: KmClass): TypeSpec =
         typeSpecPerKmClass.getOrPut(metadata) {
@@ -75,3 +81,10 @@ private fun String.substringAfterLast(vararg delimiters: Char): String {
     val index = lastIndexOfAny(delimiters)
     return if (index == -1) this else substring(index + 1, length)
 }
+
+val Metadata.languageVersion: KotlinVersion
+    get() = KotlinVersion(
+        major = metadataVersion[0],
+        minor = metadataVersion[1],
+        patch = metadataVersion.getOrElse(2) { 0 },
+    )
