@@ -39,8 +39,8 @@ internal data class MutableOriginatingKSFilesImpl(override val files: MutableLis
 internal fun TypeSpec.originatingKSFiles(): List<KSFile> = getKSFilesTag()
 internal fun FunSpec.originatingKSFiles(): List<KSFile> = getKSFilesTag()
 internal fun PropertySpec.originatingKSFiles(): List<KSFile> = getKSFilesTag()
-internal fun FileSpec.originatingKSFiles(): List<KSFile> {
-    return members
+internal fun FileSpec.originatingKSFiles(): List<KSFile> =
+    members
         .flatMap {
             when (it) {
                 is TypeSpec -> it.originatingKSFiles()
@@ -50,11 +50,8 @@ internal fun FileSpec.originatingKSFiles(): List<KSFile> {
             }
         }
         .distinct()
-}
 
-private fun Taggable.getKSFilesTag(): List<KSFile> {
-    return tag<OriginatingKSFiles>()?.files.orEmpty()
-}
+private fun Taggable.getKSFilesTag(): List<KSFile> = tag<OriginatingKSFiles>()?.files.orEmpty()
 
 internal fun TypeSpec.Builder.addOriginatingKSFile(ksFile: KSFile): TypeSpec.Builder = apply {
     getOrCreateKSFilesTag().add(ksFile)

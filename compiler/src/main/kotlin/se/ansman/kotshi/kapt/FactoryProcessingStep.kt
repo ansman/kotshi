@@ -4,33 +4,13 @@ package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.MemberName.Companion.member
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
-import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
-import se.ansman.kotshi.GeneratedAdapter
-import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.KotshiJsonAdapterFactory
-import se.ansman.kotshi.KotshiUtils
-import se.ansman.kotshi.addControlFlow
-import se.ansman.kotshi.kapt.generators.internalKotshiApi
-import se.ansman.kotshi.kapt.generators.jsonAdapterFactory
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
-import se.ansman.kotshi.moshiTypes
-import se.ansman.kotshi.nullable
-import java.lang.reflect.Type
+import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.JsonAdapterFactory
+import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
@@ -60,113 +40,45 @@ class FactoryProcessingStep(
 
     override val annotations: Set<Class<out Annotation>> = setOf(KotshiJsonAdapterFactory::class.java)
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
+    override fun process(
+        elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>,
+        roundEnv: RoundEnvironment
+    ) {
         val elements = elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
         if (elements.size > 1) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "Multiple classes found with annotations @KotshiJsonAdapterFactory", elements.first())
+            messager.printMessage(
+                Diagnostic.Kind.ERROR,
+                "Multiple classes found with annotations @KotshiJsonAdapterFactory",
+                elements.first()
+            )
         } else for (element in elements) {
             try {
                 generateFactory(MoreElements.asType(element))
-            } catch (e: ProcessingError) {
+            } catch (e: KaptProcessingError) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }
     }
 
     private fun generateFactory(element: TypeElement) {
-        val metadata = element.metadata.toImmutableKmClass()
+        val metadata = metadataAccessor.getMetadata(element)
         val elementClassName = ClassInspectorUtil.createClassName(metadata.name)
-        val generatedName = elementClassName.let {
-            ClassName(it.packageName, "Kotshi${it.simpleNames.joinToString("_")}")
-        }
 
-        val typeSpecBuilder = if (element.asType().implements(JsonAdapter.Factory::class) && Modifier.ABSTRACT in element.modifiers) {
-            TypeSpec.objectBuilder(generatedName)
-                .superclass(elementClassName)
-        } else {
-            TypeSpec.objectBuilder(generatedName)
-                .addSuperinterface(jsonAdapterFactory)
-        }
+        val factory = JsonAdapterFactory(
+            targetType = elementClassName,
+            usageType = if (element.asType().implements(JsonAdapter.Factory::class) && Modifier.ABSTRACT in element.modifiers) {
+                JsonAdapterFactory.UsageType.Subclass(elementClassName)
+            } else {
+                JsonAdapterFactory.UsageType.Standalone
+            },
+            adapters = adapters
+        )
 
-        typeSpecBuilder
-            .maybeAddGeneratedAnnotation(elements, sourceVersion)
-            .addAnnotation(AnnotationSpec.builder(optIn)
-                .addMember("%T::class", internalKotshiApi)
-                .build())
-            .addModifiers(KModifier.INTERNAL)
-            .addOriginatingElement(element)
-
-        val typeParam = ParameterSpec.builder("type", Type::class)
-            .build()
-        val annotationsParam = ParameterSpec.builder("annotations", Set::class.asClassName().parameterizedBy(Annotation::class.asClassName()))
-            .build()
-        val moshiParam = ParameterSpec.builder("moshi", Moshi::class)
-            .build()
-
-        val factory = typeSpecBuilder
-            .addFunction(makeCreateFunction(typeParam, annotationsParam, moshiParam, adapters))
-            .build()
-
-        FileSpec.builder(generatedName.packageName, generatedName.simpleName)
-            .addComment("Code generated by Kotshi. Do not edit.")
-            .addAnnotation(AnnotationSpec.builder(suppress)
-                .addMember("%S", "EXPERIMENTAL_IS_NOT_ENABLED")
-                .build())
-            .addType(factory)
-            .build()
-            .writeTo(filer)
-    }
-
-    private fun makeCreateFunction(
-        typeParam: ParameterSpec,
-        annotationsParam: ParameterSpec,
-        moshiParam: ParameterSpec,
-        adapters: List<GeneratedAdapter>
-    ): FunSpec {
-        val createSpec = FunSpec.builder("create")
-            .addModifiers(KModifier.OVERRIDE)
-            .returns(JsonAdapter::class.asClassName().parameterizedBy(STAR).nullable())
-            .addParameter(typeParam)
-            .addParameter(annotationsParam)
-            .addParameter(moshiParam)
-
-
-        if (adapters.isEmpty()) {
-            return createSpec
-                .addStatement("return null")
-                .build()
-        }
-
-        return createSpec
-            .addStatement("if (%N.isNotEmpty()) return null", annotationsParam)
-            .addCode("\n")
-            .addControlFlow("return when (%T.getRawType(%N))", moshiTypes, typeParam) {
-                for (adapter in adapters.sortedBy { it.className }) {
-                    addCode("«%T::class.java ->\n%T", adapter.targetType, adapter.className)
-                    if (adapter.typeVariables.isNotEmpty()) {
-                        addCode(adapter.typeVariables.joinToString(", ", prefix = "<", postfix = ">") { "Nothing" })
-                    }
-                    addCode("(")
-                    if (adapter.requiresMoshi) {
-                        addCode("%N", moshiParam)
-                    }
-                    if (adapter.requiresTypes) {
-                        if (adapter.requiresMoshi) {
-                            addCode(", ")
-                        }
-                        addCode("%N.%M", typeParam, typeArgumentsOrFail)
-                    }
-                    addCode(")\n»")
-                }
-                addStatement("else -> null")
+        JsonAdapterFactoryRenderer(factory)
+            .render {
+                maybeAddGeneratedAnnotation(elements, sourceVersion)
+                addOriginatingElement(element)
             }
-            .build()
-    }
-
-    companion object {
-        @OptIn(InternalKotshiApi::class, DelicateKotlinPoetApi::class)
-        private val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
-        val suppress = ClassName("kotlin", "Suppress")
-        val optIn = ClassName("kotlin", "OptIn")
+            .writeTo(filer)
     }
 }

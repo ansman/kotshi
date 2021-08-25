@@ -1,6 +1,7 @@
 package se.ansman.kotshi
 
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -10,6 +11,16 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.metadata.specs.TypeNameAliasTag
 import com.squareup.kotlinpoet.tag
+
+val TypeName.rawType: TypeName
+    get() = when (this) {
+        is ClassName -> this
+        Dynamic -> this
+        is LambdaTypeName -> this
+        is TypeVariableName -> this
+        is WildcardTypeName -> this
+        is ParameterizedTypeName -> rawType
+    }
 
 fun TypeName.unwrapTypeAlias(): TypeName =
     when (this) {

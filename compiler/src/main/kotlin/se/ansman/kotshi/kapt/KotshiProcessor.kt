@@ -8,7 +8,7 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
-import se.ansman.kotshi.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAdapter
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment

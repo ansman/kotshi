@@ -1,8 +1,7 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.model
 
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ARRAY
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
@@ -10,35 +9,49 @@ import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.Types
+import se.ansman.kotshi.notNull
 import java.util.Locale
 
 data class AdapterKey(
     val type: TypeName,
-    val jsonQualifiers: Set<AnnotationSpec>
+    val jsonQualifiers: Set<AnnotationModel>
 )
 
 fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
     type.asRuntimeType(typeVariableAccessor)
 
 val AdapterKey.suggestedAdapterName: String
-    get() = "${jsonQualifiers.joinToString("") { (it.typeName as ClassName).simpleName }}${type.baseAdapterName}Adapter"
-        .replaceFirstChar { it.lowercase(Locale.ROOT) }
+    get() = buildString {
+        jsonQualifiers.joinTo(this, "") { it.annotationName.simpleName }
+        append(type.baseAdapterName)
+        append("Adapter")
+        replace(0, 1, this[0].lowercase(Locale.ROOT))
+    }
 
 private val TypeName.baseAdapterName: String
-    get() {
-        return when (this) {
-            is ClassName -> simpleNames.joinToString("")
-            Dynamic -> "dynamic"
-            is LambdaTypeName -> "lambda"
-            is ParameterizedTypeName ->
-                typeArguments.joinToString("") { it.baseAdapterName } + rawType.baseAdapterName
-            is TypeVariableName -> name
-            is WildcardTypeName -> "wildcard"
+    get() = when (this) {
+        is ClassName -> simpleNames.joinToString("")
+        Dynamic -> "dynamic"
+        is LambdaTypeName -> buildString {
+            append(receiver?.baseAdapterName ?: "")
+            for (parameter in parameters) {
+                append(parameter.type.baseAdapterName)
+            }
+            append(returnType.baseAdapterName)
+            append("Lambda")
+        }
+        is ParameterizedTypeName -> typeArguments.joinToString("") { it.baseAdapterName } + rawType.baseAdapterName
+        is TypeVariableName -> name
+        is WildcardTypeName -> when {
+            inTypes.size == 1 -> inTypes[0].baseAdapterName
+            outTypes == STAR.outTypes -> "Star"
+            else -> outTypes[0].baseAdapterName
         }
     }
 
@@ -46,12 +59,14 @@ private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> C
     when (this) {
         is ParameterizedTypeName ->
             CodeBlock.builder()
-                .add("%T.newParameterizedType(%T::class.javaObjectType", moshiTypes, if (rawType == ARRAY) {
-                    // Arrays are special, you cannot just do Array::class.java
-                    this
-                } else {
-                    rawType.notNull()
-                })
+                .add(
+                    "%T.newParameterizedType(%T::class.javaObjectType", moshiTypes, if (rawType == ARRAY) {
+                        // Arrays are special, you cannot just do Array::class.java
+                        this
+                    } else {
+                        rawType.notNull()
+                    }
+                )
                 .apply {
                     for (typeArgument in typeArguments) {
                         add(", ")

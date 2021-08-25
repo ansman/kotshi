@@ -4,47 +4,29 @@ package se.ansman.kotshi.kapt.generators
 
 import com.google.auto.common.MoreElements
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.MemberName.Companion.member
-import com.squareup.kotlinpoet.NameAllocator
-import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
-import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isPublic
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.JsonWriter
-import com.squareup.moshi.Moshi
-import se.ansman.kotshi.GeneratedAdapter
-import se.ansman.kotshi.GlobalConfig
+import com.squareup.kotlinpoet.tag
 import se.ansman.kotshi.InternalKotshiApi
-import se.ansman.kotshi.JsonDefaultValue
-import se.ansman.kotshi.KotshiUtils
-import se.ansman.kotshi.NamedJsonAdapter
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
-import se.ansman.kotshi.applyEachIndexed
-import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.getPolymorphicLabels
+import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
-import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
-import se.ansman.kotshi.nullable
-import java.io.IOException
-import java.lang.reflect.Type
+import se.ansman.kotshi.model.GeneratableJsonAdapter
+import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GlobalConfig
+import se.ansman.kotshi.renderer.createRenderer
 import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
@@ -56,32 +38,25 @@ abstract class AdapterGenerator(
     protected val metadataAccessor: MetadataAccessor,
     protected val types: Types,
     protected val elements: Elements,
-    protected val element: TypeElement,
+    protected val targetElement: TypeElement,
     protected val metadata: ImmutableKmClass,
-    protected val globalConfig: GlobalConfig
+    protected val globalConfig: GlobalConfig,
+    protected val messager: Messager,
 ) {
-    protected val nameAllocator = NameAllocator().apply {
-        newName("options")
-        newName("value")
-        newName("writer")
-        newName("reader")
-        newName("stringBuilder")
-        newName("it")
-    }
+    protected val targetTypeSpec = metadataAccessor.getTypeSpec(metadata)
 
-    protected val elementTypeSpec = metadataAccessor.getTypeSpec(element)
-    protected val className = ClassInspectorUtil.createClassName(metadata.name)
-    private val typeVariables = elementTypeSpec.typeVariables
-        // Removes the variance
-        .map { TypeVariableName(it.name, *it.bounds.toTypedArray()) }
+    protected val targetClassName: ClassName = targetTypeSpec.tag()!!
 
-    protected val typeName = if (typeVariables.isEmpty()) {
-        className
-    } else {
-        className.parameterizedBy(typeVariables)
-    }
-
-    protected val value = ParameterSpec.builder("value", typeName.nullable()).build()
+    protected fun TypeSpec.getTypeName(typeVariableMapper: (TypeVariableName) -> TypeName = { it }): TypeName =
+        requireNotNull(tag<ClassName>()).let { className ->
+            if (typeVariables.isEmpty()) {
+                className
+            } else {
+                className.parameterizedBy(typeVariables
+                    // Removes the variance
+                    .map { typeVariableMapper(TypeVariableName(it.name, *it.bounds.toTypedArray())) })
+            }
+        }
 
     fun generateAdapter(
         sourceVersion: SourceVersion,
@@ -89,129 +64,42 @@ abstract class AdapterGenerator(
     ): GeneratedAdapter {
         when {
             metadata.isInner ->
-                throw ProcessingError("@JsonSerializable can't be applied to inner classes", element)
+                throw KaptProcessingError("@JsonSerializable can't be applied to inner classes", targetElement)
             metadata.isLocal ->
-                throw ProcessingError("@JsonSerializable can't be applied to local classes", element)
+                throw KaptProcessingError("@JsonSerializable can't be applied to local classes", targetElement)
             !metadata.isPublic && !metadata.isInternal ->
-                throw ProcessingError("Classes annotated with @JsonSerializable must public or internal", element)
+                throw KaptProcessingError(
+                    "Classes annotated with @JsonSerializable must public or internal",
+                    targetElement
+                )
         }
 
-        val adapterClassName =
-            ClassName(className.packageName, "Kotshi${className.simpleNames.joinToString("_")}JsonAdapter")
+        val generatedAdapter = getGenerableAdapter().createRenderer().render {
+            addOriginatingElement(targetElement)
+            maybeAddGeneratedAnnotation(elements, sourceVersion)
+        }
 
-        val typeSpec = TypeSpec.classBuilder(adapterClassName)
-            .addModifiers(KModifier.INTERNAL)
-            .addOriginatingElement(element)
-            .addAnnotation(internalKotshiApi)
-            .maybeAddGeneratedAnnotation(elements, sourceVersion)
-            .addTypeVariables(typeVariables)
-            .superclass(namedJsonAdapter.plusParameter(typeName))
-            .addSuperclassConstructorParameter("%S", "KotshiJsonAdapter(${className.simpleNames.joinToString(".")})")
-            .apply { addMethods() }
-            .build()
+        generatedAdapter.fileSpec.writeTo(filer)
+        return generatedAdapter
+    }
 
-        FileSpec.builder(adapterClassName.packageName, adapterClassName.simpleName)
-            .addComment("Code generated by Kotshi. Do not edit.")
-            .addType(typeSpec)
-            .build()
-            .writeTo(filer)
+    protected abstract fun getGenerableAdapter(): GeneratableJsonAdapter
 
-        return GeneratedAdapter(
-            targetType = className,
-            className = adapterClassName,
-            typeVariables = typeVariables,
-            requiresMoshi = typeSpec.primaryConstructor
-                ?.parameters
-                ?.contains(moshiParameter)
-                ?: false,
-            requiresTypes = typeSpec.primaryConstructor
-                ?.parameters
-                ?.contains(typesParameter)
-                ?: false
+    protected fun getPolymorphicLabels(): Map<String, String> =
+        targetElement.getPolymorphicLabels(
+            supertypes = { supertypes() },
+            hasAnnotation = { getAnnotation(it) != null },
+            getPolymorphicLabelKey = { getAnnotation(Polymorphic::class.java)?.labelKey },
+            getPolymorphicLabel = { getAnnotation(PolymorphicLabel::class.java)?.value },
+            error = ::KaptProcessingError
         )
-    }
-
-    protected abstract fun TypeSpec.Builder.addMethods()
-
-    protected fun TypeSpec.Builder.maybeAddCompanion(jsonNames: Collection<String>): TypeSpec.Builder =
-        applyIf(jsonNames.isNotEmpty()) {
-            addOptions(jsonNames)
-        }
-
-    protected fun TypeSpec.Builder.addOptions(jsonNames: Collection<String>): TypeSpec.Builder =
-        addProperty(PropertySpec.builder("options", jsonReaderOptions, KModifier.PRIVATE)
-            .initializer(CodeBlock.Builder()
-                .add("%T.of(«", jsonReaderOptions)
-                .applyIf(jsonNames.size > 1) { add("\n") }
-                .applyEachIndexed(jsonNames) { index, name ->
-                    if (index > 0) {
-                        add(",\n")
-                    }
-                    add("%S", name)
-                }
-                .applyIf(jsonNames.size > 1) { add("\n") }
-                .add("»)")
-                .build())
-            .build())
 
 
-    protected fun getPolymorphicLabels(): Map<String, String> = element.getPolymorphicLabels(types)
-
-    private fun TypeElement.getPolymorphicLabels(
-        types: Types,
-        output: MutableMap<String, String> = LinkedHashMap()
-    ): Map<String, String> {
+    private fun TypeElement.supertypes(): Sequence<TypeElement> = sequence {
         if (superclass.kind == TypeKind.DECLARED) {
-            MoreElements.asType(types.asElement(superclass)).getPolymorphicLabels(types, output)
+            val superclass = MoreElements.asType(types.asElement(superclass))
+            yield(superclass)
+            yieldAll(superclass.supertypes())
         }
-        val labelKey = nearestPolymorpic()?.labelKey
-            ?: return output
-        val label = getAnnotation(PolymorphicLabel::class.java)?.value
-            ?: return output
-        output[labelKey] = label
-        return output
-    }
-
-    private fun TypeElement.nearestPolymorpic(): Polymorphic? {
-        if (superclass.kind != TypeKind.DECLARED) return null
-        val superElement = types.asElement(superclass)
-        superElement?.getAnnotation(Polymorphic::class.java)?.let { return it }
-        return MoreElements.asType(superElement).nearestPolymorpic()
     }
 }
-
-val kotshiUtilsByteValue = KotshiUtils::class.member("byteValue")
-val kotshiUtilsValue = KotshiUtils::class.member("value")
-val kotshiUtilsNextFloat = KotshiUtils::class.member("nextFloat")
-val kotshiUtilsNextByte = KotshiUtils::class.member("nextByte")
-val kotshiUtilsNextShort = KotshiUtils::class.member("nextShort")
-val kotshiUtilsNextChar = KotshiUtils::class.member("nextChar")
-val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableError")
-val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
-
-val internalKotshiApi = ClassName("se.ansman.kotshi", "InternalKotshiApi")
-@OptIn(DelicateKotlinPoetApi::class)
-val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonAdapter = JsonAdapter::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonDataException = JsonDataException::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonReaderToken = JsonReader.Token::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val ioException = IOException::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonWriter = JsonWriter::class.java.asClassName()
-@OptIn(DelicateKotlinPoetApi::class)
-val jsonReader = JsonReader::class.java.asClassName()
-
-val writerParameter = ParameterSpec.builder("writer", jsonWriter).build()
-val readerParameter = ParameterSpec.builder("reader", jsonReader).build()
-val moshiParameter = ParameterSpec.builder("moshi", Moshi::class.java).build()
-val typesParameter = ParameterSpec.builder("types", Array::class.plusParameter(Type::class)).build()
