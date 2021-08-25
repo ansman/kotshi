@@ -5,6 +5,7 @@ package se.ansman.kotshi.kapt.generators
 import com.google.auto.common.MoreElements
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.MemberName.Companion.member
@@ -189,15 +190,25 @@ val kotshiUtilsAppendNullableError = KotshiUtils::class.member("appendNullableEr
 val kotshiUtilsCreateJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
 
 val internalKotshiApi = ClassName("se.ansman.kotshi", "InternalKotshiApi")
+@OptIn(DelicateKotlinPoetApi::class)
 val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonAdapter = JsonAdapter::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonAdapterFactory = JsonAdapter.Factory::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonDataException = JsonDataException::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonReaderOptions = JsonReader.Options::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonReaderToken = JsonReader.Token::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val ioException = IOException::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonWriter = JsonWriter::class.java.asClassName()
+@OptIn(DelicateKotlinPoetApi::class)
 val jsonReader = JsonReader::class.java.asClassName()
 
 val writerParameter = ParameterSpec.builder("writer", jsonWriter).build()

@@ -3,6 +3,7 @@ package se.ansman.kotshi.kapt.generators
 import com.google.auto.common.MoreTypes
 import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -15,13 +16,12 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable
-import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
-import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.SealedClassSubtype
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addElse
@@ -30,6 +30,8 @@ import se.ansman.kotshi.addIfElse
 import se.ansman.kotshi.addWhile
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.kapt.metadata
 import se.ansman.kotshi.nullable
 import javax.annotation.processing.Messager
@@ -65,6 +67,7 @@ class SealedClassAdapterGenerator(
         .initializer("%T.of(%S)", jsonReaderOptions, labelKey)
         .build()
 
+    @OptIn(DelicateKotlinPoetApi::class)
     override fun TypeSpec.Builder.addMethods() {
         val implementations = metadata.findSealedClassImplementations(className).toList()
 
@@ -109,24 +112,24 @@ class SealedClassAdapterGenerator(
             PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
                 .initializer(CodeBlock.builder()
                     .add("arrayOf(")
-                    .indent()
-                    .applyEachIndexed(subtypes) { index, subtype ->
-                        if (index > 0) {
-                            add(",")
-                        }
-                        add("\n%N.adapter<%T>(", moshiParameter, typeName)
+                    .withIndent {
+                        applyEachIndexed(subtypes) { index, subtype ->
+                            if (index > 0) {
+                                add(",")
+                            }
+                            add("\n%N.adapter<%T>(", moshiParameter, typeName)
 
-                        add(subtype.render(
-                            typeName = if (subtype.typeSpec.typeVariables.isEmpty()) {
-                                subtype.type.asClassName()
-                            } else {
-                                subtype.type.asClassName().parameterizedBy(subtype.typeSpec.typeVariables)
-                            },
-                            forceBox = true
-                        ))
-                        add(")")
+                            add(subtype.render(
+                                typeName = if (subtype.typeSpec.typeVariables.isEmpty()) {
+                                    subtype.className
+                                } else {
+                                    subtype.className.parameterizedBy(subtype.typeSpec.typeVariables)
+                                },
+                                forceBox = true
+                            ))
+                            add(")")
+                        }
                     }
-                    .unindent()
                     .add("\n)\n")
                     .build())
                 .build()
@@ -241,6 +244,7 @@ class SealedClassAdapterGenerator(
             .addProperty(labelKeyOptions)
     }
 
+    @OptIn(DelicateKotlinPoetApi::class)
     private fun ImmutableKmClass.findSealedClassImplementations(supertype: TypeName): Sequence<TypeElement> =
         sealedSubclasses
             .asSequence()

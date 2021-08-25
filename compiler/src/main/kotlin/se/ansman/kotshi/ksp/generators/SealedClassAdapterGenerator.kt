@@ -13,6 +13,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.jvm.throws
+import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.Polymorphic
@@ -120,22 +121,22 @@ class SealedClassAdapterGenerator(
             PropertySpec.builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
                 .initializer(CodeBlock.builder()
                     .add("arrayOf(")
-                    .indent()
-                    .applyEachIndexed(subtypes) { index, subtype ->
-                        if (index > 0) {
-                            add(",")
-                        }
-                        add("\n%N.adapter<%T>(", moshiParameter, typeName)
+                    .withIndent {
+                        applyEachIndexed(subtypes) { index, subtype ->
+                            if (index > 0) {
+                                add(",")
+                            }
+                            add("\n%N.adapter<%T>(", moshiParameter, typeName)
 
-                        add(
-                            subtype.render(
-                                typeName = subtype.type.toTypeName(),
-                                forceBox = true
+                            add(
+                                subtype.render(
+                                    typeName = subtype.type.toTypeName(),
+                                    forceBox = true
+                                )
                             )
-                        )
-                        add(")")
+                            add(")")
+                        }
                     }
-                    .unindent()
                     .add("\n)\n")
                     .build())
                 .build()

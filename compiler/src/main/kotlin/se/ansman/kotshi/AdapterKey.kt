@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
@@ -69,6 +70,7 @@ private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> C
         else -> CodeBlock.of("%T::class.javaObjectType", notNull())
     }
 
+@OptIn(DelicateKotlinPoetApi::class)
 val moshiTypes = Types::class.java.asClassName()
 
 private fun LambdaTypeName.asParameterizedTypeName(): ParameterizedTypeName {

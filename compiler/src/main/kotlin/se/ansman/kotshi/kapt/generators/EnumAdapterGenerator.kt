@@ -7,12 +7,12 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isEnum
 import se.ansman.kotshi.GlobalConfig
-import se.ansman.kotshi.kapt.MetadataAccessor
-import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.addNextControlFlow
 import se.ansman.kotshi.addWhen
 import se.ansman.kotshi.jsonName
+import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.ProcessingError
 import se.ansman.kotshi.nullable
 import javax.annotation.processing.Messager
 import javax.lang.model.element.TypeElement
@@ -39,7 +39,7 @@ class EnumAdapterGenerator(
 
         var defaultValue: String? = null
         for ((entry, spec) in elementTypeSpec.enumConstants) {
-            if (spec.annotationSpecs.any { it.className == jsonDefaultValue }) {
+            if (spec.annotationSpecs.any { it.typeName == jsonDefaultValue }) {
                 if (defaultValue != null) {
                     throw ProcessingError("Only one enum entry can be annotated with @JsonDefaultValue", element)
                 }

@@ -6,6 +6,7 @@ import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -163,7 +164,7 @@ class FactoryProcessingStep(
     }
 
     companion object {
-        @OptIn(InternalKotshiApi::class)
+        @OptIn(InternalKotshiApi::class, DelicateKotlinPoetApi::class)
         private val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
         val suppress = ClassName("kotlin", "Suppress")
         val optIn = ClassName("kotlin", "OptIn")

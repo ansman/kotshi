@@ -6,6 +6,7 @@ import com.squareup.kotlinpoet.CHAR
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
@@ -26,6 +27,7 @@ import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.tag
+import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.AdapterKey
 import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonSerializable
@@ -120,16 +122,22 @@ class DataClassAdapterGenerator(
         fun AdapterKey.annotations(): CodeBlock = when {
             jsonQualifiers.isEmpty() -> CodeBlock.of("")
             jsonQualifiers.singleOrNull()?.members?.isEmpty() == true ->
-                CodeBlock.of(", %T::class.java", jsonQualifiers.single().className)
+                CodeBlock.of(", %T::class.java", jsonQualifiers.single().typeName)
             else -> CodeBlock.builder()
                 .add(", setOf(")
-                .applyIf(jsonQualifiers.size > 1) { add("⇥\n") }
+                .applyIf(jsonQualifiers.size > 1) {
+                    indent()
+                    add("\n")
+                }
                 .applyEachIndexed(jsonQualifiers) { index, qualifier ->
                     if (index > 0) add(",\n")
                     val annotation = requireNotNull(qualifier.tag<AnnotationMirror>())
                     add(annotation)
                 }
-                .applyIf(jsonQualifiers.size > 1) { add("⇤\n") }
+                .applyIf(jsonQualifiers.size > 1) {
+                    unindent()
+                    add("\n")
+                }
                 .add(")")
                 .build()
         }
@@ -435,7 +443,7 @@ private data class PropertyVariables(
     }
 }
 
-@OptIn(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class, DelicateKotlinPoetApi::class)
 private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror): CodeBlock.Builder = apply {
     value.accept(object : AnnotationValueVisitor<Unit, Nothing?> {
         override fun visitFloat(f: Float, p: Nothing?) {
@@ -490,7 +498,8 @@ private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror)
                     else -> "arrayOf("
                 })
                 if (vals.size > 1) {
-                    add("⇥\n")
+                    indent()
+                    add("\n")
                 }
                 vals.forEachIndexed { i, value ->
                     if (i > 0) {
@@ -499,7 +508,8 @@ private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror)
                     value.accept(this, null)
                 }
                 if (vals.size > 1) {
-                    add("⇤\n")
+                    unindent()
+                    add("\n")
                 }
                 add(")")
             }
@@ -541,21 +551,24 @@ private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror)
     }, null)
 }
 
+@OptIn(DelicateKotlinPoetApi::class)
 private fun CodeBlock.Builder.add(annotation: AnnotationMirror): CodeBlock.Builder = apply {
     if (annotation.elementValues.isEmpty()) {
         add("%T::class.java.%M()", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
     } else {
-        add("%T::class.java.%M(mapOf(⇥", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
-        annotation.elementValues.entries.forEachIndexed { i, (element, value) ->
-            if (i > 0) {
-                add(",")
+        add("%T::class.java.%M(mapOf(", annotation.annotationType.asTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
+        withIndent {
+            annotation.elementValues.entries.forEachIndexed { i, (element, value) ->
+                if (i > 0) {
+                    add(",")
+                }
+                add("\n")
+                add("%S·to·", element.simpleName)
+                add(value, element.returnType)
+                add("")
             }
-            add("\n")
-            add("%S·to·", element.simpleName)
-            add(value, element.returnType)
-            add("")
         }
-        add("⇤\n))")
+        add("\n))")
     }
 }
 
