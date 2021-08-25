@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.CHAR
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
@@ -27,6 +28,7 @@ import javax.lang.model.util.Elements
 
 
 val STRING: ClassName = ClassName("kotlin", "String")
+@OptIn(DelicateKotlinPoetApi::class)
 val JSON: ClassName = Json::class.java.asClassName()
 val JSON_QUALIFIER = JsonQualifier::class.java
 
@@ -65,6 +67,7 @@ fun TypeSpec.Builder.maybeAddGeneratedAnnotation(elements: Elements, sourceVersi
             .orElse(null)
             ?: return@apply
         addAnnotation(
+            @OptIn(DelicateKotlinPoetApi::class)
             AnnotationSpec.builder(typeElement.asClassName())
                 .addMember("%S", KotshiProcessor::class.java.canonicalName)
                 .addMember("comments = %S", "https://github.com/ansman/kotshi")

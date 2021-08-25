@@ -3,8 +3,10 @@ package se.ansman.kotshi.kapt
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import com.squareup.kotlinpoet.tag
 import javax.lang.model.element.Element
 
 class MetadataAccessor(private val classInspector: ClassInspector) {
@@ -18,6 +20,10 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
 
     fun getTypeSpec(type: Element): TypeSpec =
         typeSpecPerType.getOrPut(type) {
-            getMetadata(type).toTypeSpec(classInspector)
+            val metadata = getMetadata(type)
+            metadata.toTypeSpec(classInspector)
+                .toBuilder()
+                .tag(ClassInspectorUtil.createClassName(metadata.name))
+                .build()
         }
 }

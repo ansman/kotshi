@@ -41,6 +41,7 @@ import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.throws
 import com.squareup.kotlinpoet.tag
+import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.AdapterKey
 import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonSerializable
@@ -144,15 +145,21 @@ class DataClassAdapterGenerator(
         fun AdapterKey.annotations(): CodeBlock = when {
             jsonQualifiers.isEmpty() -> CodeBlock.of("")
             jsonQualifiers.singleOrNull()?.members?.isEmpty() == true ->
-                CodeBlock.of(", %T::class.java", jsonQualifiers.single().className)
+                CodeBlock.of(", %T::class.java", jsonQualifiers.single().typeName)
             else -> CodeBlock.builder()
                 .add(", setOf(")
-                .applyIf(jsonQualifiers.size > 1) { add("⇥\n") }
+                .applyIf(jsonQualifiers.size > 1) {
+                    indent()
+                    add("\n")
+                }
                 .applyEachIndexed(jsonQualifiers) { index, qualifier ->
                     if (index > 0) add(",\n")
-                    add(resolver, qualifier.tag<KSAnnotation>()!!)
+                    add(resolver, qualifier.tag()!!)
                 }
-                .applyIf(jsonQualifiers.size > 1) { add("⇤\n") }
+                .applyIf(jsonQualifiers.size > 1) {
+                    unindent()
+                    add("\n")
+                }
                 .add(")")
                 .build()
         }
@@ -528,29 +535,30 @@ private fun CodeBlock.Builder.add(resolver: Resolver, annotation: KSAnnotation):
         add("%T::class.java.%M()", annotationType.toTypeName(), kotshiUtilsCreateJsonQualifierImplementation)
     } else {
         add(
-            "%T::class.java.%M(mapOf(⇥",
+            "%T::class.java.%M(mapOf(",
             annotationType.toTypeName(),
             kotshiUtilsCreateJsonQualifierImplementation
         )
-
         val typeByName = annotation.annotationType.resolve().declaration.let { it as KSClassDeclaration }
             .primaryConstructor
             ?.parameters
             ?.associateBy({ it.name!! }, { it.type })
             ?: emptyMap()
-        annotation.arguments.forEachIndexed { i, element ->
-            if (i > 0) {
-                add(",")
+        withIndent {
+            annotation.arguments.forEachIndexed { i, element ->
+                if (i > 0) {
+                    add(",")
+                }
+                add("\n")
+                val value = element.value
+                if (value != null) {
+                    add("%S·to·", element.name!!.asString())
+                    add(resolver, value, typeByName.getValue(element.name!!).resolve())
+                }
+                add("")
             }
-            add("\n")
-            val value = element.value
-            if (value != null) {
-                add("%S·to·", element.name!!.asString())
-                add(resolver, value, typeByName.getValue(element.name!!).resolve())
-            }
-            add("")
         }
-        add("⇤\n))")
+        add("\n))")
     }
 }
 

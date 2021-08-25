@@ -10,6 +10,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -239,7 +240,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
     }
 
     companion object {
-        @OptIn(InternalKotshiApi::class)
+        @OptIn(InternalKotshiApi::class, DelicateKotlinPoetApi::class)
         private val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
     }
 }

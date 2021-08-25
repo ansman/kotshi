@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.tag
+import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.TypeRenderer
 import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.kapt.generators.typesParameter
@@ -59,9 +60,13 @@ class SealedClassSubtype(
                         return CodeBlock.builder()
                             .addControlFlow(".let") {
                                 add("it as? %T\n", ParameterizedType::class.java)
-                                indent()
-                                add("?: throw %T(%P)\n", IllegalArgumentException::class.java, "The type \${${typesParameter.name}[$typesIndex]} is not a valid type constraint for the \$this")
-                                unindent()
+                                withIndent {
+                                    add(
+                                        "?: throw %T(%P)\n",
+                                        IllegalArgumentException::class.java,
+                                        "The type \${${typesParameter.name}[$typesIndex]} is not a valid type constraint for the \$this"
+                                    )
+                                }
                             }
                             .add(".actualTypeArguments[%L]", index)
                             .add(accessor)
@@ -76,9 +81,9 @@ class SealedClassSubtype(
             val accessor = superParameter.findAccessor(index) ?: return@forEachIndexed
             return CodeBlock.builder()
                 .add("%N[%L]\n", typesParameter, index)
-                .indent()
-                .add(accessor)
-                .unindent()
+                .withIndent {
+                    add(accessor)
+                }
                 .build()
         }
         throw KspProcessingError("Could not determine type variable type", typeVariable.tag() ?: type)
