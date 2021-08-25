@@ -22,7 +22,7 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew check --stacktrace
     - name: Deploy snapshot
-      run: ./gradlew publishAllPublicationsToSonatypeSnapshotsRepository --stacktrace
+      run: ./gradlew publishSnapshot --stacktrace
       if: github.ref == 'refs/heads/main'
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

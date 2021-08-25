@@ -17,3 +17,11 @@ subprojects {
 apiValidation {
     allprojects.filterNot { it.path == ":api" }.mapTo(ignoredProjects) { it.name }
 }
+
+tasks.register("publishSnapshot") {
+    if (version.toString().endsWith("-SNAPSHOT")) {
+        for (project in allprojects) {
+            project.tasks.findByName("publishAllPublicationsToSonatypeSnapshotsRepository")?.let { dependsOn(it) }
+        }
+    }
+}
