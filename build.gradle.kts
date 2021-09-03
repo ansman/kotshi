@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.5.0"
 }
@@ -8,10 +10,14 @@ allprojects {
         mavenCentral()
         mavenLocal()
     }
-}
-
-subprojects {
     tasks.withType<Javadoc> { enabled = false }
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = freeCompilerArgs + listOf(
+                "-Xopt-in=kotlin.RequiresOptIn"
+            )
+        }
+    }
 }
 
 apiValidation {

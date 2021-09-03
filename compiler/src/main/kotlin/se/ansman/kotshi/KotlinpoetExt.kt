@@ -7,7 +7,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.CHAR
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FLOAT
@@ -17,33 +16,13 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.tag
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonQualifier
 import se.ansman.kotshi.kapt.KotshiProcessor
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.util.Elements
 
-
-val STRING: ClassName = ClassName("kotlin", "String")
-@OptIn(DelicateKotlinPoetApi::class)
-val JSON: ClassName = Json::class.java.asClassName()
-val JSON_QUALIFIER = JsonQualifier::class.java
-
-fun List<AnnotationSpec>?.jsonName(): String? =
-    this?.find { it.typeName == JSON }?.let { spec ->
-        val mirror = requireNotNull(spec.tag<AnnotationMirror>())
-        mirror.elementValues.entries.single { it.key.simpleName.contentEquals("name") }.value.value as String
-    }
-
-fun List<AnnotationSpec>?.qualifiers(elements: Elements): Set<AnnotationSpec> {
-    if (this == null) return setOf()
-    return filterTo(mutableSetOf()) {
-        elements.getTypeElement(it.typeName.toString()).getAnnotation(JSON_QUALIFIER) != null
-    }
-}
+fun TypeVariableName.withoutVariance(): TypeVariableName = TypeVariableName(name, bounds)
 
 val TypeName.isPrimitive: Boolean
     get() = when (this) {
@@ -109,7 +88,7 @@ inline fun FunSpec.Builder.addWhenBranch(
     vararg args: Any,
     block: FunSpec.Builder.() -> Unit
 ): FunSpec.Builder {
-    beginControlFlow("$branch ->", *args)
+    beginControlFlow("$branch·->", *args)
     block()
     return endControlFlow()
 }
@@ -120,7 +99,7 @@ inline fun FunSpec.Builder.addWhenBranch(
  * A trailing -> is automatically inserted
  */
 inline fun FunSpec.Builder.addWhenElse(block: FunSpec.Builder.() -> Unit): FunSpec.Builder {
-    beginControlFlow("else ->")
+    beginControlFlow("else·->")
     block()
     return endControlFlow()
 }

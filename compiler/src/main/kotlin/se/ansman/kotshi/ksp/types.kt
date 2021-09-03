@@ -36,25 +36,22 @@ import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets.UTF_8
 import com.squareup.kotlinpoet.STAR as KpStar
 
-internal fun KSType.toTypeName(): TypeName {
+internal fun KSType.asTypeName(): TypeName {
     val type = when (declaration) {
-        is KSClassDeclaration -> (declaration as KSClassDeclaration).toTypeName(
-            arguments.map { it.type!!.resolve().toTypeName() }
+        is KSClassDeclaration -> (declaration as KSClassDeclaration).asTypeName(
+            arguments.map { it.type!!.resolve().asTypeName() }
         )
-        is KSTypeParameter -> (declaration as KSTypeParameter).toTypeName()
-        is KSTypeAlias -> (declaration as KSTypeAlias).type.resolve().toTypeName()
+        is KSTypeParameter -> (declaration as KSTypeParameter).asTypeName()
+        is KSTypeAlias -> (declaration as KSTypeAlias).type.resolve().asTypeName()
         else -> error("Unsupported type: $declaration")
     }
-
-    // TODO: Remove?
-//    return type.copy(nullable = makeNullable() == this)
     return type.copy(nullable = isMarkedNullable)
 }
 
-internal fun KSClassDeclaration.toTypeName(
-    actualTypeArgs: List<TypeName> = typeParameters.map { it.toTypeName() },
+internal fun KSClassDeclaration.asTypeName(
+    actualTypeArgs: List<TypeName> = typeParameters.map { it.asTypeName() },
 ): TypeName {
-    val className = toClassName()
+    val className = asClassName()
     return if (typeParameters.isNotEmpty()) {
         className.parameterizedBy(actualTypeArgs)
     } else {
@@ -62,7 +59,7 @@ internal fun KSClassDeclaration.toTypeName(
     }
 }
 
-internal fun KSClassDeclaration.toClassName(): ClassName {
+internal fun KSClassDeclaration.asClassName(): ClassName {
     require(!isLocal()) {
         "Local/anonymous classes are not supported!"
     }
@@ -74,10 +71,10 @@ internal fun KSClassDeclaration.toClassName(): ClassName {
     return ClassName(pkgName, simpleNames)
 }
 
-internal fun KSTypeParameter.toTypeName(): TypeName {
+internal fun KSTypeParameter.asTypeName(): TypeName {
     if (variance == STAR) return KpStar
     val typeVarName = name.getShortName()
-    val typeVarBounds = bounds.map { it.toTypeName() }.toList()
+    val typeVarBounds = bounds.map { it.asTypeName() }.toList()
     val typeVarVariance = when (variance) {
         COVARIANT -> KModifier.IN
         CONTRAVARIANT -> KModifier.OUT
@@ -86,9 +83,9 @@ internal fun KSTypeParameter.toTypeName(): TypeName {
     return TypeVariableName(typeVarName, bounds = typeVarBounds, variance = typeVarVariance)
 }
 
-internal fun KSTypeReference.toTypeName(): TypeName {
+internal fun KSTypeReference.asTypeName(): TypeName {
     val type = resolve()
-    return type.toTypeName()
+    return type.asTypeName()
 }
 
 internal fun FileSpec.writeTo(codeGenerator: CodeGenerator) {

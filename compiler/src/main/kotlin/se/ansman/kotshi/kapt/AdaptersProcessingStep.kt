@@ -8,9 +8,6 @@ import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isSealed
-import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import se.ansman.kotshi.GeneratedAdapter
-import se.ansman.kotshi.GlobalConfig
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.Polymorphic
@@ -18,6 +15,8 @@ import se.ansman.kotshi.kapt.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.kapt.generators.EnumAdapterGenerator
 import se.ansman.kotshi.kapt.generators.ObjectAdapterGenerator
 import se.ansman.kotshi.kapt.generators.SealedClassAdapterGenerator
+import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GlobalConfig
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
@@ -58,7 +57,7 @@ class AdaptersProcessingStep(
 
         for (element in elementsByAnnotation[JsonSerializable::class.java]) {
             try {
-                val metadata = element.metadata.toImmutableKmClass()
+                val metadata = metadataAccessor.getMetadata(element)
                 val typeElement = MoreElements.asType(element)
 
                 val generator = when {
@@ -68,7 +67,8 @@ class AdaptersProcessingStep(
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        messager = messager,
                     )
                     metadata.isEnum -> EnumAdapterGenerator(
                         metadataAccessor = metadataAccessor,
@@ -97,14 +97,14 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager
                     )
-                    else -> throw ProcessingError(
+                    else -> throw KaptProcessingError(
                         "@JsonSerializable can only be applied to enums, objects, sealed classes and data classes",
                         typeElement
                     )
                 }
 
                 adapters += generator.generateAdapter(sourceVersion, filer)
-            } catch (e: ProcessingError) {
+            } catch (e: KaptProcessingError) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }
         }

@@ -1,4 +1,7 @@
-package se.ansman.kotshi
+package se.ansman.kotshi.model
+
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.SerializeNulls
 
 data class GlobalConfig(
     val useAdaptersForPrimitives: Boolean,

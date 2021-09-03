@@ -3,16 +3,12 @@ plugins {
     id("com.google.devtools.ksp") version deps.ksp.version
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir(buildDir.resolve("generated/ksp/main/kotlin"))
-        }
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
     }
-    test {
-        java {
-            srcDir(buildDir.resolve("generated/ksp/test/kotlin"))
-        }
+    sourceSets.test {
+        kotlin.srcDir("build/generated/ksp/test/kotlin")
     }
 }
 

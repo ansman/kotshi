@@ -1,16 +1,45 @@
 package se.ansman.kotshi.ksp
 
-import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.KSValueArgument
-import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.CHAR
+import com.squareup.kotlinpoet.CHAR_ARRAY
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import se.ansman.kotshi.JSON_QUALIFIER
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.INT_ARRAY
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.LONG_ARRAY
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.SHORT_ARRAY
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.U_BYTE
+import com.squareup.kotlinpoet.U_BYTE_ARRAY
+import com.squareup.kotlinpoet.U_INT
+import com.squareup.kotlinpoet.U_INT_ARRAY
+import com.squareup.kotlinpoet.U_LONG
+import com.squareup.kotlinpoet.U_LONG_ARRAY
+import com.squareup.kotlinpoet.U_SHORT
+import com.squareup.kotlinpoet.U_SHORT_ARRAY
+import com.squareup.moshi.JsonQualifier
+import se.ansman.kotshi.Types
+import se.ansman.kotshi.model.AnnotationModel
+import se.ansman.kotshi.model.AnnotationModel.Value
 
 inline fun <reified T : Annotation> KSAnnotated.getAnnotation(): KSAnnotation? = getAnnotation(T::class.java)
 
@@ -25,14 +54,6 @@ fun Sequence<KSAnnotation>.getAnnotation(type: Class<out Annotation>): KSAnnotat
             it.annotationType.resolve().declaration.qualifiedName?.asString() == type.name
     }
 
-inline fun <reified T : Annotation> KSAnnotation.isAnnotation(): Boolean = isAnnotation(T::class.java)
-
-fun KSAnnotation.isAnnotation(type: Class<out Annotation>): Boolean =
-    shortName.asString() == type.simpleName &&
-        annotationType.resolve().declaration.qualifiedName?.asString() == type.name
-
-fun List<KSValueArgument>.asKeyValueMap(): Map<String, Any?> = associateBy({ it.name!!.asString() }, { it.value })
-
 inline fun <reified V> KSAnnotation.getValue(name: String): V =
     arguments.first { it.name?.asString() == name }.value as V
 
@@ -41,55 +62,88 @@ inline fun <reified V : Enum<V>> KSAnnotation.getEnumValue(name: String, default
 
 fun KSAnnotation.isJsonQualifier(): Boolean =
     annotationType.resolve().declaration.annotations.any {
-        it.shortName.asString() == JSON_QUALIFIER.simpleName &&
-            it.annotationType.resolve().declaration.qualifiedName?.asString() == JSON_QUALIFIER.name
+        it.shortName.asString() == Types.Moshi.jsonQualifier.simpleName &&
+            it.annotationType.resolve().declaration.qualifiedName?.asString() == JsonQualifier::class.java.name
     }
 
-
-internal fun KSAnnotation.toAnnotationSpec(resolver: Resolver): AnnotationSpec {
-    val element = annotationType.resolve().declaration as KSClassDeclaration
-    // TODO support generic annotations
-    val builder = AnnotationSpec.builder(element.toClassName())
-        .tag(KSAnnotation::class.java, this)
-    for (argument in arguments) {
-        val member = CodeBlock.builder()
-        val name = argument.name!!.getShortName()
-        member.add("%L = ", name)
-        when (val value = argument.value!!) {
-            resolver.builtIns.arrayType -> {
-//        TODO("Arrays aren't supported tet")
-//        member.add("[⇥⇥")
-//        values.forEachIndexed { index, value ->
-//          if (index > 0) member.add(", ")
-//          value.accept(this, name)
-//        }
-//        member.add("⇤⇤]")
+fun KSAnnotation.toAnnotationModel(): AnnotationModel {
+    val typeByName = annotationType.resolve().declaration.let { it as KSClassDeclaration }
+        .primaryConstructor
+        ?.parameters
+        ?.associateBy({ it.name!! }, {
+            if (it.isVararg) {
+                LIST.parameterizedBy(it.type.asTypeName())
+            } else {
+                it.type.asTypeName()
             }
-            is KSType -> member.add("%T::class", value.toTypeName())
-            // TODO is this the right way to handle an enum constant?
-            is KSName ->
-                member.add(
-                    "%T.%L", ClassName.bestGuess(value.getQualifier()),
-                    value.getShortName()
-                )
-            is KSAnnotation -> member.add("%L", value.toAnnotationSpec(resolver))
-            else -> member.add(memberForValue(value))
+        })
+        ?: emptyMap()
+
+    val annotationType = annotationType.resolve()
+    return AnnotationModel(
+        annotationName = annotationType.asTypeName() as ClassName,
+        hasMethods = (annotationType.declaration as KSClassDeclaration).getAllProperties().any(),
+        values = arguments.filter { it.value != null }.associateBy({ it.name!!.asString() }) {
+            it.value!!.toAnnotationValue(it, typeByName.getValue(it.name!!))
         }
-        builder.addMember(member.build())
-    }
-    return builder.build()
+    )
 }
 
-/**
- * Creates a [CodeBlock] with parameter `format` depending on the given `value` object.
- * Handles a number of special cases, such as appending "f" to `Float` values, and uses
- * `%L` for other types.
- */
-private fun memberForValue(value: Any) = when (value) {
-    is Class<*> -> CodeBlock.of("%T::class", value)
-    is Enum<*> -> CodeBlock.of("%T.%L", value.javaClass, value.name)
-    is String -> CodeBlock.of("%S", value)
-    is Float -> CodeBlock.of("%Lf", value)
-    is Char -> CodeBlock.of("'%L'", if (value == '\'') "\\'" else value)
-    else -> CodeBlock.of("%L", value)
-}
+private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
+    when (this) {
+        is KSType -> {
+            val declaration = declaration as KSClassDeclaration
+            if (declaration.classKind == ClassKind.ENUM_ENTRY) {
+                Value.Enum((declaration.parentDeclaration as KSClassDeclaration).asClassName(), declaration.simpleName.asString())
+            } else {
+                Value.Class(declaration.asClassName())
+            }
+        }
+        is KSName -> Value.Enum(
+            enumType = ClassName.bestGuess(getQualifier()),
+            value = getShortName(),
+        )
+        is KSAnnotation -> Value.Annotation(toAnnotationModel())
+        is String -> Value.String(this)
+        is Float -> Value.Float(this)
+        is Char -> Value.Char(this)
+        is Boolean -> Value.Boolean(this)
+        is Double -> Value.Double(this)
+        is Byte -> Value.Byte(this)
+        is UByte -> Value.UByte(this)
+        is Short -> Value.Short(this)
+        is UShort -> Value.UShort(this)
+        is Int -> Value.Int(this)
+        is UInt -> Value.UInt(this)
+        is Long -> Value.Long(this)
+        is ULong -> Value.ULong(this)
+        is List<*> -> when (type) {
+            FLOAT, FLOAT_ARRAY -> Value.Array.Float(map { Value.Float(it as Float) })
+            CHAR, CHAR_ARRAY -> Value.Array.Char(map { Value.Char(it as Char) })
+            BOOLEAN, BOOLEAN_ARRAY -> Value.Array.Boolean(map { Value.Boolean(it as Boolean) })
+            DOUBLE, DOUBLE_ARRAY -> Value.Array.Double(map { Value.Double(it as Double) })
+            BYTE, BYTE_ARRAY -> Value.Array.Byte(map { Value.Byte(it as Byte) })
+            U_BYTE, U_BYTE_ARRAY -> Value.Array.UByte(map { Value.UByte((it as Byte).toUByte()) })
+            SHORT, SHORT_ARRAY -> Value.Array.Short(map { Value.Short(it as Short) })
+            U_SHORT, U_SHORT_ARRAY -> Value.Array.UShort(map { Value.UShort((it as Short).toUShort()) })
+            INT, INT_ARRAY -> Value.Array.Int(map { Value.Int(it as Int) })
+            U_INT, U_INT_ARRAY -> Value.Array.UInt(map { Value.UInt((it as Int).toUInt()) })
+            LONG, LONG_ARRAY -> Value.Array.Long(map { Value.Long(it as Long) })
+            U_LONG, U_LONG_ARRAY -> Value.Array.ULong(map { Value.ULong((it as Long).toULong()) })
+            else -> {
+                require(type is ParameterizedTypeName) {
+                    "Expected $type (${type.javaClass}) to be a ParameterizedTypeName"
+                }
+                val elementType = type.typeArguments.single()
+                Value.Array.Object(
+                    elementType = if (elementType is ParameterizedTypeName && elementType.rawType == Types.Kotlin.kClass) {
+                        Types.Java.clazz.parameterizedBy(elementType.typeArguments)
+                    } else {
+                        elementType
+                    },
+                    value = map { it!!.toAnnotationValue(node, type) as Value.Object<*> }
+                )
+            }
+        }
+        else -> throw KspProcessingError("Unknown annotation value type $javaClass", node)
+    }
