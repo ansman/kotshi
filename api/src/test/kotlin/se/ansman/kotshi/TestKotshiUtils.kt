@@ -7,37 +7,52 @@ import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation
 
 @OptIn(InternalKotshiApi::class)
 class TestKotshiUtils {
-    private val noArgs = TestQualifier::class.java.createJsonQualifierImplementation()
-    private val withArgs = TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar"))
 
     @Test
     fun testCreateJsonQualifierImplementation_equals() {
-        assertThat(noArgs).isEqualTo(noArgs)
-        assertThat(noArgs).isEqualTo(TestQualifier::class.java.createJsonQualifierImplementation())
-        assertThat(withArgs).isEqualTo(withArgs)
-        assertThat(withArgs).isEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
-        assertThat(withArgs).isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "baz")))
-        assertThat(noArgs).isNotEqualTo(withArgs)
-        assertThat(withArgs).isNotEqualTo(noArgs)
+        fun assertEquality(a: TestQualifier, b: TestQualifier = a) {
+            assertThat(a).isEqualTo(b)
+            assertThat(b).isEqualTo(a)
+        }
+
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation())
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(), TestQualifier::class.java.createJsonQualifierImplementation())
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(), TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "n/a")))
+
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")), TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation())
+            .isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+            .isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation())
     }
 
     @Test
     fun testCreateJsonQualifierImplementation_hashCode() {
-        assertThat(noArgs.hashCode()).isEqualTo(noArgs.hashCode())
-        assertThat(noArgs.hashCode()).isEqualTo(TestQualifier::class.java.createJsonQualifierImplementation().hashCode())
-        assertThat(withArgs.hashCode()).isEqualTo(withArgs.hashCode())
-        assertThat(withArgs.hashCode()).isEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")).hashCode())
-        assertThat(withArgs.hashCode()).isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "baz")).hashCode())
-        assertThat(noArgs.hashCode()).isNotEqualTo(withArgs.hashCode())
-        assertThat(withArgs.hashCode()).isNotEqualTo(noArgs.hashCode())
+        fun assertEquality(a: TestQualifier, b: TestQualifier = a) {
+            assertThat(a.hashCode()).isEqualTo(b.hashCode())
+            assertThat(b.hashCode()).isEqualTo(a.hashCode())
+        }
+
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+        assertEquality(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")), TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")))
+
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation().hashCode())
+            .isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")).hashCode())
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")).hashCode())
+            .isNotEqualTo(TestQualifier::class.java.createJsonQualifierImplementation().hashCode())
     }
 
     @Test
     fun testCreateJsonQualifierImplementation_toString() {
-        assertThat(noArgs.toString()).isEqualTo("@se.ansman.kotshi.TestQualifier()")
-        assertThat(withArgs.toString()).isEqualTo("@se.ansman.kotshi.TestQualifier(foo=bar)")
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation().toString())
+            .isEqualTo("@se.ansman.kotshi.TestQualifier()")
+
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation(mapOf("foo" to "bar")).toString())
+            .isEqualTo("@se.ansman.kotshi.TestQualifier(foo=bar)")
     }
 }
 
 @JsonQualifier
-private annotation class TestQualifier(val foo: String = "n/a")
+annotation class TestQualifier(val foo: String = "n/a")
