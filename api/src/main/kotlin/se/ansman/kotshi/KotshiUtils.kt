@@ -86,9 +86,11 @@ object KotshiUtils {
                 when (method.name) {
                     "annotationType" -> this
                     "equals" -> args!![0] === proxy || isInstance(args!![0]) && annotationMethods.all { m ->
-                        m.invoke(args[0]) == annotationArguments.getOrDefault(m.name, m.defaultValue)
+                        m.invoke(args[0]) == (annotationArguments[m.name] ?: m.defaultValue)
                     }
-                    "hashCode" -> annotationArguments.hashCode()
+                    "hashCode" -> annotationMethods.fold(0) { hashCode, m ->
+                        hashCode * 31 + (annotationArguments[m.name] ?: m.defaultValue).hashCode()
+                    }
                     "toString" -> "@$name(${annotationArguments.entries.joinToString()})"
                     else -> annotationArguments[method.name] ?: method.defaultValue
                 }
