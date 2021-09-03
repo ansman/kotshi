@@ -35,7 +35,7 @@ class AnnotationModelValueVisitor : AnnotationValueVisitor<AnnotationModel.Value
     }
 
     override fun visitType(t: TypeMirror, p: TypeMirror): AnnotationModel.Value<*> =
-        AnnotationModel.Value.Class(t.asTypeName() as ClassName)
+        AnnotationModel.Value.Class(t.asTypeName().toKotlinVersion() as ClassName)
 
     override fun visitBoolean(b: Boolean, p: TypeMirror): AnnotationModel.Value<*> = AnnotationModel.Value.Boolean(b)
     override fun visitByte(b: Byte, p: TypeMirror): AnnotationModel.Value<*> = AnnotationModel.Value.Byte(b)

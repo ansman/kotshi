@@ -21,6 +21,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SET
 import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
@@ -35,7 +36,11 @@ fun TypeName.toKotlinVersion(mutable: Boolean = true): TypeName =
         is ParameterizedTypeName -> rawType.toKotlinVersion(mutable)
             .parameterizedBy(typeArguments.map { it.toKotlinVersion(mutable) })
         is TypeVariableName -> copy(bounds = bounds.map { it.toKotlinVersion(mutable) })
-        is WildcardTypeName -> this
+        is WildcardTypeName -> when {
+            inTypes.size == 1 -> WildcardTypeName.consumerOf(inTypes[0].toKotlinVersion(mutable))
+            outTypes == STAR.outTypes -> STAR
+            else -> WildcardTypeName.producerOf(outTypes[0].toKotlinVersion(mutable))
+        }
     }
 
 fun ClassName.toKotlinVersion(mutable: Boolean = true): ClassName =

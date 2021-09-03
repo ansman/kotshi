@@ -17,3 +17,11 @@ tasks.withType<KotlinCompile> {
         )
     }
 }
+
+tasks.compileTestKotlin {
+    kotlinOptions {
+        freeCompilerArgs = freeCompilerArgs + listOf(
+            "-Xjvm-default=all"
+        )
+    }
+}
