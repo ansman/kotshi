@@ -25,7 +25,7 @@ class TestQualifiersWithArguments {
                     assertEquals(1f, annotation.floatArg)
                     assertEquals(2.0, annotation.doubleArg)
                     assertEquals("string", annotation.stringArg)
-                    assertTrue(booleanArrayOf().contentEquals(annotation.emptyArray))
+                    assertTrue(emptyArray<String>().contentEquals(annotation.emptyArray))
                     assertTrue(booleanArrayOf(true).contentEquals(annotation.booleanArrayArg))
                     assertTrue(byteArrayOf(254.toByte()).contentEquals(annotation.byteArrayArg))
                     assertTrue(shortArrayOf(10_000).contentEquals(annotation.shortArrayArg))

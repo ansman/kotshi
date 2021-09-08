@@ -16,7 +16,7 @@ annotation class QualifierWithArguments(
     val floatArg: Float,
     val doubleArg: Double,
     val stringArg: String,
-    val emptyArray: BooleanArray,
+    val emptyArray: Array<String>,
     val booleanArrayArg: BooleanArray,
     val byteArrayArg: ByteArray,
     val charArrayArg: CharArray,
