@@ -121,7 +121,7 @@ class DataClassAdapterGenerator(
     private fun Sequence<AdapterKey>.generatePropertySpecs(): Map<AdapterKey, PropertySpec> {
         fun AdapterKey.annotations(): CodeBlock = when {
             jsonQualifiers.isEmpty() -> CodeBlock.of("")
-            jsonQualifiers.singleOrNull()?.members?.isEmpty() == true ->
+            jsonQualifiers.singleOrNull()?.tag<AnnotationMirror>()?.annotationType?.asElement()?.enclosedElements?.isEmpty() == true ->
                 CodeBlock.of(", %T::class.java", jsonQualifiers.single().typeName)
             else -> CodeBlock.builder()
                 .add(", setOf(")

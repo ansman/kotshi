@@ -1,0 +1,22 @@
+package se.ansman.kotshi
+
+import com.squareup.moshi.Moshi
+import org.junit.Test
+
+class TestClassWithQualifierWithDefaults {
+    private val moshi = Moshi.Builder()
+        .add(KotshiTestFactory)
+        .add { type, annotations, moshi ->
+            if (type == String::class.java && annotations.singleOrNull() is QualifierWithDefaults) {
+                moshi.adapter<Any>(type)
+            } else {
+                null
+            }
+        }
+        .build()
+
+    @Test
+    fun test() {
+        moshi.adapter(ClassWithQualifierWithDefaults::class.java)
+    }
+}
