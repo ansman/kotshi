@@ -470,20 +470,23 @@ private fun CodeBlock.Builder.add(value: AnnotationValue, valueType: TypeMirror)
 
         override fun visit(av: AnnotationValue?, p: Nothing?) = throw AssertionError()
 
-        override fun visit(av: AnnotationValue?) =throw AssertionError()
+        override fun visit(av: AnnotationValue?) = throw AssertionError()
 
         override fun visitArray(vals: List<AnnotationValue>, p: Nothing?) {
             if (vals.isEmpty()) {
-                add(when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
-                    BYTE -> "byteArrayOf()"
-                    CHAR -> "charArrayOf()"
-                    SHORT -> "shortArrayOf()"
-                    INT -> "intArrayOf()"
-                    LONG -> "longArrayOf()"
-                    FLOAT -> "floatArrayOf()"
-                    DOUBLE -> "doubleArrayOf()"
-                    BOOLEAN -> "booleanArrayOf()"
-                    else -> "emptyArray<Any>()"
+                add(when (val elementType = (valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
+                    BYTE -> CodeBlock.of("byteArrayOf()")
+                    CHAR -> CodeBlock.of("charArrayOf()")
+                    SHORT -> CodeBlock.of("shortArrayOf()")
+                    INT -> CodeBlock.of("intArrayOf()")
+                    LONG -> CodeBlock.of("longArrayOf()")
+                    FLOAT -> CodeBlock.of("floatArrayOf()")
+                    DOUBLE -> CodeBlock.of("doubleArrayOf()")
+                    BOOLEAN -> CodeBlock.of("booleanArrayOf()")
+                    else -> CodeBlock.of("emptyArray<%T>()", when (elementType) {
+                        ClassName("java.lang", "String") -> STRING
+                        else -> elementType
+                    })
                 })
             } else {
                 add(when ((valueType.asTypeName() as ParameterizedTypeName).typeArguments.single()) {
