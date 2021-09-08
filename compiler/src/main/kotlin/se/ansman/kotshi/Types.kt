@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.MemberName.Companion.member
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SET
 import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.asClassName
@@ -20,6 +21,9 @@ import java.lang.reflect.Type
 @OptIn(InternalKotshiApi::class, DelicateKotlinPoetApi::class)
 object Functions {
     object Kotlin {
+        val typeOf = MemberName("kotlin.reflect", "typeOf")
+        val setOf = MemberName("kotlin.collections", "setOf")
+        val javaType = MemberName("kotlin.reflect", "javaType")
         val booleanArrayOf = MemberName("kotlin", "booleanArrayOf")
         val byteArrayOf = MemberName("kotlin", "byteArrayOf")
         val ubyteArrayOf = MemberName("kotlin", "ubyteArrayOf")
@@ -45,6 +49,7 @@ object Functions {
         val appendNullableError = KotshiUtils::class.member("appendNullableError")
         val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
         val createJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
+        val matches = KotshiUtils::class.member("matches")
     }
 }
 
@@ -59,6 +64,7 @@ object Types {
         val suppress = ClassName("kotlin", "Suppress")
         val optIn = ClassName("kotlin", "OptIn")
         val kClass = ClassName("kotlin.reflect", "KClass")
+        val experimentalStdlibApi = ClassName("kotlin", "ExperimentalStdlibApi")
     }
 
     object Kotshi {
@@ -67,6 +73,7 @@ object Types {
         val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
         @OptIn(ExperimentalKotshiApi::class)
         val jsonProperty = JsonProperty::class.java.asClassName()
+        val typesArray = ARRAY.parameterizedBy(Java.type)
     }
 
     object Moshi {

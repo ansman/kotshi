@@ -1,7 +1,7 @@
 package se.ansman.kotshi
 
-import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonWriter
 
 /**
  * Annotation to be applied on an abstract class that implements

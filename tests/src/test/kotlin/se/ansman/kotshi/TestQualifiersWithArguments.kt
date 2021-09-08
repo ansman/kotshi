@@ -11,7 +11,7 @@ class TestQualifiersWithArguments {
     fun test() {
         var callCount = 0
         Moshi.Builder()
-            .add(KotshiTestFactory)
+            .add(TestFactory)
             .add { type, annotations, moshi ->
                 if (type == String::class.java && annotations.isNotEmpty()) {
                     ++callCount

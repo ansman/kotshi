@@ -27,8 +27,8 @@ import se.ansman.kotshi.withoutVariance
 abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
     private var isUsed = false
     protected val nameAllocator: NameAllocator = NameAllocator().apply {
-        newName("moshi")
-        newName("types")
+        newName(moshiParameterName)
+        newName(typesParameterName)
         newName("value")
         newName("writer")
         newName("reader")
@@ -126,6 +126,11 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
                     .add("»)")
                     .build())
             .build()
+    }
+
+    companion object {
+        const val moshiParameterName = "moshi"
+        const val typesParameterName = "types"
     }
 }
 

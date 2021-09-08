@@ -9,7 +9,6 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -92,9 +91,9 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
 
     override fun TypeSpec.Builder.renderSetup() {
         primaryConstructor(FunSpec.constructorBuilder()
-            .addParameter("moshi", Types.Moshi.moshi)
+            .addParameter(moshiParameterName, Types.Moshi.moshi)
             .applyIf(adapter.targetTypeVariables.isNotEmpty()) {
-                addParameter("types", Types.Kotlin.array.parameterizedBy(Types.Java.type))
+                addParameter(typesParameterName, Types.Kotshi.typesArray)
             }
             .build())
         addProperty(labelKeyOptions)

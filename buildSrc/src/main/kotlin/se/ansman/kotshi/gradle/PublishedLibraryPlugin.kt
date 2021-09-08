@@ -11,7 +11,6 @@ import org.gradle.configurationcache.extensions.serviceOf
 import org.gradle.jvm.tasks.Jar
 import org.gradle.plugins.signing.SigningExtension
 import org.jetbrains.dokka.gradle.DokkaTask
-import java.util.Locale
 
 abstract class PublishedLibraryPlugin : Plugin<Project> {
     override fun apply(target: Project): Unit = with(target) {
@@ -126,7 +125,7 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
         if (!providers.environmentVariable("CI").orNull.toBoolean()) {
             with(extensions.getByType(SigningExtension::class.java)) {
                 gradle.taskGraph.whenReady { graph ->
-                    if (graph.hasTask("${path}:sign${publication.name.replaceFirstChar { it.titlecase(Locale.ROOT) }}Publication")) {
+                    if (graph.hasTask("${path}:sign${publication.name.replaceFirstChar(Char::uppercase)}Publication")) {
                         rootProject.extensions.extraProperties.getOrPut("signing.gnupg.passphrase") {
                             val inputHandler = serviceOf<UserInputHandler>()
                             inputHandler.askQuestion("Signing key passphrase: ", "")

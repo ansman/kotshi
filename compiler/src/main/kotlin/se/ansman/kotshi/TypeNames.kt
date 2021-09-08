@@ -2,6 +2,7 @@ package se.ansman.kotshi
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.Dynamic
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -21,6 +22,15 @@ val TypeName.rawType: TypeName
         is WildcardTypeName -> this
         is ParameterizedTypeName -> rawType
     }
+
+inline fun TypeName.mapTypeArguments(mapper: (TypeName) -> TypeName): TypeName = when (this) {
+    is ClassName -> this
+    Dynamic -> this
+    is LambdaTypeName -> this
+    is TypeVariableName -> this
+    is WildcardTypeName -> this
+    is ParameterizedTypeName -> copy(typeArguments = typeArguments.map(mapper))
+}
 
 fun TypeName.unwrapTypeAlias(): TypeName =
     tag<TypeAliasTag>()
@@ -83,8 +93,29 @@ fun TypeName.withoutVariance(): TypeName =
         is WildcardTypeName -> withoutVariance()
     }
 
+fun TypeName.unwrapTypeVariables(): TypeName =
+    when (this) {
+        is ClassName -> this
+        Dynamic -> this
+        is LambdaTypeName -> this
+        is ParameterizedTypeName -> copy(typeArguments = typeArguments.map { it.unwrapTypeVariables() })
+        is TypeVariableName -> {
+            val unwrapped = bounds.single().unwrapTypeVariables()
+            when (variance) {
+                KModifier.IN -> WildcardTypeName.consumerOf(unwrapped)
+                else -> WildcardTypeName.producerOf(unwrapped)
+            }
+        }
+        is WildcardTypeName -> if (inTypes.isNotEmpty()) {
+            WildcardTypeName.consumerOf(inTypes.single().unwrapTypeVariables())
+        } else {
+            WildcardTypeName.producerOf(outTypes.single().unwrapTypeVariables())
+        }
+    }
+
 fun ParameterizedTypeName.withoutVariance(): ParameterizedTypeName =
     copy(typeArguments = typeArguments.map { it.withoutVariance() })
+
 fun TypeVariableName.withoutVariance(): TypeVariableName = TypeVariableName(name, bounds.map { it.withoutVariance() })
 fun WildcardTypeName.withoutVariance(): TypeName =
     if (this == STAR) STAR else inTypes.getOrNull(0)?.withoutVariance() ?: outTypes[0]

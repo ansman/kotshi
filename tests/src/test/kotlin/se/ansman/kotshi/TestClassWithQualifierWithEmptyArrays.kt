@@ -11,7 +11,7 @@ class TestClassWithQualifierWithEmptyArrays {
     fun test() {
         var callCount = 0
         Moshi.Builder()
-            .add(KotshiTestFactory)
+            .add(TestFactory)
             .add { type, annotations, moshi ->
                 if (annotations.isEmpty()) {
                     null

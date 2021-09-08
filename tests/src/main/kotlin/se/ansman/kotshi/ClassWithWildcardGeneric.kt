@@ -1,7 +1,10 @@
 package se.ansman.kotshi
 
 @JsonSerializable
-data class ClassWithBoundGeneric<out Data>(val data: List<Data>)
+data class ClassWithWildcardGeneric<out Data>(val data: List<Data>)
+
+@JsonSerializable
+data class ClassWithBoundGeneric<out Data : Number>(val data: Data)
 
 @JsonSerializable
 data class ParameterizedModel<out Data>(val data: Data)

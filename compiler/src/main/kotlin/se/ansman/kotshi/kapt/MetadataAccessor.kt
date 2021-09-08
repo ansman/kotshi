@@ -30,8 +30,10 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
 
     fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) { metadata.toKmClass() }
     fun getKmClass(type: Element): KmClass = getKmClass(getMetadata(type))
+    fun getKmClassOrNull(type: Element): KmClass? = getMetadataOrNull(type)?.let(::getKmClass)
 
     fun getTypeSpec(type: Element): TypeSpec = getTypeSpec(getKmClass(type))
+    fun getTypeSpecOrNull(type: Element): TypeSpec? = getKmClassOrNull(type)?.let(::getTypeSpec)
 
     fun getTypeSpec(metadata: KmClass): TypeSpec =
         typeSpecPerKmClass.getOrPut(metadata) {
@@ -88,3 +90,6 @@ val Metadata.languageVersion: KotlinVersion
         minor = metadataVersion[1],
         patch = metadataVersion.getOrElse(2) { 0 },
     )
+
+val Metadata.supportsCreatingAnnotationsWithConstructor: Boolean
+    get() = languageVersion.isAtLeast(1, 6)

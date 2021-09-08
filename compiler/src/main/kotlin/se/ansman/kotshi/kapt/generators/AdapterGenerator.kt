@@ -20,7 +20,7 @@ import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
-import se.ansman.kotshi.kapt.languageVersion
+import se.ansman.kotshi.kapt.supportsCreatingAnnotationsWithConstructor
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
@@ -77,10 +77,11 @@ abstract class AdapterGenerator(
                 )
         }
 
-        val metadata = metadataAccessor.getMetadata(targetElement)
-
         val generatedAdapter = getGenerableAdapter()
-            .createRenderer(createAnnotationsUsingConstructor ?: metadata.languageVersion.isAtLeast(1, 6))
+            .createRenderer(
+                createAnnotationsUsingConstructor
+                    ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor
+            )
             .render {
                 addOriginatingElement(targetElement)
                 maybeAddGeneratedAnnotation(elements, sourceVersion)

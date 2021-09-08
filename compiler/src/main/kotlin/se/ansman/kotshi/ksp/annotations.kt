@@ -59,6 +59,11 @@ fun Sequence<KSAnnotation>.getAnnotation(type: Class<out Annotation>): KSAnnotat
 inline fun <reified V> KSAnnotation.getValue(name: String): V =
     arguments.first { it.name?.asString() == name }.value as V
 
+inline fun <reified V> KSAnnotation.getValueOrDefault(name: String, defaultValue: () -> V): V {
+    val arg = arguments.firstOrNull { it.name?.asString() == name } ?: return defaultValue()
+    return arg.value as V
+}
+
 inline fun <reified V : Enum<V>> KSAnnotation.getEnumValue(name: String, defaultValue: V): V =
     getValue<KSType?>(name)?.let { enumValueOf<V>(it.declaration.simpleName.getShortName()) } ?: defaultValue
 

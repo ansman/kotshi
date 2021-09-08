@@ -61,7 +61,10 @@ the module wide setting).
 ### Annotations
 * `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on data classes, enums, sealed classes and objects.
 * `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
-* `@JsonDefaultValue` can be used to annotated a fallback for enums or sealed classes when an unknown entry is encountered. The default is to thrown an exception.
+* `@JsonDefaultValue` can be used to annotate a fallback for enums or sealed classes when an unknown entry is encountered. The default is to thrown an exception.
+* `@JsonProperty` can be used to customize how a property or enum entry is serialized to and from JSON.
+* `@Polymorphic` and `@PolymorphicLabel` used on sealed classes and their implementions.
+* `@RegisterJsonAdapter` registers a json adapter into the Kotshi json adapter factory.
 
 ### Default Values
 You can use default values just like you normally would in Kotlin.
@@ -79,12 +82,17 @@ Properties marked with `@Transient` are not serialized. All transient properties
 Only properties declared in the constructor needs to be annotated since other properties are ignores.
 
 ### Custom Names
-By default the property or enum entry name is used when reading and writing JSON. To change the name used you may use
-the regular `@Json` annotation from Moshi to annotate the property or enum entry.
+By default, the property or enum entry name is used when reading and writing JSON. To change the name used you may use 
+the `@JsonProperty` annotation or the regular `@Json` annotation from Moshi to annotate the property or enum entry.
 
 ### Json Qualifiers
 Kotshi has full support for `@JsonQualifier`, both plain and those with arguments. Simply annotate a property with the
 desired qualifiers and Kotshi will pick them up.
+
+### Registered adapters
+It's often required to have a few adapters that are handwritten, for example for framework classes. Handling this in a 
+custom factory can be tedious, especially for generic types. To make this easier you may annotate any class or object
+that extends `JsonAdapter` with `@RegisterJsonAdapter` and Kotshi will generate the needed code in the adapter factory.
 
 ### Options
 

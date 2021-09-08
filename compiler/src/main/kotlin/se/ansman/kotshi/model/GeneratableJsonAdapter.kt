@@ -24,5 +24,14 @@ sealed class GeneratableJsonAdapter {
         ClassName(targetPackageName, "Kotshi${targetSimpleNames.joinToString("_")}JsonAdapter")
     }
 
+    val adapterTypeName by lazy {
+        val variables = targetTypeVariables
+        if (variables.isEmpty()) {
+            adapterClassName
+        } else {
+            adapterClassName.parameterizedBy(variables)
+        }
+    }
+
     val adapterName: String get() = adapterClassName.simpleName
 }

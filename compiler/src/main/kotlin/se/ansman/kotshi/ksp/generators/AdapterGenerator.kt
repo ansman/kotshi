@@ -7,10 +7,9 @@ import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
-import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import com.squareup.kotlinpoet.ksp.writeTo
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
@@ -31,13 +30,8 @@ abstract class AdapterGenerator(
 ) {
     protected val typeParameterResolver = targetElement.toTypeParameterResolver()
     protected val targetClassName = targetElement.toClassName()
-    protected val targetTypeVariables = targetElement.typeParameters.map { typeParameter ->
-        TypeVariableName(
-            typeParameter.name.getShortName(),
-            typeParameter.bounds
-                .map { it.resolve().toTypeName(typeParameterResolver) }
-                .toList(),
-        )
+    protected val targetTypeVariables = targetElement.typeParameters.map {
+        it.toTypeVariableName(typeParameterResolver)
     }
 
     protected val polymorphicLabels: Map<String, String> by lazy {
@@ -76,7 +70,7 @@ abstract class AdapterGenerator(
             .createRenderer(createAnnotationsUsingConstructor)
             .render {
                 addOriginatingKSFile(targetElement.containingFile!!)
-                // TODO
+            // TODO
 //            maybeAddGeneratedAnnotation(elements, sourceVersion)
             }
 
