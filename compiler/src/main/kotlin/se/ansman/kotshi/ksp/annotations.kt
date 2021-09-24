@@ -36,6 +36,8 @@ import com.squareup.kotlinpoet.U_LONG
 import com.squareup.kotlinpoet.U_LONG_ARRAY
 import com.squareup.kotlinpoet.U_SHORT
 import com.squareup.kotlinpoet.U_SHORT_ARRAY
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.JsonQualifier
 import se.ansman.kotshi.Types
 import se.ansman.kotshi.model.AnnotationModel
@@ -72,16 +74,16 @@ fun KSAnnotation.toAnnotationModel(): AnnotationModel {
         ?.parameters
         ?.associateBy({ it.name!! }, {
             if (it.isVararg) {
-                LIST.parameterizedBy(it.type.asTypeName())
+                LIST.parameterizedBy(it.type.toTypeName())
             } else {
-                it.type.asTypeName()
+                it.type.toTypeName()
             }
         })
         ?: emptyMap()
 
     val annotationType = annotationType.resolve()
     return AnnotationModel(
-        annotationName = annotationType.asTypeName() as ClassName,
+        annotationName = annotationType.toTypeName() as ClassName,
         hasMethods = (annotationType.declaration as KSClassDeclaration).getAllProperties().any(),
         values = arguments.filter { it.value != null }.associateBy({ it.name!!.asString() }) {
             it.value!!.toAnnotationValue(it, typeByName.getValue(it.name!!))
@@ -94,9 +96,12 @@ private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
         is KSType -> {
             val declaration = declaration as KSClassDeclaration
             if (declaration.classKind == ClassKind.ENUM_ENTRY) {
-                Value.Enum((declaration.parentDeclaration as KSClassDeclaration).asClassName(), declaration.simpleName.asString())
+                Value.Enum(
+                    (declaration.parentDeclaration as KSClassDeclaration).toClassName(),
+                    declaration.simpleName.asString()
+                )
             } else {
-                Value.Class(declaration.asClassName())
+                Value.Class(declaration.toClassName())
             }
         }
         is KSName -> Value.Enum(

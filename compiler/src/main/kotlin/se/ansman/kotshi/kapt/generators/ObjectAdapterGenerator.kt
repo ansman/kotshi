@@ -1,7 +1,7 @@
 package se.ansman.kotshi.kapt.generators
 
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isObject
+import kotlinx.metadata.KmClass
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
@@ -16,7 +16,7 @@ class ObjectAdapterGenerator(
     types: Types,
     elements: Elements,
     element: TypeElement,
-    metadata: ImmutableKmClass,
+    metadata: KmClass,
     globalConfig: GlobalConfig,
     messager: Messager,
 ) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {

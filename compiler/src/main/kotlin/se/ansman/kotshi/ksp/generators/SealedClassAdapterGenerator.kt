@@ -6,16 +6,18 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier.SEALED
 import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.Polymorphic.Fallback
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ksp.KspProcessingError
-import se.ansman.kotshi.ksp.asClassName
 import se.ansman.kotshi.ksp.asTypeName
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getEnumValue
 import se.ansman.kotshi.ksp.getValue
+import se.ansman.kotshi.ksp.toTypeParameterResolver
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.SealedClassJsonAdapter
@@ -58,7 +60,7 @@ class SealedClassAdapterGenerator(
                     if (it.typeParameters.isNotEmpty()) {
                         throw KspProcessingError("The default value of a sealed class cannot be generic", it)
                     }
-                    it.asClassName()
+                    it.toClassName()
                 }
                 .toList()
                 .let { defaultValues ->
@@ -72,18 +74,19 @@ class SealedClassAdapterGenerator(
     }
 
     private fun KSClassDeclaration.toSubtype(): SealedClassJsonAdapter.Subtype? {
+        val typeParameterResolver = toTypeParameterResolver()
         return SealedClassJsonAdapter.Subtype(
-            type = asTypeName(),
-            wildcardType = asTypeName(typeParameters.map { STAR }),
+            type = asTypeName(typeParameterResolver),
+            wildcardType = asTypeName(typeParameterResolver, typeParameters.map { STAR }),
             superClass = superTypes
                 .filter { (it.resolve().declaration as? KSClassDeclaration)?.classKind == ClassKind.CLASS }
                 // All subtypes should have a superclass
                 .first()
-                .asTypeName(),
+                .toTypeName(typeParameterResolver),
             label = getAnnotation(PolymorphicLabel::class.java)?.getValue("value")
                 ?: run {
                     if (SEALED !in modifiers && getAnnotation<JsonDefaultValue>() == null) {
-                        throw KspProcessingError("Missing @PolymorphicLabel on ${asClassName()}", this)
+                        throw KspProcessingError("Missing @PolymorphicLabel on ${toClassName()}", this)
                     }
                     return null
                 }

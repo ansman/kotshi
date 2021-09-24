@@ -6,12 +6,12 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.PrimitiveAdapters
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.ksp.KspProcessingError
-import se.ansman.kotshi.ksp.asTypeName
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getEnumValue
 import se.ansman.kotshi.ksp.getValue
@@ -52,7 +52,7 @@ class DataClassAdapterGenerator(
 
     private fun KSValueParameter.toProperty(): Property {
         val name = name!!.asString()
-        val type = type.resolve().asTypeName()
+        val type = type.toTypeName(typeParameterResolver)
 
         val property = targetElement.getDeclaredProperties().find { it.simpleName == this.name }
             ?: throw KspProcessingError("Could not find property for parameter $name", this)

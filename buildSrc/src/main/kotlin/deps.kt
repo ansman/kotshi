@@ -11,11 +11,10 @@ object deps {
     }
 
     object kotlinpoet {
-        const val version = "1.9.0"
+        const val version = "1.10.1"
         const val core = "com.squareup:kotlinpoet:$version"
         const val metadata = "com.squareup:kotlinpoet-metadata:$version"
-        const val metadataSpecs = "com.squareup:kotlinpoet-metadata-specs:$version"
-        const val classinspector = "com.squareup:kotlinpoet-classinspector-elements:$version"
+        const val ksp = "com.squareup:kotlinpoet-ksp:$version"
     }
 
     const val autocommon = "com.google.auto:auto-common:0.11"

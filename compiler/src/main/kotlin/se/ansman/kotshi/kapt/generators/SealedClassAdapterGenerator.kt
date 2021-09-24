@@ -3,9 +3,9 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.tag
+import kotlinx.metadata.KmClass
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
@@ -25,12 +25,12 @@ class SealedClassAdapterGenerator(
     types: Types,
     elements: Elements,
     element: TypeElement,
-    metadata: ImmutableKmClass,
+    metadata: KmClass,
     globalConfig: GlobalConfig,
     messager: Messager,
 ) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
-        require(metadata.isSealed)
+        require(metadata.flags.isSealed)
     }
 
     override fun getGenerableAdapter(): GeneratableJsonAdapter {
@@ -108,7 +108,7 @@ class SealedClassAdapterGenerator(
                         typeElement to metadataAccessor.getMetadata(typeElement)
                     }
                 },
-                isSealed = { second.isSealed },
+                isSealed = { second.flags.isSealed },
                 hasAnnotation = { first.getAnnotation(it) != null },
                 getPolymorphicLabelKey = { first.getAnnotation(Polymorphic::class.java)?.labelKey },
                 getPolymorphicLabel = { first.getAnnotation(PolymorphicLabel::class.java)?.value },
