@@ -8,12 +8,12 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.tag
+import kotlinx.metadata.KmClass
 import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
@@ -39,7 +39,7 @@ abstract class AdapterGenerator(
     protected val types: Types,
     protected val elements: Elements,
     protected val targetElement: TypeElement,
-    protected val metadata: ImmutableKmClass,
+    protected val metadata: KmClass,
     protected val globalConfig: GlobalConfig,
     protected val messager: Messager,
 ) {
@@ -65,9 +65,9 @@ abstract class AdapterGenerator(
         when {
             metadata.isInner ->
                 throw KaptProcessingError("@JsonSerializable can't be applied to inner classes", targetElement)
-            metadata.isLocal ->
+            metadata.flags.isLocal ->
                 throw KaptProcessingError("@JsonSerializable can't be applied to local classes", targetElement)
-            !metadata.isPublic && !metadata.isInternal ->
+            !metadata.flags.isPublic && !metadata.flags.isInternal ->
                 throw KaptProcessingError(
                     "Classes annotated with @JsonSerializable must public or internal",
                     targetElement

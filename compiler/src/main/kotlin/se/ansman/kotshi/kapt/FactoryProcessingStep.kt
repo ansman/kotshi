@@ -4,7 +4,6 @@ package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import com.squareup.moshi.JsonAdapter
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
@@ -62,7 +61,7 @@ class FactoryProcessingStep(
 
     private fun generateFactory(element: TypeElement) {
         val metadata = metadataAccessor.getMetadata(element)
-        val elementClassName = ClassInspectorUtil.createClassName(metadata.name)
+        val elementClassName = createClassName(metadata.name)
 
         val factory = JsonAdapterFactory(
             targetType = elementClassName,

@@ -34,6 +34,9 @@ abstract class TypeRenderer {
     abstract fun renderTypeVariable(typeVariable: TypeVariableName): CodeBlock
 
     fun render(typeName: TypeName, forceBox: Boolean = false): CodeBlock =
+        renderInternal(typeName.unwrapTypeAlias(), forceBox)
+
+    private fun renderInternal(typeName: TypeName, forceBox: Boolean): CodeBlock =
         when {
             typeName.annotations.isNotEmpty() -> render(typeName.copy(annotations = emptyList()), forceBox)
             typeName.isNullable -> renderObjectType(typeName.copy(nullable = false))
@@ -63,7 +66,7 @@ abstract class TypeRenderer {
                             } else {
                                 add("newParameterizedType(")
                             }
-                            add("%T::class.java", typeName.rawType)
+                            add("%T::class.java", typeName.rawType.unwrapTypeAlias())
                             for (typeArgument in typeName.typeArguments) {
                                 add(", %L", renderObjectType(typeArgument))
                             }
@@ -102,7 +105,7 @@ abstract class TypeRenderer {
         if (typeName.isPrimitive) {
             CodeBlock.of("%T::class.javaObjectType", typeName)
         } else {
-            render(typeName)
+            renderInternal(typeName, forceBox = false)
         }
 
     companion object {

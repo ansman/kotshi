@@ -1,8 +1,8 @@
 package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isEnum
+import kotlinx.metadata.KmClass
 import se.ansman.kotshi.Types.Kotshi.jsonDefaultValue
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.KaptProcessingError
@@ -20,7 +20,7 @@ class EnumAdapterGenerator(
     types: Types,
     elements: Elements,
     element: TypeElement,
-    metadata: ImmutableKmClass,
+    metadata: KmClass,
     globalConfig: GlobalConfig,
     messager: Messager,
 ) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {

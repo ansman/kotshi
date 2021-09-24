@@ -2,9 +2,9 @@ package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.tag
+import kotlinx.metadata.KmClass
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
@@ -14,7 +14,6 @@ import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.Property
-import se.ansman.kotshi.unwrapTypeAlias
 import javax.annotation.processing.Messager
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
@@ -25,7 +24,7 @@ class DataClassAdapterGenerator(
     types: Types,
     elements: Elements,
     element: TypeElement,
-    metadata: ImmutableKmClass,
+    metadata: KmClass,
     globalConfig: GlobalConfig,
     messager: Messager,
 ) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
@@ -65,7 +64,7 @@ class DataClassAdapterGenerator(
 
         return Property.create(
             name = name,
-            type = type.unwrapTypeAlias().copy(annotations = emptyList()),
+            type = type.copy(annotations = emptyList()),
             jsonQualifiers = annotations.qualifiers(),
             globalConfig = globalConfig,
             useAdaptersForPrimitives = config.useAdaptersForPrimitives,

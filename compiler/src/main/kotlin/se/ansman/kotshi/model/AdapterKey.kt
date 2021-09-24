@@ -14,6 +14,8 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.tag
+import com.squareup.kotlinpoet.tags.TypeAliasTag
 import com.squareup.moshi.Types
 import se.ansman.kotshi.notNull
 import java.util.Locale
@@ -24,7 +26,7 @@ data class AdapterKey(
 )
 
 fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
-    type.asRuntimeType(typeVariableAccessor)
+    (type.tag<TypeAliasTag>()?.abbreviatedType ?: type).asRuntimeType(typeVariableAccessor)
 
 val AdapterKey.suggestedAdapterName: String
     get() = buildString {

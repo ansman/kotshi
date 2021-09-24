@@ -6,7 +6,8 @@ plugins {
 tasks.compileKotlin {
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xuse-experimental=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
+            "-Xopt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
+            "-Xopt-in=com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview",
         )
     }
 }
@@ -20,8 +21,7 @@ dependencies {
     implementation(deps.autocommon)
     implementation(deps.kotlinpoet.core)
     implementation(deps.kotlinpoet.metadata)
-    implementation(deps.kotlinpoet.metadataSpecs)
-    implementation(deps.kotlinpoet.classinspector)
+    implementation(deps.kotlinpoet.ksp)
     implementation(deps.moshi)
     implementation(deps.ksp.api)
 }

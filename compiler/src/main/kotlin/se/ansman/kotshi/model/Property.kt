@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.TypeName
 import se.ansman.kotshi.PrimitiveAdapters
 import se.ansman.kotshi.isPrimitive
 import se.ansman.kotshi.notNull
+import se.ansman.kotshi.unwrapTypeAlias
 
 data class Property(
     val name: String,
@@ -38,7 +39,7 @@ data class Property(
                 name = name,
                 type = type,
                 adapterKey = AdapterKey(
-                    type = type.copy(nullable = false, annotations = emptyList()),
+                    type = type.unwrapTypeAlias().copy(nullable = false, annotations = emptyList()),
                     jsonQualifiers = jsonQualifiers.toSet(),
                 ),
                 jsonName = parameterJsonName ?: propertyJsonName ?: name,

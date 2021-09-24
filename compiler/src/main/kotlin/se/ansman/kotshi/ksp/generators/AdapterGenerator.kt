@@ -9,16 +9,17 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.writeTo
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.ksp.KspProcessingError
-import se.ansman.kotshi.ksp.addOriginatingKSFile
-import se.ansman.kotshi.ksp.asClassName
-import se.ansman.kotshi.ksp.asTypeName
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getValue
-import se.ansman.kotshi.ksp.writeTo
+import se.ansman.kotshi.ksp.toTypeParameterResolver
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
 import se.ansman.kotshi.model.GlobalConfig
@@ -31,12 +32,13 @@ abstract class AdapterGenerator(
     protected val targetElement: KSClassDeclaration,
     protected val globalConfig: GlobalConfig,
 ) {
-    protected val targetClassName = targetElement.asClassName()
+    protected val typeParameterResolver = targetElement.toTypeParameterResolver()
+    protected val targetClassName = targetElement.toClassName()
     protected val targetTypeVariables = targetElement.typeParameters.map { typeParameter ->
         TypeVariableName(
             typeParameter.name.getShortName(),
             typeParameter.bounds
-                .map { it.resolve().asTypeName() }
+                .map { it.resolve().toTypeName(typeParameterResolver) }
                 .toList(),
         )
     }
@@ -67,7 +69,10 @@ abstract class AdapterGenerator(
             targetElement.isLocal() ->
                 throw KspProcessingError("@JsonSerializable can't be applied to local classes", targetElement)
             !targetElement.isPublic() && !targetElement.isInternal() ->
-                throw KspProcessingError("Classes annotated with @JsonSerializable must public or internal", targetElement)
+                throw KspProcessingError(
+                    "Classes annotated with @JsonSerializable must public or internal",
+                    targetElement
+                )
         }
 
         val generatedAdapter = getGenerableAdapter().createRenderer().render {
@@ -76,7 +81,7 @@ abstract class AdapterGenerator(
 //            maybeAddGeneratedAnnotation(elements, sourceVersion)
         }
 
-        generatedAdapter.fileSpec.writeTo(environment.codeGenerator)
+        generatedAdapter.fileSpec.writeTo(environment.codeGenerator, aggregating = false)
         return generatedAdapter
     }
 

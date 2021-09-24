@@ -8,6 +8,9 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.writeTo
 import com.squareup.moshi.JsonAdapter
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.KotshiJsonAdapterFactory
@@ -66,9 +69,11 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
 
                 val jsonAdapterFactoryType = resolver.getClassDeclarationByName<JsonAdapter.Factory>()!!.asType(emptyList())
                 val factory = JsonAdapterFactory(
-                    targetType = targetFactory.asClassName(),
-                    usageType = if (targetFactory.asType(emptyList()).isAssignableFrom(jsonAdapterFactoryType) && Modifier.ABSTRACT in targetFactory.modifiers) {
-                        JsonAdapterFactory.UsageType.Subclass(targetFactory.asClassName())
+                    targetType = targetFactory.toClassName(),
+                    usageType = if (targetFactory.asType(emptyList())
+                            .isAssignableFrom(jsonAdapterFactoryType) && Modifier.ABSTRACT in targetFactory.modifiers
+                    ) {
+                        JsonAdapterFactory.UsageType.Subclass(targetFactory.toClassName())
                     } else {
                         JsonAdapterFactory.UsageType.Standalone
                     },
@@ -76,9 +81,12 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                 )
                 JsonAdapterFactoryRenderer(factory)
                     .render { addOriginatingKSFile(targetFactory.containingFile!!) }
-                    .writeTo(environment.codeGenerator)
+                    .writeTo(environment.codeGenerator, aggregating = true)
             } catch (e: KspProcessingError) {
                 environment.logger.error("Kotshi: ${e.message}", e.node)
+            } catch (e: Exception) {
+                environment.logger.error("Kotshi: failed to analyze class:", targetFactory)
+                environment.logger.exception(e)
             }
         }
 
@@ -139,6 +147,10 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                 generator.generateAdapter()
             } catch (e: KspProcessingError) {
                 environment.logger.error("Kotshi: ${e.message}", e.node)
+                null
+            } catch (e: Exception) {
+                environment.logger.error("Kotshi: failed to analyze class:", annotated)
+                environment.logger.exception(e)
                 null
             }
         }.toList()

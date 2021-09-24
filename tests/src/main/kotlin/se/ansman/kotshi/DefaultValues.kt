@@ -15,27 +15,19 @@ data class ClassWithDefaultValues(
 )
 
 @JsonSerializable
-data class WithCompanionFunction(val v: String?) {
-}
+data class WithCompanionFunction(val v: String?)
 
 @JsonSerializable
-data class WithStaticFunction(val v: String?) {
-}
+data class WithStaticFunction(val v: String?)
 
 @JsonSerializable
-data class WithCompanionProperty(val v: String?) {
-}
+data class WithCompanionProperty(val v: String?)
 
 @JsonSerializable
-data class WithStaticProperty(val v: String?) {
-}
+data class WithStaticProperty(val v: String?)
 
 @JsonSerializable
-data class GenericClassWithDefault<out T>(val v: T?) {
-}
-
-object DefaultProvider {
-}
+data class GenericClassWithDefault<out T>(val v: T?)
 
 @JsonSerializable
 data class ClassWithConstructorAsDefault(val v: String?) {

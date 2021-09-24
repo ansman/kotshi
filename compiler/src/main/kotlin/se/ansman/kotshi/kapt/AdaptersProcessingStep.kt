@@ -88,7 +88,7 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager
                     )
-                    metadata.isSealed -> SealedClassAdapterGenerator(
+                    metadata.flags.isSealed -> SealedClassAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
                         element = typeElement,
