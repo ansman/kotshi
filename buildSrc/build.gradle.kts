@@ -14,8 +14,8 @@ repositories {
 }
 
 dependencies {
-    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.10")
-    api("org.jetbrains.dokka:dokka-gradle-plugin:1.4.32")
+    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31")
+    api("org.jetbrains.dokka:dokka-gradle-plugin:1.5.30")
 }
 
 tasks.compileKotlin {
