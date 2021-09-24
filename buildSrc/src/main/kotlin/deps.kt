@@ -32,7 +32,7 @@ object deps {
     }
 
     object ksp {
-        const val version = "1.5.10-1.0.0-beta01"
+        const val version = "1.5.31-1.0.0"
         const val api = "com.google.devtools.ksp:symbol-processing-api:$version"
     }
 }
