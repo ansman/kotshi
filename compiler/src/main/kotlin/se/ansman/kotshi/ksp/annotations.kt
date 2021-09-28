@@ -110,18 +110,6 @@ private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
         )
         is KSAnnotation -> Value.Annotation(toAnnotationModel())
         is String -> Value.String(this)
-        is Float -> Value.Float(this)
-        is Char -> Value.Char(this)
-        is Boolean -> Value.Boolean(this)
-        is Double -> Value.Double(this)
-        is Byte -> Value.Byte(this)
-        is UByte -> Value.UByte(this)
-        is Short -> Value.Short(this)
-        is UShort -> Value.UShort(this)
-        is Int -> Value.Int(this)
-        is UInt -> Value.UInt(this)
-        is Long -> Value.Long(this)
-        is ULong -> Value.ULong(this)
         is List<*> -> when (type) {
             FLOAT, FLOAT_ARRAY -> Value.Array.Float(map { Value.Float(it as Float) })
             CHAR, CHAR_ARRAY -> Value.Array.Char(map { Value.Char(it as Char) })
@@ -141,14 +129,24 @@ private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
                 }
                 val elementType = type.typeArguments.single()
                 Value.Array.Object(
-                    elementType = if (elementType is ParameterizedTypeName && elementType.rawType == Types.Kotlin.kClass) {
-                        Types.Java.clazz.parameterizedBy(elementType.typeArguments)
-                    } else {
-                        elementType
-                    },
+                    elementType = elementType,
                     value = map { it!!.toAnnotationValue(node, type) as Value.Object<*> }
                 )
             }
         }
-        else -> throw KspProcessingError("Unknown annotation value type $javaClass", node)
+        else -> when (type) {
+            FLOAT -> Value.Float(this as Float)
+            CHAR -> Value.Char(this as Char)
+            BOOLEAN -> Value.Boolean(this as Boolean)
+            DOUBLE -> Value.Double(this as Double)
+            BYTE -> Value.Byte(this as Byte)
+            U_BYTE -> Value.UByte((this as Byte).toUByte())
+            SHORT -> Value.Short(this as Short)
+            U_SHORT -> Value.UShort((this as Short).toUShort())
+            INT -> Value.Int(this as Int)
+            U_INT -> Value.UInt((this as Int).toUInt())
+            LONG -> Value.Long(this as Long)
+            U_LONG -> Value.ULong((this as Long).toULong())
+            else -> throw KspProcessingError("Unknown annotation value type $javaClass", node)
+        }
     }

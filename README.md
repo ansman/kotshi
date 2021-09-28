@@ -84,6 +84,37 @@ the regular `@Json` annotation from Moshi to annotate the property or enum entry
 Kotshi has full support for `@JsonQualifier`, both plain and those with arguments. Simply annotate a property with the
 desired qualifiers and Kotshi will pick them up.
 
+### Options
+
+#### `kotshi.createAnnotationsUsingConstructor`
+This option enables a new way of creating annotations instances at runtime. Normally Kotshi uses reflection to create 
+the qualifier annotations but as of 1.5.30 of Kotlin you can enable creating annotations by calling the constructor.
+
+This behavior is enabled by default when using language version 1.6 but can be explicitly enabled or disabled using this
+option. You can enable it like this:
+```kotlin
+// If you are using Groovy build scripts this will be `tasks.withType(KotlinCompile) {`
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        languageVersion = "1.6"
+    }
+}
+
+// When using KAPT
+kapt {
+    arguments {
+        arg("kotshi.createAnnotationsUsingConstructor", true)
+    }
+}
+
+// When using KSP
+ksp {
+    arg("kotshi.createAnnotationsUsingConstructor", "true")
+}
+```
+
+See more about instantiating annotations here: https://kotlinlang.org/docs/whatsnew1530.html#instantiation-of-annotation-classes
+
 Limitations
 ---
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.

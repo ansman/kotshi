@@ -20,6 +20,7 @@ import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.languageVersion
 import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
@@ -39,11 +40,11 @@ abstract class AdapterGenerator(
     protected val types: Types,
     protected val elements: Elements,
     protected val targetElement: TypeElement,
-    protected val metadata: KmClass,
+    protected val kmClass: KmClass,
     protected val globalConfig: GlobalConfig,
     protected val messager: Messager,
 ) {
-    protected val targetTypeSpec = metadataAccessor.getTypeSpec(metadata)
+    protected val targetTypeSpec = metadataAccessor.getTypeSpec(kmClass)
 
     protected val targetClassName: ClassName = targetTypeSpec.tag()!!
 
@@ -60,24 +61,29 @@ abstract class AdapterGenerator(
 
     fun generateAdapter(
         sourceVersion: SourceVersion,
-        filer: Filer
+        filer: Filer,
+        createAnnotationsUsingConstructor: Boolean?
     ): GeneratedAdapter {
         when {
-            metadata.isInner ->
+            kmClass.isInner ->
                 throw KaptProcessingError("@JsonSerializable can't be applied to inner classes", targetElement)
-            metadata.flags.isLocal ->
+            kmClass.flags.isLocal ->
                 throw KaptProcessingError("@JsonSerializable can't be applied to local classes", targetElement)
-            !metadata.flags.isPublic && !metadata.flags.isInternal ->
+            !kmClass.flags.isPublic && !kmClass.flags.isInternal ->
                 throw KaptProcessingError(
                     "Classes annotated with @JsonSerializable must public or internal",
                     targetElement
                 )
         }
 
-        val generatedAdapter = getGenerableAdapter().createRenderer().render {
-            addOriginatingElement(targetElement)
-            maybeAddGeneratedAnnotation(elements, sourceVersion)
-        }
+        val metadata = metadataAccessor.getMetadata(targetElement)
+
+        val generatedAdapter = getGenerableAdapter()
+            .createRenderer(createAnnotationsUsingConstructor ?: metadata.languageVersion.isAtLeast(1, 6))
+            .render {
+                addOriginatingElement(targetElement)
+                maybeAddGeneratedAnnotation(elements, sourceVersion)
+            }
 
         generatedAdapter.fileSpec.writeTo(filer)
         return generatedAdapter

@@ -1,5 +1,6 @@
 package se.ansman.kotshi.renderer
 
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -44,6 +45,32 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
         val typeSpec = TypeSpec.classBuilder(adapter.adapterName)
             .addModifiers(KModifier.INTERNAL)
             .addAnnotation(Types.Kotshi.internalKotshiApi)
+            .addAnnotation(AnnotationSpec.builder(Types.Kotlin.suppress)
+                // https://github.com/square/moshi/issues/1023
+                .addMember("%S", "DEPRECATION")
+                // Because we look it up reflectively
+                .addMember("%S", "unused")
+                // Because we include underscores
+                .addMember("%S", "ClassName")
+                // Because we generate redundant `out` variance for some generics and there's no way
+                // for us to know when it's redundant.
+                .addMember("%S", "REDUNDANT_PROJECTION")
+                // Because we may generate redundant explicit types for local vars with default values.
+                // Example: 'var fooSet: Boolean = false'
+                .addMember("%S", "RedundantExplicitType")
+                // NameAllocator will just add underscores to differentiate names, which Kotlin doesn't
+                // like for stylistic reasons.
+                .addMember("%S", "LocalVariableName")
+                // KotlinPoet always generates explicit public modifiers for public members.
+                .addMember("%S", "RedundantVisibilityModifier")
+                // For LambdaTypeNames we have to import kotlin.functions.* types
+                .addMember("%S", "PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                // Cover for calling fromJson() on a Nothing property type. Theoretically nonsensical but we
+                // support it
+                .addMember("%S", "IMPLICIT_NOTHING_TYPE_ARGUMENT_IN_RETURN_POSITION")
+                // In case the consumer is using experimental APIs
+                .addMember("%S", "EXPERIMENTAL_API_USAGE")
+                .build())
             .addTypeVariables(adapter.targetTypeVariables.map { it.withoutVariance() })
             .superclass(Types.Kotshi.namedJsonAdapter.plusParameter(adapter.targetType))
             .addSuperclassConstructorParameter(
@@ -100,9 +127,9 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
     }
 }
 
-fun GeneratableJsonAdapter.createRenderer(): AdapterRenderer =
+fun GeneratableJsonAdapter.createRenderer(createAnnotationsUsingConstructor: Boolean): AdapterRenderer =
     when (this) {
-        is DataClassJsonAdapter -> DataClassAdapterRenderer(this)
+        is DataClassJsonAdapter -> DataClassAdapterRenderer(this, createAnnotationsUsingConstructor)
         is EnumJsonAdapter -> EnumAdapterRenderer(this)
         is ObjectJsonAdapter -> ObjectAdapterRenderer(this)
         is SealedClassJsonAdapter -> SealedClassAdapterRenderer(this)

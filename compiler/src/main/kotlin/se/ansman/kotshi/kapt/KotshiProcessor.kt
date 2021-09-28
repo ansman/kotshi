@@ -23,6 +23,7 @@ import javax.lang.model.util.Types
 @AutoService(Processor::class)
 @IncrementalAnnotationProcessor(AGGREGATING)
 class KotshiProcessor : AbstractProcessor() {
+    private var createAnnotationsUsingConstructor: Boolean? = null
     private lateinit var elements: Elements
     private lateinit var types: Types
     private lateinit var metadataAccessor: MetadataAccessor
@@ -41,7 +42,8 @@ class KotshiProcessor : AbstractProcessor() {
                 adapters = adapters,
                 types = types,
                 elements = processingEnv.elementUtils,
-                sourceVersion = processingEnv.sourceVersion
+                sourceVersion = processingEnv.sourceVersion,
+                createAnnotationsUsingConstructor  = createAnnotationsUsingConstructor,
             ),
             FactoryProcessingStep(
                 processor = this,
@@ -59,6 +61,7 @@ class KotshiProcessor : AbstractProcessor() {
     @Synchronized
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
+        createAnnotationsUsingConstructor = processingEnv.options["kotshi.createAnnotationsUsingConstructor"]?.toBooleanStrict()
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils
         metadataAccessor = MetadataAccessor(ElementsClassInspector.create(elements, processingEnv.typeUtils))
@@ -74,6 +77,8 @@ class KotshiProcessor : AbstractProcessor() {
      */
     override fun getSupportedAnnotationTypes(): Set<String> =
         getSupportedAnnotationClasses().mapTo(mutableSetOf()) { it.canonicalName }
+
+    override fun getSupportedOptions(): Set<String> = setOf("kotshi.createAnnotationsUsingConstructor")
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         if (!roundEnv.processingOver()) {

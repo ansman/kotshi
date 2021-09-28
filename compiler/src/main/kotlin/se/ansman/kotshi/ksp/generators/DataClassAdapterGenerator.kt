@@ -26,9 +26,9 @@ class DataClassAdapterGenerator(
     environment: SymbolProcessorEnvironment,
     resolver: Resolver,
     element: KSClassDeclaration,
-    globalConfig: GlobalConfig
+    globalConfig: GlobalConfig,
+    private val createAnnotationsUsingConstructor: Boolean
 ) : AdapterGenerator(environment, resolver, element, globalConfig) {
-
 
     init {
         require(Modifier.DATA in element.modifiers)

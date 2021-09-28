@@ -34,7 +34,8 @@ class AdaptersProcessingStep(
     private val adapters: MutableList<GeneratedAdapter>,
     private val types: Types,
     private val elements: Elements,
-    private val sourceVersion: SourceVersion
+    private val sourceVersion: SourceVersion,
+    private val createAnnotationsUsingConstructor: Boolean?
 ) : KotshiProcessor.GeneratingProcessingStep() {
     override val annotations: Set<Class<out Annotation>> =
         setOf(
@@ -57,7 +58,7 @@ class AdaptersProcessingStep(
 
         for (element in elementsByAnnotation[JsonSerializable::class.java]) {
             try {
-                val metadata = metadataAccessor.getMetadata(element)
+                val metadata = metadataAccessor.getKmClass(element)
                 val typeElement = MoreElements.asType(element)
 
                 val generator = when {
@@ -103,7 +104,7 @@ class AdaptersProcessingStep(
                     )
                 }
 
-                adapters += generator.generateAdapter(sourceVersion, filer)
+                adapters += generator.generateAdapter(sourceVersion, filer, createAnnotationsUsingConstructor)
             } catch (e: KaptProcessingError) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }

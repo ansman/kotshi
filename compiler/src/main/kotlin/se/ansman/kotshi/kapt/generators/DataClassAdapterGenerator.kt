@@ -65,7 +65,7 @@ class DataClassAdapterGenerator(
         return Property.create(
             name = name,
             type = type.copy(annotations = emptyList()),
-            jsonQualifiers = annotations.qualifiers(),
+            jsonQualifiers = annotations.qualifiers(metadataAccessor),
             globalConfig = globalConfig,
             useAdaptersForPrimitives = config.useAdaptersForPrimitives,
             parameterJsonName = annotations.jsonName(),
