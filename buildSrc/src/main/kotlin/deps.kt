@@ -11,7 +11,7 @@ object deps {
     }
 
     object kotlinpoet {
-        const val version = "1.10.1"
+        const val version = "1.10.2"
         const val core = "com.squareup:kotlinpoet:$version"
         const val metadata = "com.squareup:kotlinpoet-metadata:$version"
         const val ksp = "com.squareup:kotlinpoet-ksp:$version"
@@ -31,7 +31,7 @@ object deps {
     }
 
     object ksp {
-        const val version = "1.5.31-1.0.0"
+        const val version = "1.6.0-1.0.1"
         const val api = "com.google.devtools.ksp:symbol-processing-api:$version"
     }
 }
