@@ -94,6 +94,7 @@ This behavior is enabled by default when using language version 1.6 but can be e
 option. You can enable it like this:
 ```kotlin
 // If you are using Groovy build scripts this will be `tasks.withType(KotlinCompile) {`
+// This is only needed when using Kotlin 1.5
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         languageVersion = "1.6"
@@ -103,13 +104,13 @@ tasks.withType<KotlinCompile> {
 // When using KAPT
 kapt {
     arguments {
-        arg("kotshi.createAnnotationsUsingConstructor", true)
+        arg("kotshi.createAnnotationsUsingConstructor", false)
     }
 }
 
 // When using KSP
 ksp {
-    arg("kotshi.createAnnotationsUsingConstructor", "true")
+    arg("kotshi.createAnnotationsUsingConstructor", "false")
 }
 ```
 
@@ -127,8 +128,6 @@ Limitations
 
 Download
 ---
-There is experimental support for [KSP](https://github.com/google/ksp) which promises faster compile times compared to
-KAPT. Until KSP becomes stable this support in Koshi is experimental and can change at any time.
 
 ```kotlin
 plugins {
