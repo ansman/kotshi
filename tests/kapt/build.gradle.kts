@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     `test-library`
     kotlin("kapt")
@@ -9,15 +7,15 @@ dependencies {
     kapt(projects.compiler)
 }
 
-if (providers.gradleProperty("kotshi.createAnnotationsUsingConstructor").forUseAtConfigurationTime().orNull.toBoolean()) {
-    tasks.withType<KotlinCompile> {
-        kotlinOptions {
-            languageVersion = "1.6"
-        }
-    }
+val createAnnotationsUsingConstructor = providers.gradleProperty("kotshi.createAnnotationsUsingConstructor")
+    .forUseAtConfigurationTime()
+    .orNull
+    ?.toBoolean()
+
+if (createAnnotationsUsingConstructor != null) {
     kapt {
         arguments {
-            arg("kotshi.createAnnotationsUsingConstructor", true)
+            arg("kotshi.createAnnotationsUsingConstructor", createAnnotationsUsingConstructor)
         }
     }
 }
