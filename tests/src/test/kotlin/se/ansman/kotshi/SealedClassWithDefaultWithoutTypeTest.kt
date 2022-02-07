@@ -17,6 +17,12 @@ class SealedClassWithDefaultWithoutTypeWithoutTypeTest {
     }
 
     @Test
+    fun reading_withFailOnUnknown() {
+        val json = """{"type":"type2","bar":"bar2"}"""
+        assertEquals(SealedClassWithDefaultWithoutTypeSubclass2("bar2"), adapter.failOnUnknown().fromJson(json))
+    }
+
+    @Test
     fun reading_default() {
         assertEquals(SealedClassWithDefaultWithoutTypeDefault, adapter.fromJson("""{"type":"unknown"}"""))
     }

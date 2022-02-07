@@ -57,7 +57,10 @@ class DataClassAdapterRenderer(
     private val createAnnotationsUsingConstructor: Boolean
 ) : AdapterRenderer(adapter) {
     private val adapterKeys = adapter.adapterKeys.generatePropertySpecs()
-    private val optionsProperty = jsonOptionsProperty(adapter.serializedProperties.map { it.jsonName })
+    private val propertyNames = adapter.properties.mapTo(mutableSetOf()) { it.jsonName }
+    private val parentLabels = adapter.polymorphicLabels.filterKeys { it !in propertyNames }
+    private val serializedNames = adapter.serializedProperties.map { it.jsonName }.toSet()
+    private val optionsProperty = jsonOptionsProperty(serializedNames + parentLabels.keys)
 
     override fun TypeSpec.Builder.renderSetup() {
         primaryConstructor(
@@ -102,12 +105,9 @@ class DataClassAdapterRenderer(
         writerParameter: ParameterSpec,
         valueParameter: ParameterSpec
     ) {
-        val propertyNames = adapter.properties.mapTo(mutableSetOf()) { it.jsonName }
-        val labels = adapter.polymorphicLabels.filterKeys { it !in propertyNames }
-
         fun addBody(): FunSpec.Builder =
             addStatement("%N.beginObject()", writerParameter)
-                .applyEach(labels.entries) { (key, value) ->
+                .applyEach(parentLabels.entries) { (key, value) ->
                     addStatement("%N.name(%S).value(%S)", writerParameter, key, value)
                 }
                 .applyEach(adapter.serializedProperties) { property ->
@@ -237,6 +237,12 @@ class DataClassAdapterRenderer(
                                     )
                                 }
                             }
+                        }
+                    }
+                    parentLabels.keys.forEachIndexed { i, name ->
+                        addWhenBranch("%L", variables.size + i) {
+                            addComment("Consumes the '%L' label key from the parent", name)
+                            addStatement("%N.nextString()", readerParameter)
                         }
                     }
                     addWhenBranch("-1") {
