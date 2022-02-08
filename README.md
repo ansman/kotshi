@@ -87,7 +87,7 @@ desired qualifiers and Kotshi will pick them up.
 ### Options
 
 #### `kotshi.createAnnotationsUsingConstructor`
-This option enables a new way of creating annotations instances at runtime. Normally Kotshi uses reflection to create 
+This option enables a new way of creating annotations instances at runtime. Normally Kotshi uses reflection to create
 the qualifier annotations but as of 1.5.30 of Kotlin you can enable creating annotations by calling the constructor.
 
 This behavior is enabled by default when using language version 1.6 but can be explicitly enabled or disabled using this
@@ -138,7 +138,7 @@ plugins {
 }
 
 dependencies {
-    val kotshiVersion = "2.7.0"
+    val kotshiVersion = "2.7.1"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
     // If you are using KSP then you use instead
