@@ -65,6 +65,8 @@ object Types {
         val internalKotshiApi = ClassName("se.ansman.kotshi", "InternalKotshiApi")
         val namedJsonAdapter = NamedJsonAdapter::class.java.asClassName()
         val jsonDefaultValue = JsonDefaultValue::class.java.asClassName()
+        @OptIn(ExperimentalKotshiApi::class)
+        val jsonProperty = JsonProperty::class.java.asClassName()
     }
 
     object Moshi {

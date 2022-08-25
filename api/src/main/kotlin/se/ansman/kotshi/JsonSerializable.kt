@@ -9,6 +9,10 @@ import com.squareup.moshi.JsonWriter
  * Annotation to be placed on classes that Kotshi should generate a [JsonAdapter] for.
  *
  * The annotation should only be placed on Kotlin data classes or Kotlin enums.
+ *
+ * To customize the name of a property when serialized, use the [JsonProperty] annotation on the property or enum
+ * instance;
+ *
  * [JsonQualifier] is supported and so is the [Json] annotation. They can be placed on either the property field or the
  * property parameter.
  *
@@ -22,7 +26,7 @@ import com.squareup.moshi.JsonWriter
  *     @get:JvmName("hasVerifiedAccount") @Getter("hasVerifiedAccount")
  *     val hasVerifiedAccount: Boolean,
  *     // This property has a different name in the Json than here so @Json must be applied
- *     @Json(name = "sign_up_date")
+ *     @JsonProperty(name = "sign_up_date")
  *     val signUpDate: Date,
  *     // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
  *     @NullIfEmpty

@@ -7,6 +7,8 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
+import se.ansman.kotshi.ExperimentalKotshiApi
+import se.ansman.kotshi.JsonProperty
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.PrimitiveAdapters
 import se.ansman.kotshi.SerializeNulls
@@ -47,6 +49,7 @@ class DataClassAdapterGenerator(
             serializeNulls = serializeNulls,
         )
 
+    @OptIn(ExperimentalKotshiApi::class)
     private fun KSValueParameter.toProperty(): Property {
         val name = name!!.asString()
         val type = type.toTypeName(typeParameterResolver)
@@ -75,8 +78,10 @@ class DataClassAdapterGenerator(
             jsonQualifiers = qualifiers,
             globalConfig = globalConfig,
             useAdaptersForPrimitives = annotation.getEnumValue("useAdaptersForPrimitives", PrimitiveAdapters.DEFAULT),
-            parameterJsonName = getAnnotation<Json>()?.getValue("name"),
-            propertyJsonName = property.getAnnotation<Json>()?.getValue("name"),
+            parameterJsonName = (getAnnotation<JsonProperty>() ?: getAnnotation<Json>())
+                ?.getValue("name"),
+            propertyJsonName = (property.getAnnotation<JsonProperty>() ?: property.getAnnotation<Json>())
+                ?.getValue("name"),
             isTransient = isTransient,
             hasDefaultValue = hasDefault
         )

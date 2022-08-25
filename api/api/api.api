@@ -1,7 +1,14 @@
+public abstract interface annotation class se/ansman/kotshi/ExperimentalKotshiApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class se/ansman/kotshi/InternalKotshiApi : java/lang/annotation/Annotation {
 }
 
 public abstract interface annotation class se/ansman/kotshi/JsonDefaultValue : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class se/ansman/kotshi/JsonProperty : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
 }
 
 public abstract interface annotation class se/ansman/kotshi/JsonSerializable : java/lang/annotation/Annotation {

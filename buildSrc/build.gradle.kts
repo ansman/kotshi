@@ -18,6 +18,11 @@ dependencies {
     api("org.jetbrains.dokka:dokka-gradle-plugin:1.7.10")
 }
 
+tasks.compileJava {
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+}
+
 tasks.compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"

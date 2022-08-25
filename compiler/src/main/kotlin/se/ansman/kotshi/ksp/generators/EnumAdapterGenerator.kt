@@ -5,7 +5,9 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.moshi.Json
+import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.JsonProperty
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getValue
@@ -41,9 +43,12 @@ class EnumAdapterGenerator(
         )
     }
 
+    @OptIn(ExperimentalKotshiApi::class)
     private fun KSClassDeclaration.toEnumEntry(): EnumJsonAdapter.Entry =
         EnumJsonAdapter.Entry(
             name = simpleName.getShortName(),
-            serializedName = getAnnotation<Json>()?.getValue("name") ?: simpleName.getShortName()
+            serializedName = (getAnnotation<JsonProperty>() ?: getAnnotation<Json>())
+                ?.getValue("name")
+                ?: simpleName.getShortName()
         )
 }

@@ -32,6 +32,7 @@ class TestEnums {
     @Test
     fun customName() {
         assertEquals(SomeEnum.VALUE3, adapter1.fromJson("\"VALUE3-alt\""))
+        assertEquals(SomeEnum.VALUE4, adapter1.fromJson("\"VALUE4-alt\""))
     }
 
     @Test
