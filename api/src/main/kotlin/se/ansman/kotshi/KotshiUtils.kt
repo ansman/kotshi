@@ -76,7 +76,7 @@ object KotshiUtils {
                 .toList()
 
             init {
-                val extraArguments = annotationArguments.keys - annotationMethods.map { it.name }
+                val extraArguments = annotationArguments.keys - annotationMethods.map { it.name }.toSet()
                 require(extraArguments.isEmpty()) {
                     "Found annotation values for unknown methods: $extraArguments"
                 }

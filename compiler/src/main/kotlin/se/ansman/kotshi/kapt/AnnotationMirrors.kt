@@ -9,4 +9,4 @@ inline fun <reified R : Any> AnnotationMirror.getValueOrNull(name: String): R? =
     elementValues.entries
         .find { it.key.simpleName.contentEquals(name) }
         ?.value
-        ?.value as R
+        ?.value as R?

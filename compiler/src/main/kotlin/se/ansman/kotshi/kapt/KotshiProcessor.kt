@@ -43,7 +43,7 @@ class KotshiProcessor : AbstractProcessor() {
                 types = types,
                 elements = processingEnv.elementUtils,
                 sourceVersion = processingEnv.sourceVersion,
-                createAnnotationsUsingConstructor  = createAnnotationsUsingConstructor,
+                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
             ),
             FactoryProcessingStep(
                 processor = this,

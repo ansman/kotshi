@@ -107,16 +107,13 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                             Modifier.DATA in annotated.modifiers -> {
                                 DataClassAdapterGenerator(
                                     environment = environment,
-                                    resolver = resolver,
                                     element = annotated,
                                     globalConfig = globalConfig,
-                                    createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
                                 )
                             }
                             Modifier.SEALED in annotated.modifiers -> {
                                 SealedClassAdapterGenerator(
                                     environment = environment,
-                                    resolver = resolver,
                                     targetElement = annotated,
                                     globalConfig = globalConfig
                                 )
@@ -131,13 +128,11 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     }
                     ClassKind.ENUM_CLASS -> EnumAdapterGenerator(
                         environment = environment,
-                        resolver = resolver,
                         element = annotated,
                         globalConfig = globalConfig
                     )
                     ClassKind.OBJECT -> ObjectAdapterGenerator(
                         environment = environment,
-                        resolver = resolver,
                         element = annotated,
                         globalConfig = globalConfig
                     )

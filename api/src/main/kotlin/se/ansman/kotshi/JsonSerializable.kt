@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonWriter
  *
  * @param useAdaptersForPrimitives A flag to enable/disable the use of adapters to read and write primitive values.
  *                                 The default value is the same as [KotshiJsonAdapterFactory.useAdaptersForPrimitives].
- *                                 If you don't actually need it it's better to not use adapters for performance reasons.
+ *                                 If you don't actually need it, it's better to not use adapters for performance reasons.
  * @param serializeNulls Enable or disable [null serialization][JsonWriter.serializeNulls] for this adapter and child
  *                       adapters (unless they override it).
  */

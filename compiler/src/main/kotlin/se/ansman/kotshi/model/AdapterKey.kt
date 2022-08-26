@@ -24,7 +24,6 @@ data class AdapterKey(
     val type: TypeName,
     val jsonQualifiers: Set<AnnotationModel>
 )
-
 fun AdapterKey.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
     (type.tag<TypeAliasTag>()?.abbreviatedType ?: type).asRuntimeType(typeVariableAccessor)
 

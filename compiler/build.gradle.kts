@@ -6,8 +6,7 @@ plugins {
 tasks.compileKotlin {
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xopt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
-            "-Xopt-in=com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview",
+            "-opt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
         )
     }
 }

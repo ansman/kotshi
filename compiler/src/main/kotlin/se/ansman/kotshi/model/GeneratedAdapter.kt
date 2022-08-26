@@ -11,7 +11,6 @@ data class GeneratedAdapter(
     val adapterClassName: ClassName = ClassName(adapter.targetPackageName, adapter.adapterName)
 
     val typeSpec = fileSpec.members.filterIsInstance<TypeSpec>().single()
-
     val requiresTypes: Boolean
         get() = typeSpec.primaryConstructor?.parameters?.any { it.name == "types" } ?: false
 

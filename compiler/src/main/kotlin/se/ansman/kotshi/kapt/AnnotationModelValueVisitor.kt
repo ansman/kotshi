@@ -1,26 +1,17 @@
 package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreTypes
-import com.squareup.kotlinpoet.ARRAY
-import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BOOLEAN_ARRAY
-import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.BYTE_ARRAY
-import com.squareup.kotlinpoet.CHAR
 import com.squareup.kotlinpoet.CHAR_ARRAY
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.DOUBLE
 import com.squareup.kotlinpoet.DOUBLE_ARRAY
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
-import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FLOAT_ARRAY
-import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.INT_ARRAY
-import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.LONG_ARRAY
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.SHORT_ARRAY
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
@@ -123,24 +114,7 @@ class AnnotationModelValueVisitor(
                 ?.constructors
                 ?.find { it.flags.isPrimaryConstructor }
                 ?.valueParameters
-                ?.associateBy({ it.name }) {
-                    it.type?.toAnnotationTypeName()
-                        ?: when (val type = it.varargElementType!!.toAnnotationTypeName()) {
-                            BOOLEAN -> BOOLEAN_ARRAY
-                            BYTE -> BYTE_ARRAY
-                            U_BYTE -> U_BYTE_ARRAY
-                            SHORT -> SHORT_ARRAY
-                            U_SHORT -> U_SHORT_ARRAY
-                            INT -> INT_ARRAY
-                            U_INT -> U_INT_ARRAY
-                            LONG -> LONG_ARRAY
-                            U_LONG -> U_LONG_ARRAY
-                            CHAR -> CHAR_ARRAY
-                            FLOAT -> FLOAT_ARRAY
-                            DOUBLE -> DOUBLE_ARRAY
-                            else -> ARRAY.parameterizedBy(type)
-                        }
-                }
+                ?.associateBy({ it.name }) { it.type.toAnnotationTypeName() }
                 ?: emptyMap()
 
             return AnnotationModel(
