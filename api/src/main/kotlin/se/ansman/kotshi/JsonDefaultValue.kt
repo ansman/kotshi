@@ -12,9 +12,9 @@ package se.ansman.kotshi
  * ```
  * @JsonSerializable
  * enum class SomeEnum {
- *     @Json(name = "some-value")
+ *     @JsonProperty(name = "some-value")
  *     SOME_VALUE,
- *     @Json(name = "some-other-value")
+ *     @JsonProperty(name = "some-other-value")
  *     SOME_OTHER_VALUE,
  *     @JsonDefaultValue
  *     UNKNOWN

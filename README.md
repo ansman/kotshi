@@ -21,8 +21,8 @@ data class Person(
     val name: String,
     val email: String?,
     val hasVerifiedAccount: Boolean,
-    // This property has a different name in the Json than here so @Json must be applied.
-    @Json(name = "created_at")
+    // This property has a different name in the Json than here so @JsonProperty must be applied.
+    @JsonProperty(name = "created_at")
     val signUpDate: Date,
     // This field has a default value which will be used if the field is missing.
     val jobTitle: String? = null

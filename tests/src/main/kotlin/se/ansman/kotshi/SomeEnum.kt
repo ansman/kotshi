@@ -6,8 +6,10 @@ import com.squareup.moshi.Json
 enum class SomeEnum {
     VALUE1,
     VALUE2,
-    @Json(name = "VALUE3-alt")
+    @OptIn(ExperimentalKotshiApi::class)
+    @JsonProperty(name = "VALUE3-alt")
     VALUE3,
+    @Json(name = "VALUE4-alt")
     VALUE4,
     VALUE5
 }
