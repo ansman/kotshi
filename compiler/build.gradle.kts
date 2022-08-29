@@ -21,6 +21,6 @@ dependencies {
     implementation(deps.kotlinpoet.core)
     implementation(deps.kotlinpoet.metadata)
     implementation(deps.kotlinpoet.ksp)
-    implementation(deps.moshi)
+    implementation(deps.moshi.oldestSupported)
     implementation(deps.ksp.api)
 }

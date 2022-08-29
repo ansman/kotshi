@@ -104,10 +104,12 @@ private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
                 Value.Class(declaration.toClassName())
             }
         }
+
         is KSName -> Value.Enum(
             enumType = ClassName.bestGuess(getQualifier()),
             value = getShortName(),
         )
+
         is KSAnnotation -> Value.Annotation(toAnnotationModel())
         is String -> Value.String(this)
         is List<*> -> when (type) {
@@ -134,6 +136,7 @@ private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
                 )
             }
         }
+
         else -> when (type) {
             FLOAT -> Value.Float(this as Float)
             CHAR -> Value.Char(this as Char)
