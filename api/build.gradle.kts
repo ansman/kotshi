@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    api(deps.moshi)
+    api(deps.moshi.oldestSupported)
     testImplementation(deps.junit)
     testImplementation(deps.truth)
 }

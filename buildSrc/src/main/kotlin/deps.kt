@@ -21,7 +21,10 @@ object deps {
     const val junit = "junit:junit:4.12"
     const val truth = "com.google.truth:truth:0.30"
     const val compiletesting = "com.google.testing.compile:compile-testing:0.10"
-    const val moshi = "com.squareup.moshi:moshi:1.8.0"
+    object moshi {
+        const val oldestSupported = "com.squareup.moshi:moshi:1.8.0"
+        const val current = "com.squareup.moshi:moshi:1.13.0"
+    }
     const val findBugs = "com.google.code.findbugs:jsr305:3.0.2"
 
     object incap {

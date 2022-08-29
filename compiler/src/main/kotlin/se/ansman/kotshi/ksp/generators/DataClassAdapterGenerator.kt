@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
 import se.ansman.kotshi.ExperimentalKotshiApi
+import se.ansman.kotshi.JSON_UNSET_NAME
 import se.ansman.kotshi.JsonProperty
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.PrimitiveAdapters
@@ -66,22 +67,28 @@ class DataClassAdapterGenerator(
             throw KspProcessingError("Property $name must be public or internal", property)
         }
 
-        val isTransient = property.getAnnotation<Transient>() != null
+
+        val jsonAnnotation = getAnnotation<Json>()
+        val propertyJsonAnnotation = property.getAnnotation<Json>()
+        @Suppress("RemoveExplicitTypeArguments")
+        val isTransient = property.getAnnotation<Transient>() != null ||
+            (jsonAnnotation ?: propertyJsonAnnotation)?.getValue<Boolean?>("ignore") ?: false
 
         if (isTransient && !hasDefault) {
             throw KspProcessingError("Transient property $name must declare a default value", property)
         }
-
         return Property.create(
             name = name,
             type = type,
             jsonQualifiers = qualifiers,
             globalConfig = globalConfig,
             useAdaptersForPrimitives = annotation.getEnumValue("useAdaptersForPrimitives", PrimitiveAdapters.DEFAULT),
-            parameterJsonName = (getAnnotation<JsonProperty>() ?: getAnnotation<Json>())
-                ?.getValue("name"),
-            propertyJsonName = (property.getAnnotation<JsonProperty>() ?: property.getAnnotation<Json>())
-                ?.getValue("name"),
+            parameterJsonName = (getAnnotation<JsonProperty>() ?: jsonAnnotation)
+                ?.getValue<String?>("name")
+                ?.takeUnless { it == JSON_UNSET_NAME },
+            propertyJsonName = (property.getAnnotation<JsonProperty>() ?: propertyJsonAnnotation)
+                ?.getValue<String?>("name")
+                ?.takeUnless { it == JSON_UNSET_NAME },
             isTransient = isTransient,
             hasDefaultValue = hasDefault
         )

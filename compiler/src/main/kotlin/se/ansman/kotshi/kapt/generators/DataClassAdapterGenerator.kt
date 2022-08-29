@@ -3,11 +3,11 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.metadata.isData
-import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.isJsonIgnore
 import se.ansman.kotshi.kapt.jsonName
 import se.ansman.kotshi.kapt.qualifiers
 import se.ansman.kotshi.model.DataClassJsonAdapter
@@ -57,9 +57,10 @@ class DataClassAdapterGenerator(
             throw KaptProcessingError("Property $name must be public or internal", targetElement)
         }
 
-        val isTransient = property.annotations.any { it.typeName == se.ansman.kotshi.Types.Kotlin.transient }
+        val isTransient = property.annotations.any { it.typeName == se.ansman.kotshi.Types.Kotlin.transient } ||
+            annotations.isJsonIgnore() || property.annotations.isJsonIgnore()
         if (isTransient && defaultValue == null) {
-            throw KaptProcessingError("Transient property $name must declare a default value", tag()!!)
+            throw KaptProcessingError("Transient property $name must declare a default value", targetElement)
         }
 
         return Property.create(
