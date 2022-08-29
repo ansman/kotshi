@@ -16,7 +16,6 @@ data class Property(
     val shouldUseAdapter: Boolean,
     val isTransient: Boolean
 ) {
-
     init {
         if (isTransient) {
             require(hasDefaultValue)

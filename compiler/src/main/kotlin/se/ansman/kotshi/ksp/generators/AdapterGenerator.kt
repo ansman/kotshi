@@ -4,7 +4,6 @@ import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isInternal
 import com.google.devtools.ksp.isLocal
 import com.google.devtools.ksp.isPublic
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
@@ -25,10 +24,8 @@ import se.ansman.kotshi.model.GeneratedAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.renderer.createRenderer
 
-@Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
     protected val environment: SymbolProcessorEnvironment,
-    protected val resolver: Resolver,
     protected val targetElement: KSClassDeclaration,
     protected val globalConfig: GlobalConfig,
 ) {

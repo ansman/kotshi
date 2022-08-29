@@ -1,6 +1,5 @@
 package se.ansman.kotshi.ksp.generators
 
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -25,10 +24,9 @@ import se.ansman.kotshi.model.getSealedSubtypes
 
 class SealedClassAdapterGenerator(
     environment: SymbolProcessorEnvironment,
-    resolver: Resolver,
     targetElement: KSClassDeclaration,
     globalConfig: GlobalConfig
-) : AdapterGenerator(environment, resolver, targetElement, globalConfig) {
+) : AdapterGenerator(environment, targetElement, globalConfig) {
     init {
         require(SEALED in targetElement.modifiers)
     }

@@ -1,5 +1,3 @@
-@file:Suppress("NOTHING_TO_INLINE")
-
 package se.ansman.kotshi
 
 import com.google.auto.common.GeneratedAnnotations
@@ -16,7 +14,6 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.asClassName
 import se.ansman.kotshi.kapt.KotshiProcessor
 import javax.lang.model.SourceVersion

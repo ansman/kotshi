@@ -1,7 +1,6 @@
 package se.ansman.kotshi.ksp.generators
 
 import com.google.devtools.ksp.getDeclaredProperties
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
@@ -24,11 +23,9 @@ import se.ansman.kotshi.model.Property
 
 class DataClassAdapterGenerator(
     environment: SymbolProcessorEnvironment,
-    resolver: Resolver,
     element: KSClassDeclaration,
-    globalConfig: GlobalConfig,
-    private val createAnnotationsUsingConstructor: Boolean
-) : AdapterGenerator(environment, resolver, element, globalConfig) {
+    globalConfig: GlobalConfig
+) : AdapterGenerator(environment, element, globalConfig) {
 
     init {
         require(Modifier.DATA in element.modifiers)

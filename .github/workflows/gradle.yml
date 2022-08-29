@@ -17,7 +17,7 @@ jobs:
         java-version: '11'
         cache: 'gradle'
     - name: Run Checks
-      run: ./gradlew check --stacktrace
+      run: ./gradlew check --stacktrace -Pkotshi.createAnnotationsUsingConstructor=false
   testWithAnnotations:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +28,7 @@ jobs:
         java-version: '11'
         cache: 'gradle'
     - name: Run Checks
-      run: ./gradlew check --stacktrace -Pkotshi.createAnnotationsUsingConstructor=true
+      run: ./gradlew check --stacktrace
   deploySnapshot:
     runs-on: ubuntu-latest
     needs: [test, testWithAnnotations]

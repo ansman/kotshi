@@ -42,6 +42,7 @@ abstract class AdapterGenerator(
     protected val targetElement: TypeElement,
     protected val kmClass: KmClass,
     protected val globalConfig: GlobalConfig,
+    @Suppress("unused") // Useful to have for debugging
     protected val messager: Messager,
 ) {
     protected val targetTypeSpec = metadataAccessor.getTypeSpec(kmClass)

@@ -2,7 +2,6 @@ package se.ansman.kotshi.model
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 
@@ -18,15 +17,6 @@ sealed class GeneratableJsonAdapter {
             rawType
         } else {
             rawType.parameterizedBy(targetTypeVariables)
-        }
-    }
-
-    val wildcardTargetType: TypeName by lazy {
-        val rawType = ClassName(targetPackageName, targetSimpleNames)
-        if (targetTypeVariables.isEmpty()) {
-            rawType
-        } else {
-            rawType.parameterizedBy(targetTypeVariables.map { STAR })
         }
     }
 

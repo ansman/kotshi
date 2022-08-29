@@ -8,7 +8,6 @@ dependencies {
 }
 
 val createAnnotationsUsingConstructor = providers.gradleProperty("kotshi.createAnnotationsUsingConstructor")
-    .forUseAtConfigurationTime()
     .orNull
     ?.toBoolean()
 

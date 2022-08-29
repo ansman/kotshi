@@ -1,6 +1,5 @@
 package se.ansman.kotshi.ksp.generators
 
-import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -16,10 +15,9 @@ import se.ansman.kotshi.model.GlobalConfig
 
 class EnumAdapterGenerator(
     environment: SymbolProcessorEnvironment,
-    resolver: Resolver,
     element: KSClassDeclaration,
     globalConfig: GlobalConfig
-) : AdapterGenerator(environment, resolver, element, globalConfig) {
+) : AdapterGenerator(environment, element, globalConfig) {
     init {
         require(Modifier.ENUM in element.modifiers)
     }

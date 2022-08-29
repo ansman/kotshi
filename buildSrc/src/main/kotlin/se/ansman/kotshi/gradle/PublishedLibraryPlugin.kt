@@ -20,7 +20,7 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
         pluginManager.apply("signing")
         pluginManager.apply("org.jetbrains.dokka")
 
-        version = target.providers.gradleProperty("version").forUseAtConfigurationTime().get()
+        version = target.providers.gradleProperty("version").get()
         group = "se.ansman.kotshi"
 
         tasks.named("dokkaJavadoc", DokkaTask::class.java) { task ->
@@ -61,11 +61,11 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
                 repo.name = "mavenCentral"
                 repo.setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
                 with(repo.credentials) {
-                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime()
-                        .orElse(providers.environmentVariable("SONATYPE_USERNAME").forUseAtConfigurationTime())
+                    username = providers.gradleProperty("sonatype.username")
+                        .orElse(providers.environmentVariable("SONATYPE_USERNAME"))
                         .orNull
-                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime()
-                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD").forUseAtConfigurationTime())
+                    password = providers.gradleProperty("sonatype.password")
+                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD"))
                         .orNull
                 }
             }
@@ -74,11 +74,11 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
                 repo.name = "sonatypeSnapshots"
                 repo.setUrl("https://oss.sonatype.org/content/repositories/snapshots/")
                 with(repo.credentials) {
-                    username = providers.gradleProperty("sonatype.username").forUseAtConfigurationTime()
-                        .orElse(providers.environmentVariable("SONATYPE_USERNAME").forUseAtConfigurationTime())
+                    username = providers.gradleProperty("sonatype.username")
+                        .orElse(providers.environmentVariable("SONATYPE_USERNAME"))
                         .orNull
-                    password = providers.gradleProperty("sonatype.password").forUseAtConfigurationTime()
-                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD").forUseAtConfigurationTime())
+                    password = providers.gradleProperty("sonatype.password")
+                        .orElse(providers.environmentVariable("SONATYPE_PASSWORD"))
                         .orNull
                 }
             }
@@ -123,10 +123,10 @@ abstract class PublishedLibraryPlugin : Plugin<Project> {
         }
 
 
-        if (!providers.environmentVariable("CI").forUseAtConfigurationTime().orNull.toBoolean()) {
+        if (!providers.environmentVariable("CI").orNull.toBoolean()) {
             with(extensions.getByType(SigningExtension::class.java)) {
                 gradle.taskGraph.whenReady { graph ->
-                    if (graph.hasTask("${path}:sign${publication.name.capitalize(Locale.ROOT)}Publication")) {
+                    if (graph.hasTask("${path}:sign${publication.name.replaceFirstChar { it.titlecase(Locale.ROOT) }}Publication")) {
                         rootProject.extensions.extraProperties.getOrPut("signing.gnupg.passphrase") {
                             val inputHandler = serviceOf<UserInputHandler>()
                             inputHandler.askQuestion("Signing key passphrase: ", "")
