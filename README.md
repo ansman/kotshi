@@ -138,7 +138,7 @@ plugins {
 }
 
 dependencies {
-    val kotshiVersion = "2.7.1"
+    val kotshiVersion = "2.8.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
     // If you are using KSP then you use instead
