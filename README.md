@@ -12,6 +12,8 @@ written them by hand yourself. It will automatically regenerate the adapters whe
 It's made to work with minimal setup, through there are [limitations](#limitations).
 Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
 
+You can find the generated documentation by visiting https://kotshi.ansman.se/
+
 Usage
 ---
 First you must annotate your objects with the `@JsonSerializable` annotation:
