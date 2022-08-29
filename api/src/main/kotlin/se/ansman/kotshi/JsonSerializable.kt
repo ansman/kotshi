@@ -28,7 +28,8 @@ import com.squareup.moshi.JsonWriter
  *     // This property has a different name in the Json than here so @Json must be applied
  *     @JsonProperty(name = "sign_up_date")
  *     val signUpDate: Date,
- *     // This field has a json qualifier applied, the generated adapter will request an adapter with the qualifier.
+ *     // This field has a json qualifier applied, the generated adapter will request an
+ *     // adapter with the qualifier.
  *     @NullIfEmpty
  *     val jobTitle: String?
  * )
