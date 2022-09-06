@@ -3,7 +3,10 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.metadata.isData
+import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
+import kotlinx.metadata.KmConstructor
+import kotlinx.metadata.jvm.signature
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
@@ -34,7 +37,7 @@ class DataClassAdapterGenerator(
 
     private val config = element.getAnnotation(JsonSerializable::class.java)
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter =
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
         DataClassJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,
@@ -45,7 +48,8 @@ class DataClassAdapterGenerator(
                 ?.map { parameter -> parameter.toProperty() }
                 ?.takeUnless { it.isEmpty() }
                 ?: throw KaptProcessingError("Could not find any data class properties.", targetElement),
-            serializeNulls = config.serializeNulls
+            serializeNulls = config.serializeNulls,
+            constructorSignature = targetTypeSpec.primaryConstructor!!.tag<KmConstructor>()!!.signature!!.toString()
         )
 
     private fun ParameterSpec.toProperty(): Property {

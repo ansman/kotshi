@@ -10,6 +10,7 @@ data class DataClassJsonAdapter(
     val polymorphicLabels: Map<String, String>,
     val properties: List<Property>,
     val serializeNulls: SerializeNulls,
+    val constructorSignature: String,
 ) : GeneratableJsonAdapter() {
     val adapterKeys = properties
         .asSequence()

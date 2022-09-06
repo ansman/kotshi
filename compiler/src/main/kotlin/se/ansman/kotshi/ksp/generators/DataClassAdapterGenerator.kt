@@ -1,6 +1,8 @@
 package se.ansman.kotshi.ksp.generators
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
@@ -27,8 +29,9 @@ import se.ansman.kotshi.model.Property
 class DataClassAdapterGenerator(
     environment: SymbolProcessorEnvironment,
     element: KSClassDeclaration,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(environment, element, globalConfig) {
+    globalConfig: GlobalConfig,
+    resolver: Resolver,
+) : AdapterGenerator(environment, element, globalConfig, resolver) {
 
     init {
         require(Modifier.DATA in element.modifiers)
@@ -40,7 +43,8 @@ class DataClassAdapterGenerator(
         .takeUnless { it == SerializeNulls.DEFAULT }
         ?: globalConfig.serializeNulls
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter =
+    @OptIn(KspExperimental::class)
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
         DataClassJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,
@@ -48,6 +52,8 @@ class DataClassAdapterGenerator(
             polymorphicLabels = polymorphicLabels,
             properties = targetElement.primaryConstructor!!.parameters.map { it.toProperty() },
             serializeNulls = serializeNulls,
+            constructorSignature = resolver.mapToJvmSignature(targetElement.primaryConstructor!!)
+                ?: throw KspProcessingError("Failed to resolve signature for constructor", targetElement.primaryConstructor!!),
         )
 
     @OptIn(ExperimentalKotshiApi::class)

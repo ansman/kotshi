@@ -4,8 +4,12 @@ import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isInternal
 import com.google.devtools.ksp.isLocal
 import com.google.devtools.ksp.isPublic
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -13,6 +17,7 @@ import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import com.squareup.kotlinpoet.ksp.writeTo
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
+import se.ansman.kotshi.ProguardConfig
 import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.getAnnotation
@@ -22,11 +27,14 @@ import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.renderer.createRenderer
+import java.io.OutputStreamWriter
+import java.nio.charset.StandardCharsets
 
 abstract class AdapterGenerator(
     protected val environment: SymbolProcessorEnvironment,
     protected val targetElement: KSClassDeclaration,
     protected val globalConfig: GlobalConfig,
+    protected val resolver: Resolver,
 ) {
     protected val typeParameterResolver = targetElement.toTypeParameterResolver()
     protected val targetClassName = targetElement.toClassName()
@@ -69,7 +77,7 @@ abstract class AdapterGenerator(
                 )
         }
 
-        val generatedAdapter = getGenerableAdapter()
+        val generatedAdapter = getGeneratableJsonAdapter()
             .createRenderer(
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer
@@ -81,8 +89,22 @@ abstract class AdapterGenerator(
             }
 
         generatedAdapter.fileSpec.writeTo(environment.codeGenerator, aggregating = false)
+        generatedAdapter.proguardConfig?.writeTo(environment.codeGenerator, targetElement.containingFile!!)
         return generatedAdapter
     }
 
-    protected abstract fun getGenerableAdapter(): GeneratableJsonAdapter
+    protected abstract fun getGeneratableJsonAdapter(): GeneratableJsonAdapter
+}
+
+/** Writes this config to a [codeGenerator]. */
+private fun ProguardConfig.writeTo(codeGenerator: CodeGenerator, originatingKSFile: KSFile) {
+    val file = codeGenerator.createNewFile(
+        dependencies = Dependencies(aggregating = false, originatingKSFile),
+        packageName = "",
+        fileName = outputFilePathWithoutExtension(targetClass.canonicalName),
+        extensionName = "pro"
+    )
+    // Don't use writeTo(file) because that tries to handle directories under the hood
+    OutputStreamWriter(file, StandardCharsets.UTF_8)
+        .use(::writeTo)
 }

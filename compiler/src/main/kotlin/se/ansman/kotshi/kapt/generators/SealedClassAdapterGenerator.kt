@@ -33,7 +33,7 @@ class SealedClassAdapterGenerator(
         require(metadata.flags.isSealed)
     }
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter {
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
         val implementations = findSealedClassImplementations().toList()
         val annotation = targetElement.getAnnotation(Polymorphic::class.java)!!
 

@@ -28,7 +28,7 @@ class EnumAdapterGenerator(
         require(metadata.isEnum)
     }
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter =
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
         EnumJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,

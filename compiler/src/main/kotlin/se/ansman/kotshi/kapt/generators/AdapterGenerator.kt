@@ -17,6 +17,7 @@ import kotlinx.metadata.KmClass
 import se.ansman.kotshi.InternalKotshiApi
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
+import se.ansman.kotshi.ProguardConfig
 import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
@@ -29,10 +30,12 @@ import se.ansman.kotshi.renderer.createRenderer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.lang.model.SourceVersion
+import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
+import javax.tools.StandardLocation
 
 @Suppress("UnstableApiUsage")
 abstract class AdapterGenerator(
@@ -78,7 +81,7 @@ abstract class AdapterGenerator(
                 )
         }
 
-        val generatedAdapter = getGenerableAdapter()
+        val generatedAdapter = getGeneratableJsonAdapter()
             .createRenderer(
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor
                     ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor,
@@ -90,10 +93,11 @@ abstract class AdapterGenerator(
             }
 
         generatedAdapter.fileSpec.writeTo(filer)
+        generatedAdapter.proguardConfig?.writeTo(filer, targetElement)
         return generatedAdapter
     }
 
-    protected abstract fun getGenerableAdapter(): GeneratableJsonAdapter
+    protected abstract fun getGeneratableJsonAdapter(): GeneratableJsonAdapter
 
     protected fun getPolymorphicLabels(): Map<String, String> =
         targetElement.getPolymorphicLabels(
@@ -112,4 +116,11 @@ abstract class AdapterGenerator(
             yieldAll(superclass.supertypes())
         }
     }
+}
+
+/** Writes this config to a [filer]. */
+private fun ProguardConfig.writeTo(filer: Filer, vararg originatingElements: Element) {
+    filer.createResource(StandardLocation.CLASS_OUTPUT, "", "${outputFilePathWithoutExtension(targetClass.canonicalName)}.pro", *originatingElements)
+        .openWriter()
+        .use(::writeTo)
 }

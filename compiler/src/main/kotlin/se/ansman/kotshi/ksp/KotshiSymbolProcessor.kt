@@ -179,13 +179,15 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                                     environment = environment,
                                     element = annotated,
                                     globalConfig = globalConfig,
+                                    resolver = resolver,
                                 )
                             }
                             Modifier.SEALED in annotated.modifiers -> {
                                 SealedClassAdapterGenerator(
                                     environment = environment,
                                     targetElement = annotated,
-                                    globalConfig = globalConfig
+                                    globalConfig = globalConfig,
+                                    resolver = resolver,
                                 )
                             }
                             else -> {
@@ -199,12 +201,14 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     ClassKind.ENUM_CLASS -> EnumAdapterGenerator(
                         environment = environment,
                         element = annotated,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        resolver = resolver,
                     )
                     ClassKind.OBJECT -> ObjectAdapterGenerator(
                         environment = environment,
                         element = annotated,
-                        globalConfig = globalConfig
+                        globalConfig = globalConfig,
+                        resolver = resolver,
                     )
                     else -> {
                         throw KspProcessingError(
