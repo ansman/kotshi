@@ -1,5 +1,6 @@
 package se.ansman.kotshi.ksp.generators
 
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -18,13 +19,14 @@ import se.ansman.kotshi.model.GlobalConfig
 class EnumAdapterGenerator(
     environment: SymbolProcessorEnvironment,
     element: KSClassDeclaration,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(environment, element, globalConfig) {
+    globalConfig: GlobalConfig,
+    resolver: Resolver
+) : AdapterGenerator(environment, element, globalConfig, resolver) {
     init {
         require(Modifier.ENUM in element.modifiers)
     }
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter {
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
         val entries = targetElement.declarations
             .filterIsInstance<KSClassDeclaration>()
             .filter { it.classKind == ClassKind.ENUM_ENTRY }

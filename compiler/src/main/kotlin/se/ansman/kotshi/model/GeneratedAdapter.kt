@@ -5,12 +5,14 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeSpec
 import se.ansman.kotshi.KotshiConstructor
+import se.ansman.kotshi.ProguardConfig
 import se.ansman.kotshi.renderer.AdapterRenderer
 
 
 data class GeneratedAdapter(
     val adapter: GeneratableJsonAdapter,
     val fileSpec: FileSpec,
+    val proguardConfig: ProguardConfig?
 ) : Comparable<GeneratedAdapter> {
     val adapterClassName: ClassName = ClassName(adapter.targetPackageName, adapter.adapterName)
 

@@ -24,7 +24,7 @@ class ObjectAdapterGenerator(
         require(metadata.isObject)
     }
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter =
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
         ObjectJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,

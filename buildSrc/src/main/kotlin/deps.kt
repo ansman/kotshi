@@ -37,4 +37,6 @@ object deps {
         const val version = "1.7.10-1.0.6"
         const val api = "com.google.devtools.ksp:symbol-processing-api:$version"
     }
+
+    const val asm = "org.ow2.asm:asm:9.3"
 }

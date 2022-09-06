@@ -33,6 +33,7 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.joinToCode
 import se.ansman.kotshi.Functions
+import se.ansman.kotshi.ProguardConfig
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.Types
 import se.ansman.kotshi.Types.Moshi.jsonDataException
@@ -58,6 +59,7 @@ import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
 import se.ansman.kotshi.rawType
 import java.lang.reflect.Constructor
+import org.objectweb.asm.Type as AsmType
 
 class DataClassAdapterRenderer(
     private val adapter: DataClassJsonAdapter,
@@ -80,6 +82,26 @@ class DataClassAdapterRenderer(
         .mutable(true)
         .initializer("null")
         .build()
+
+    override fun TypeSpec.createProguardRule(): ProguardConfig? {
+        if (!hasDefaultValueConstructor) {
+            return null
+        }
+        var parameterTypes = emptyList<String>()
+        adapter.constructorSignature.let { constructorSignature ->
+            if (constructorSignature.startsWith("constructor-impl")) {
+                // Inline class, we don't support this yet.
+                // This is a static method with signature like 'constructor-impl(I)I'
+                return@let
+            }
+            parameterTypes = AsmType.getArgumentTypes(constructorSignature.removePrefix("<init>"))
+                .map { it.toReflectionString() }
+        }
+        return ProguardConfig(
+            targetClass = adapter.adapterClassName,
+            targetConstructorParams = parameterTypes,
+        )
+    }
 
     override fun TypeSpec.Builder.renderSetup() {
         primaryConstructor(
@@ -657,4 +679,22 @@ private fun TypeName.defaultPrimitiveValue(): CodeBlock =
         LONG -> CodeBlock.of("0L")
         DOUBLE -> CodeBlock.of("0.0")
         else -> CodeBlock.of("null")
+    }
+
+private fun AsmType.toReflectionString(): String =
+    when (this) {
+        AsmType.VOID_TYPE -> "void"
+        AsmType.BOOLEAN_TYPE -> "boolean"
+        AsmType.CHAR_TYPE -> "char"
+        AsmType.BYTE_TYPE -> "byte"
+        AsmType.SHORT_TYPE -> "short"
+        AsmType.INT_TYPE -> "int"
+        AsmType.FLOAT_TYPE -> "float"
+        AsmType.LONG_TYPE -> "long"
+        AsmType.DOUBLE_TYPE -> "double"
+        else -> when (sort) {
+            AsmType.ARRAY -> "${elementType.toReflectionString()}[]"
+            // Object type
+            else -> className
+        }
     }

@@ -1,5 +1,6 @@
 package se.ansman.kotshi.ksp.generators
 
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -25,13 +26,14 @@ import se.ansman.kotshi.model.getSealedSubtypes
 class SealedClassAdapterGenerator(
     environment: SymbolProcessorEnvironment,
     targetElement: KSClassDeclaration,
-    globalConfig: GlobalConfig
-) : AdapterGenerator(environment, targetElement, globalConfig) {
+    globalConfig: GlobalConfig,
+    resolver: Resolver
+) : AdapterGenerator(environment, targetElement, globalConfig, resolver) {
     init {
         require(SEALED in targetElement.modifiers)
     }
 
-    override fun getGenerableAdapter(): GeneratableJsonAdapter {
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
         val sealedSubclasses = targetElement.getAllSealedSubclasses().toList()
         val annotation = targetElement.getAnnotation(Polymorphic::class.java)!!
         val labelKey = annotation.getValue<String>("labelKey")
