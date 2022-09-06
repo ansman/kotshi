@@ -73,10 +73,11 @@ object KotshiUtils {
                         }
                     }
                 }
-                .toList()
+                .apply { sortBy { it.name } }
 
             init {
-                val extraArguments = annotationArguments.keys - annotationMethods.map { it.name }.toSet()
+                val extraArguments =
+                    annotationArguments.keys - annotationMethods.mapTo(HashSet(annotationMethods.size)) { it.name }
                 require(extraArguments.isEmpty()) {
                     "Found annotation values for unknown methods: $extraArguments"
                 }
@@ -86,14 +87,74 @@ object KotshiUtils {
                 when (method.name) {
                     "annotationType" -> this
                     "equals" -> args!![0] === proxy || isInstance(args!![0]) && annotationMethods.all { m ->
-                        m.invoke(args[0]) == (annotationArguments[m.name] ?: m.defaultValue)
+                        annotationValuesEquals(m.invoke(args[0]), annotationArguments[m.name] ?: m.defaultValue)
                     }
-                    "hashCode" -> annotationMethods.fold(0) { hashCode, m ->
-                        hashCode * 31 + (annotationArguments[m.name] ?: m.defaultValue).hashCode()
+                    // For the implementation see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/annotation/Annotation.html#hashCode()
+                    "hashCode" -> annotationMethods.sumOf { m ->
+                        (m.name.hashCode() * 127) xor (annotationArguments[m.name] ?: m.defaultValue).annotationValueHashCode()
                     }
-                    "toString" -> "@$name(${annotationArguments.entries.joinToString()})"
+
+                    "toString" -> buildString {
+                        append('@').append(name)
+                        append('(')
+                        var appendSeparator = false
+                        for (m in annotationMethods) {
+                            if (appendSeparator) {
+                                append(", ")
+                            }
+                            val value = annotationArguments[m.name] ?: m.defaultValue
+                            append(m.name).append('=').append(value.annotationValueToString())
+                            appendSeparator = true
+                        }
+                        append(')')
+                        "@$name(${annotationArguments.entries.joinToString()})"
+                    }
+
                     else -> annotationArguments[method.name] ?: method.defaultValue
                 }
+
+            private fun annotationValuesEquals(v1: Any?, v2: Any?): Boolean =
+                when (v1) {
+                    is BooleanArray -> v2 is BooleanArray && v1.contentEquals(v2)
+                    is ByteArray -> v2 is ByteArray && v1.contentEquals(v2)
+                    is CharArray -> v2 is CharArray && v1.contentEquals(v2)
+                    is ShortArray -> v2 is ShortArray && v1.contentEquals(v2)
+                    is IntArray -> v2 is IntArray && v1.contentEquals(v2)
+                    is LongArray -> v2 is LongArray && v1.contentEquals(v2)
+                    is FloatArray -> v2 is FloatArray && v1.contentEquals(v2)
+                    is DoubleArray -> v2 is DoubleArray && v1.contentEquals(v2)
+                    is Array<*> -> v2 is Array<*> && v1.contentEquals(v2)
+                    else -> v1 == v2
+                }
+
+            private fun Any.annotationValueHashCode(): Int =
+                when (this) {
+                    is BooleanArray -> contentHashCode()
+                    is ByteArray -> contentHashCode()
+                    is CharArray -> contentHashCode()
+                    is ShortArray -> contentHashCode()
+                    is IntArray -> contentHashCode()
+                    is LongArray -> contentHashCode()
+                    is FloatArray -> contentHashCode()
+                    is DoubleArray -> contentHashCode()
+                    is Array<*> -> contentHashCode()
+                    else -> hashCode()
+                }
+
+            private fun Any.annotationValueToString(): String =
+                when (this) {
+                    is BooleanArray -> contentToString()
+                    is ByteArray -> contentToString()
+                    is CharArray -> contentToString()
+                    is ShortArray -> contentToString()
+                    is IntArray -> contentToString()
+                    is LongArray -> contentToString()
+                    is FloatArray -> contentToString()
+                    is DoubleArray -> contentToString()
+                    is Array<*> -> contentToString()
+                    else -> toString()
+                }
+
         }) as T
     }
 
