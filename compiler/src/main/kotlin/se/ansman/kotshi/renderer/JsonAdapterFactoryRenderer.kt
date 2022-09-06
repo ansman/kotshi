@@ -115,7 +115,7 @@ internal class JsonAdapterFactoryRenderer(
         addStatement("val·rawType·=·%T.getRawType(%N)", moshiTypes, typesParam)
             .addControlFlow("when") {
                 for (adapter in factory.manuallyRegisteredAdapters.sorted()) {
-                    addCode("rawType·==·%T::class.java", adapter.targetType.rawType)
+                    addCode("rawType·==·%T::class.java", adapter.targetType.rawType())
                     if (adapter.qualifiers.isNotEmpty()) {
                         val qualifiers = PropertySpec
                             .builder(
@@ -175,7 +175,7 @@ internal class JsonAdapterFactoryRenderer(
             .addCode("\n")
             .addControlFlow("return·when·(%T.getRawType(%N))", moshiTypes, typesParam) {
                 for (adapter in factory.generatedAdapters.sorted()) {
-                    addCode("%T::class.java·->«\n", adapter.adapter.targetType.rawType)
+                    addCode("%T::class.java·->«\n", adapter.adapter.targetType.rawType())
                     addAdapterConstructorCall(
                         adapterTypeName = adapter.adapter.adapterTypeName,
                         constructor = adapter.constructor,

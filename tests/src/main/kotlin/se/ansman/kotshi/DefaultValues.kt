@@ -1,6 +1,6 @@
 package se.ansman.kotshi
 
-@JsonSerializable(useAdaptersForPrimitives = PrimitiveAdapters.ENABLED)
+@JsonSerializable
 data class ClassWithDefaultValues(
     val v1: Byte = Byte.MAX_VALUE,
     val v2: Char = Char.MAX_VALUE,

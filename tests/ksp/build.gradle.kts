@@ -1,3 +1,5 @@
+import com.google.devtools.ksp.gradle.KspExtension
+
 plugins {
     `test-library`
     id("com.google.devtools.ksp") version deps.ksp.version
@@ -16,11 +18,14 @@ dependencies {
     ksp(projects.compiler)
 }
 
-val createAnnotationsUsingConstructor = providers.gradleProperty("kotshi.createAnnotationsUsingConstructor")
-    .orNull
-
-if (createAnnotationsUsingConstructor != null) {
-    ksp {
-        arg("kotshi.createAnnotationsUsingConstructor", createAnnotationsUsingConstructor)
+fun KspExtension.argFromGradleProperty(name: String) {
+    val value = providers.gradleProperty(name).orNull
+    if (value != null) {
+        arg(name, value)
     }
+}
+
+ksp {
+    argFromGradleProperty("kotshi.createAnnotationsUsingConstructor")
+    argFromGradleProperty("kotshi.useLegacyDataClassRenderer")
 }

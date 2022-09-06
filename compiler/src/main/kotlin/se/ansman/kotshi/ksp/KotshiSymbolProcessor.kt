@@ -41,6 +41,10 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
         ?.toBooleanStrict()
         ?: environment.kotlinVersion.isAtLeast(1, 6)
 
+    private val useLegacyDataClassRenderer = environment.options["kotshi.useLegacyDataClassRenderer"]
+        ?.toBooleanStrict()
+        ?: false
+
     private fun logError(message: String, node: KSNode) {
         environment.logger.error("Kotshi: $message", node)
     }
@@ -210,7 +214,10 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     }
                 }
 
-                generator.generateAdapter(createAnnotationsUsingConstructor)
+                generator.generateAdapter(
+                    createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
+                    useLegacyDataClassRenderer = useLegacyDataClassRenderer
+                )
             } catch (e: KspProcessingError) {
                 logError(e.message, e.node)
                 null

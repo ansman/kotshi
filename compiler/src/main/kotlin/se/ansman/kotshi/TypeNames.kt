@@ -13,15 +13,26 @@ import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.tag
 import com.squareup.kotlinpoet.tags.TypeAliasTag
 
-val TypeName.rawType: TypeName
-    get() = when (this) {
-        is ClassName -> this
-        Dynamic -> this
-        is LambdaTypeName -> this
-        is TypeVariableName -> this
-        is WildcardTypeName -> this
-        is ParameterizedTypeName -> rawType
+fun TypeName.rawType(): ClassName = when (this) {
+    is ClassName -> this
+    Dynamic -> throw IllegalArgumentException("Dynamic does not have a raw type")
+    is LambdaTypeName -> {
+        var count = parameters.size
+        if (receiver != null) {
+            count++
+        }
+        val functionSimpleName = if (count >= 23) {
+            "FunctionN"
+        } else {
+            "Function$count"
+        }
+        ClassName("kotlin.jvm.functions", functionSimpleName)
     }
+
+    is TypeVariableName -> throw IllegalArgumentException("Type variable names does not have a raw type")
+    is WildcardTypeName -> outTypes.first().rawType()
+    is ParameterizedTypeName -> rawType
+}
 
 inline fun TypeName.mapTypeArguments(mapper: (TypeName) -> TypeName): TypeName = when (this) {
     is ClassName -> this
@@ -49,24 +60,30 @@ fun TypeName.unwrapTypeAlias(): TypeName =
                         nestedUnwrappedType.copy(nullable = isAnyNullable, annotations = runningAnnotations.toList())
                     }
                     ?: this
+
             is ParameterizedTypeName -> (rawType.unwrapTypeAlias() as ClassName)
                 .parameterizedBy(typeArguments.map(TypeName::unwrapTypeAlias))
                 .copy(nullable = isNullable, annotations = annotations, tags = tags)
+
             is TypeVariableName -> TypeVariableName(
                 name = name,
                 bounds = bounds.map { (TypeName::unwrapTypeAlias)(it) },
                 variance = variance
             ).copy(nullable = isNullable, annotations = annotations, tags = tags)
+
             is WildcardTypeName -> when {
                 this == STAR -> this
                 outTypes.isNotEmpty() && inTypes.isEmpty() ->
                     WildcardTypeName.producerOf(outTypes[0].unwrapTypeAlias())
                         .copy(nullable = isNullable, annotations = annotations)
+
                 inTypes.isNotEmpty() ->
                     WildcardTypeName.consumerOf(inTypes[0].unwrapTypeAlias())
                         .copy(nullable = isNullable, annotations = annotations)
+
                 else -> throw AssertionError("")
             }
+
             is LambdaTypeName -> {
                 LambdaTypeName.get(
                     receiver = receiver?.unwrapTypeAlias(),
@@ -80,6 +97,7 @@ fun TypeName.unwrapTypeAlias(): TypeName =
                     annotations = annotations,
                 )
             }
+
             else -> throw UnsupportedOperationException("Type '${javaClass.name}' is invalid. Only classes, parameterized types, wildcard types, or type variables are allowed.")
         }
 
@@ -106,6 +124,7 @@ fun TypeName.unwrapTypeVariables(): TypeName =
                 else -> WildcardTypeName.producerOf(unwrapped)
             }
         }
+
         is WildcardTypeName -> if (inTypes.isNotEmpty()) {
             WildcardTypeName.consumerOf(inTypes.single().unwrapTypeVariables())
         } else {

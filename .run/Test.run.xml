@@ -4,12 +4,15 @@
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="clean check --stacktrace" />
+      <option name="scriptParameters" value="--stacktrace" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
-        <list />
+        <list>
+          <option value="clean" />
+          <option value="check" />
+        </list>
       </option>
       <option name="vmOptions" />
     </ExternalSystemSettings>

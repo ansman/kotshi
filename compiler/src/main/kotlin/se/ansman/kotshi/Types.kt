@@ -94,6 +94,7 @@ object Types {
         val clazz = ClassName("java.lang", "Class")
         val string = ClassName("java.lang", "String")
         val type = Type::class.java.asClassName()
+        val void = Void::class.java.asClassName()
         val ioException = IOException::class.java.asClassName()
     }
 }

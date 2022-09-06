@@ -123,13 +123,18 @@ ksp {
 
 See more about instantiating annotations here: https://kotlinlang.org/docs/whatsnew1530.html#instantiation-of-annotation-classes
 
+#### `kotshi.useLegacyDataClassRenderer`
+This option allows you to use the old way of creating classes with parameters that has default values.
+
+From 2.10.0 reflection is used create data classes, but by setting this option to `true` the old behavior can be used 
+instead which used the `copy` method.
+
 ## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
 * Only data classes, enums, sealed classes and objects are supported.
   - Only constructor properties will be serialized.
   - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
 * Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
-* Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 * Due to a KAPT bug/limitation you cannot add qualifiers to parameters that are inline classes ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-36352)).
 
 ## Download
