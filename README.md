@@ -1,6 +1,4 @@
-Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api)
-===
-
+# Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) ![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api)
 An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
@@ -12,10 +10,9 @@ written them by hand yourself. It will automatically regenerate the adapters whe
 It's made to work with minimal setup, through there are [limitations](#limitations).
 Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
 
-You can find the generated documentation by visiting https://kotshi.ansman.se/
+You can find the generated documentation by visiting [kotshi.ansman.se](https://kotshi.ansman.se/).
 
-Usage
----
+## Usage
 First you must annotate your objects with the `@JsonSerializable` annotation:
 ```kotlin
 @JsonSerializable
@@ -126,8 +123,7 @@ ksp {
 
 See more about instantiating annotations here: https://kotlinlang.org/docs/whatsnew1530.html#instantiation-of-annotation-classes
 
-Limitations
----
+## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
 * Only data classes, enums, sealed classes and objects are supported.
   - Only constructor properties will be serialized.
@@ -136,8 +132,7 @@ Limitations
 * Default values that depend on other constructor properties is not supported ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-18695)).
 * Due to a KAPT bug/limitation you cannot add qualifiers to parameters that are inline classes ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-36352)).
 
-Download
----
+## Download
 
 ```kotlin
 plugins {
@@ -157,8 +152,7 @@ dependencies {
 ```
 Snapshots of the development version are available in [the sonatype snapshots repository](https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~se/ansman/kotshi/).
 
-License
----
+## License
 ```text
 Copyright 2017-2022 Nicklas Ansman Giertz.
 
