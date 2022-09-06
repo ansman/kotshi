@@ -32,6 +32,8 @@ public final class se/ansman/kotshi/KotshiUtils {
 	public static final fun createJsonQualifierImplementation (Ljava/lang/Class;Ljava/util/Map;)Ljava/lang/annotation/Annotation;
 	public static synthetic fun createJsonQualifierImplementation$default (Ljava/lang/Class;Ljava/util/Map;ILjava/lang/Object;)Ljava/lang/annotation/Annotation;
 	public static final fun getTypeArgumentsOrFail (Ljava/lang/reflect/Type;)[Ljava/lang/reflect/Type;
+	public static final fun matches (Ljava/lang/reflect/Type;Ljava/lang/reflect/Type;ZZ)Z
+	public static synthetic fun matches$default (Ljava/lang/reflect/Type;Ljava/lang/reflect/Type;ZZILjava/lang/Object;)Z
 	public static final fun nextByte (Lcom/squareup/moshi/JsonReader;)B
 	public static final fun nextChar (Lcom/squareup/moshi/JsonReader;)C
 	public static final fun nextFloat (Lcom/squareup/moshi/JsonReader;)F
@@ -69,6 +71,10 @@ public final class se/ansman/kotshi/PrimitiveAdapters : java/lang/Enum {
 	public static final field ENABLED Lse/ansman/kotshi/PrimitiveAdapters;
 	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/PrimitiveAdapters;
 	public static fun values ()[Lse/ansman/kotshi/PrimitiveAdapters;
+}
+
+public abstract interface annotation class se/ansman/kotshi/RegisterJsonAdapter : java/lang/annotation/Annotation {
+	public abstract fun priority ()I
 }
 
 public final class se/ansman/kotshi/SerializeNulls : java/lang/Enum {

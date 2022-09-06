@@ -15,7 +15,6 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SHORT
@@ -25,7 +24,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
-import com.squareup.kotlinpoet.withIndent
 import se.ansman.kotshi.Functions
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.Types
@@ -43,14 +41,13 @@ import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.isPrimitive
 import se.ansman.kotshi.model.AdapterKey
-import se.ansman.kotshi.model.AnnotationModel
 import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.Property
 import se.ansman.kotshi.model.asRuntimeType
+import se.ansman.kotshi.model.render
 import se.ansman.kotshi.model.suggestedAdapterName
 import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
-import se.ansman.kotshi.withoutVariance
 
 class DataClassAdapterRenderer(
     private val adapter: DataClassJsonAdapter,
@@ -65,9 +62,9 @@ class DataClassAdapterRenderer(
     override fun TypeSpec.Builder.renderSetup() {
         primaryConstructor(
             FunSpec.constructorBuilder()
-                .applyIf(adapterKeys.isNotEmpty()) { addParameter("moshi", Types.Moshi.moshi) }
+                .applyIf(adapterKeys.isNotEmpty()) { addParameter(moshiParameterName, Types.Moshi.moshi) }
                 .applyIf(adapterKeys.any { it.key.type.hasTypeVariable }) {
-                    addParameter("types", Types.Kotlin.array.parameterizedBy(Types.Java.type))
+                    addParameter(typesParameterName, Types.Kotshi.typesArray)
                 }
                 .build()
         )
@@ -415,7 +412,7 @@ private fun AdapterKey.annotations(createAnnotationsUsingConstructor: Boolean): 
             }
             .applyEachIndexed(jsonQualifiers.sortedBy { it.annotationName }) { index, qualifier ->
                 if (index > 0) add(",\n")
-                add(qualifier.toCodeBlock(createAnnotationsUsingConstructor))
+                add(qualifier.render(createAnnotationsUsingConstructor))
             }
             .applyIf(jsonQualifiers.size > 1) {
                 unindent()
@@ -426,149 +423,7 @@ private fun AdapterKey.annotations(createAnnotationsUsingConstructor: Boolean): 
     }
 }
 
-private fun AnnotationModel.toCodeBlock(createAnnotationsUsingConstructor: Boolean): CodeBlock =
-    if (createAnnotationsUsingConstructor) {
-        CodeBlock.builder()
-            .add("%T(", annotationName)
-            .indent()
-            .applyEach(values.entries) { (name, value) ->
-                add("\n%N·=·%L,", name, value.toCodeBlock(true))
-            }
-            .unindent()
-            .applyIf(values.isNotEmpty()) { add("\n") }
-            .add(")")
-            .build()
-    } else if (values.isEmpty()) {
-        CodeBlock.of("%T::class.java.%M()", annotationName, Functions.Kotshi.createJsonQualifierImplementation)
-    } else {
-        CodeBlock.builder()
-            .add("%T::class.java.%M(mapOf(", annotationName, Functions.Kotshi.createJsonQualifierImplementation)
-            .withIndent {
-                values.entries.forEachIndexed { i, (name, value) ->
-                    if (i > 0) {
-                        add(",")
-                    }
-                    add("\n%S·to·%L", name, value.toCodeBlock(false))
-                }
-            }
-            .add("\n))")
-            .build()
-    }
 
-private fun AnnotationModel.Value<*>.toCodeBlock(createAnnotationsUsingConstructor: Boolean): CodeBlock =
-    when (this) {
-        is AnnotationModel.Value.Boolean ->
-            CodeBlock.of("%L", value)
-        is AnnotationModel.Value.Byte ->
-            CodeBlock.of("(%L).toByte()", value)
-        is AnnotationModel.Value.UByte ->
-            if (createAnnotationsUsingConstructor) CodeBlock.of("%LU", value) else CodeBlock.of("(%LU).toByte()", value)
-        is AnnotationModel.Value.Char ->
-            CodeBlock.of("'%L'", if (value == '\'') "\\'" else value)
-        is AnnotationModel.Value.Class ->
-            if (createAnnotationsUsingConstructor) CodeBlock.of("%T::class", value) else CodeBlock.of("%T::class.java", value)
-        is AnnotationModel.Value.Annotation ->
-            value.toCodeBlock(createAnnotationsUsingConstructor)
-        is AnnotationModel.Value.Double -> {
-            var s = value.toString()
-            if ('.' !in s) s += ".0"
-            CodeBlock.of("%L", s)
-        }
-        is AnnotationModel.Value.Enum ->
-            CodeBlock.of("%T.%L", enumType, value)
-        is AnnotationModel.Value.Float ->
-            CodeBlock.of("%Lf", value)
-        is AnnotationModel.Value.Int ->
-            CodeBlock.of("%L", value)
-        is AnnotationModel.Value.UInt ->
-            if (createAnnotationsUsingConstructor) CodeBlock.of("%LU", value) else CodeBlock.of("(%LU).toInt()", value)
-        is AnnotationModel.Value.Long -> {
-            if (value == Long.MIN_VALUE) {
-                CodeBlock.of("%T.MIN_VALUE", LONG)
-            } else {
-                CodeBlock.of("%LL", value)
-            }
-        }
-        is AnnotationModel.Value.ULong ->
-            if (createAnnotationsUsingConstructor) CodeBlock.of("%LUL", value) else CodeBlock.of("(%LUL).toLong()", value)
-        is AnnotationModel.Value.Short ->
-            CodeBlock.of("(%L).toShort()", value)
-        is AnnotationModel.Value.UShort ->
-            if (createAnnotationsUsingConstructor) CodeBlock.of("%LU", value) else CodeBlock.of("(%LU).toShort()", value)
-        is AnnotationModel.Value.String ->
-            CodeBlock.of("%S", value)
-        is AnnotationModel.Value.Array<*> -> {
-            CodeBlock.builder()
-                .add(
-                    when (this) {
-                        is AnnotationModel.Value.Array.Boolean ->
-                            CodeBlock.of("%M", Functions.Kotlin.booleanArrayOf)
-                        is AnnotationModel.Value.Array.Char ->
-                            CodeBlock.of("%M", Functions.Kotlin.charArrayOf)
-                        is AnnotationModel.Value.Array.Double ->
-                            CodeBlock.of("%M", Functions.Kotlin.doubleArrayOf)
-                        is AnnotationModel.Value.Array.Float ->
-                            CodeBlock.of("%M", Functions.Kotlin.floatArrayOf)
-                        is AnnotationModel.Value.Array.Byte ->
-                            CodeBlock.of("%M", Functions.Kotlin.byteArrayOf)
-                        is AnnotationModel.Value.Array.UByte ->
-                            if (createAnnotationsUsingConstructor) {
-                                CodeBlock.of("%M", Functions.Kotlin.ubyteArrayOf)
-                            } else {
-                                CodeBlock.of("%M", Functions.Kotlin.byteArrayOf)
-                            }
-                        is AnnotationModel.Value.Array.Short ->
-                            CodeBlock.of("%M", Functions.Kotlin.shortArrayOf)
-                        is AnnotationModel.Value.Array.UShort ->
-                            if (createAnnotationsUsingConstructor) {
-                                CodeBlock.of("%M", Functions.Kotlin.ushortArrayOf)
-                            } else {
-                                CodeBlock.of("%M", Functions.Kotlin.shortArrayOf)
-                            }
-                        is AnnotationModel.Value.Array.Int ->
-                            CodeBlock.of("%M", Functions.Kotlin.intArrayOf)
-                        is AnnotationModel.Value.Array.UInt ->
-                            if (createAnnotationsUsingConstructor) {
-                                CodeBlock.of("%M", Functions.Kotlin.uintArrayOf)
-                            } else {
-                                CodeBlock.of("%M", Functions.Kotlin.intArrayOf)
-                            }
-                        is AnnotationModel.Value.Array.Long ->
-                            CodeBlock.of("%M", Functions.Kotlin.longArrayOf)
-                        is AnnotationModel.Value.Array.ULong ->
-                            if (createAnnotationsUsingConstructor) {
-                                CodeBlock.of("%M", Functions.Kotlin.ulongArrayOf)
-                            } else {
-                                CodeBlock.of("%M", Functions.Kotlin.longArrayOf)
-                            }
-                        is AnnotationModel.Value.Array.Object ->
-                            if (createAnnotationsUsingConstructor) {
-                                CodeBlock.of("%M", Functions.Kotlin.arrayOf)
-                            } else {
-                                val elementType = elementType.withoutVariance()
-                                CodeBlock.of(
-                                    "%M<%T>",
-                                    Functions.Kotlin.arrayOf,
-                                    if (elementType is ParameterizedTypeName && elementType.rawType == Types.Kotlin.kClass) {
-                                        Types.Java.clazz.parameterizedBy(elementType.typeArguments.single())
-                                    } else {
-                                        elementType
-                                    }
-                                )
-                            }
-                    }
-                )
-                .add("(")
-                .applyEachIndexed(value) { i, v ->
-                    if (i > 0) {
-                        add(", ")
-                    }
-                    add(v.toCodeBlock(createAnnotationsUsingConstructor))
-                }
-                .add(")")
-                .build()
-        }
-    }
 
 private val TypeName.hasTypeVariable: Boolean
     get() = when (this) {

@@ -52,8 +52,9 @@ class KotshiProcessor : AbstractProcessor() {
                 types = processingEnv.typeUtils,
                 elements = processingEnv.elementUtils,
                 sourceVersion = processingEnv.sourceVersion,
-                adapters = adapters,
+                generatedAdapters = adapters,
                 metadataAccessor = metadataAccessor,
+                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
             )
         )
     }

@@ -4,7 +4,12 @@ import com.google.common.truth.Truth.assertThat
 import com.squareup.moshi.JsonQualifier
 import org.junit.Test
 import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation
+import se.ansman.kotshi.KotshiUtils.matches
+import kotlin.reflect.javaType
 import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(InternalKotshiApi::class)
 @Suppress("DEPRECATION_ERROR")
@@ -256,6 +261,80 @@ class TestKotshiUtils {
             "enumArg" to TestEnum.Value2,
         )).toString())
             .isEqualTo("@se.ansman.kotshi.TestQualifier(booleanArg=true, booleanArrayArg=[true, false], byteArg=1, byteArrayArg=[1, 2, 3], charArg=3, charArrayArg=[a, b, c], classArg=class se.ansman.kotshi.TestKotshiUtils, doubleArg=NaN, doubleArrayArg=[1.0, 2.0, 3.0], emptyArray=[], enumArg=Value2, floatArg=0.0, floatArrayArg=[1.0, 2.0, 3.0], intArg=6, intArrayArg=[1, 2, 3], longArg=8, longArrayArg=[1, 2, 3], nestedArg=@se.ansman.kotshi.TestQualifier\$Nested(arg=nested), shortArg=4, shortArrayArg=[1, 2, 3], stringArg=value, stringArrayArg=[one, two, three], ubyteArg=0, uintArg=0, ulongArg=0, ushortArg=0, vararg=[v1, v2])")
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testMatches() {
+        assertTrue(
+            matches(
+                String::class.java,
+                String::class.java
+            )
+        )
+
+        assertFalse(
+            matches(
+                Int::class.java,
+                String::class.java
+            )
+        )
+
+        assertFalse(
+            matches(
+                String::class.java,
+                Int::class.java
+            )
+        )
+
+        assertTrue(
+            matches(
+                typeOf<MutableList<String>>().javaType,
+                typeOf<MutableList<String>>().javaType
+            )
+        )
+
+        assertTrue(
+            matches(
+                typeOf<MutableList<out String>>().javaType,
+                typeOf<MutableList<String>>().javaType
+            )
+        )
+
+        assertFalse(
+            matches(
+                typeOf<MutableList<out String>>().javaType,
+                typeOf<MutableList<Int>>().javaType
+            )
+        )
+
+        assertTrue(
+            matches(
+                typeOf<MutableList<out CharSequence>>().javaType,
+                typeOf<MutableList<String>>().javaType
+            )
+        )
+
+        assertTrue(
+            matches(
+                typeOf<MutableList<in String>>().javaType,
+                typeOf<MutableList<CharSequence>>().javaType
+            )
+        )
+
+        assertFalse(
+            matches(
+                typeOf<MutableList<in CharSequence>>().javaType,
+                typeOf<MutableList<String>>().javaType
+            )
+        )
+
+        assertTrue(
+            matches(
+                typeOf<MutableList<*>>().javaType,
+                typeOf<MutableList<String>>().javaType
+            )
+        )
     }
 }
 

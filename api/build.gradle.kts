@@ -9,6 +9,7 @@ dependencies {
     api(deps.moshi.oldestSupported)
     testImplementation(deps.junit)
     testImplementation(deps.truth)
+    testImplementation(deps.kotlin.junit)
 }
 
 tasks.withType<KotlinCompile> {

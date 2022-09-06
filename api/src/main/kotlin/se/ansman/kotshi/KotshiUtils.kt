@@ -4,11 +4,14 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Types
+import java.lang.reflect.GenericArrayType
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Proxy
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
+import java.lang.reflect.WildcardType
 
 /**
  * A helper class for Kotshi.
@@ -40,6 +43,62 @@ object KotshiUtils {
                     append(" (JSON name ").append(jsonName).append(')')
                 }
             }
+
+    @JvmStatic
+    @InternalKotshiApi
+    fun matches(
+        targetType: Type?,
+        actualType: Type?,
+        allowSubClasses: Boolean = false,
+        allowSuperClasses: Boolean = false,
+    ): Boolean = when (targetType) {
+        // e.g. Array<...>
+        is GenericArrayType -> actualType is GenericArrayType &&
+            matches(targetType.genericComponentType, actualType.genericComponentType, allowSubClasses = true)
+        // e.g. List<...>
+        is ParameterizedType -> actualType is ParameterizedType &&
+            matches(actualType.rawType, targetType.rawType, allowSubClasses, allowSuperClasses) &&
+            matches(actualType.ownerType, targetType.ownerType, allowSubClasses, allowSuperClasses) &&
+            targetType.actualTypeArguments.size == actualType.actualTypeArguments.size &&
+            targetType.actualTypeArguments.allIndexed { i, e -> matches(e, actualType.actualTypeArguments[i]) }
+        // e.g. E : Number
+        is TypeVariable<*> -> targetType.bounds.all { matches(it, actualType, allowSubClasses = true) }
+        // e.g. out Number or in Number
+        is WildcardType -> targetType.lowerBounds.all { matches(it, actualType, allowSuperClasses = true) } &&
+            targetType.upperBounds.all { matches(it, actualType, allowSubClasses = true) }
+        // e.g. String
+        is Class<*> -> {
+            fun Type.rawType(): Class<*>? =
+                when (this) {
+                    is GenericArrayType -> Array::class.java
+                    is ParameterizedType -> rawType.rawType()
+                    is TypeVariable<*> -> null // Type variables should not appear in actual type
+                    is WildcardType -> (lowerBounds.singleOrNull() ?: upperBounds[0]).rawType()
+                    is Class<*> -> this
+                    else -> null
+                }
+            val rawType = actualType?.rawType()
+            rawType != null && when {
+                allowSubClasses -> targetType.isAssignableFrom(rawType)
+                allowSuperClasses -> rawType.isAssignableFrom(targetType)
+                else -> targetType == rawType
+            }
+        }
+        null -> actualType == null
+        // Unknown type
+        else -> false
+    }
+
+    private inline fun <E> Array<E>.allIndexed(predicate: (index: Int, element: E) -> Boolean): Boolean {
+        var i = 0
+        while (i < size) {
+            if (!predicate(i, get(i))) {
+                return false
+            }
+            ++i
+        }
+        return true
+    }
 
     @JvmStatic
     @JvmOverloads

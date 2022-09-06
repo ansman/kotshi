@@ -5,7 +5,7 @@ import org.junit.Test
 
 class TestClassWithQualifierWithDefaults {
     private val moshi = Moshi.Builder()
-        .add(KotshiTestFactory)
+        .add(TestFactory)
         .add { type, annotations, moshi ->
             if (annotations.singleOrNull() is QualifierWithDefaults) {
                 moshi.adapter<Any>(type)
