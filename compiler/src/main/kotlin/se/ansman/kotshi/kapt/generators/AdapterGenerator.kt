@@ -63,7 +63,8 @@ abstract class AdapterGenerator(
     fun generateAdapter(
         sourceVersion: SourceVersion,
         filer: Filer,
-        createAnnotationsUsingConstructor: Boolean?
+        createAnnotationsUsingConstructor: Boolean?,
+        useLegacyDataClassRenderer: Boolean,
     ): GeneratedAdapter {
         when {
             kmClass.isInner ->
@@ -79,8 +80,9 @@ abstract class AdapterGenerator(
 
         val generatedAdapter = getGenerableAdapter()
             .createRenderer(
-                createAnnotationsUsingConstructor
-                    ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor
+                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor
+                    ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor,
+                useLegacyDataClassRenderer = useLegacyDataClassRenderer,
             )
             .render {
                 addOriginatingElement(targetElement)

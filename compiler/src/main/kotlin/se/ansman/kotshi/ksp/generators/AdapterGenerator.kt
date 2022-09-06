@@ -53,7 +53,10 @@ abstract class AdapterGenerator(
         )
     }
 
-    fun generateAdapter(createAnnotationsUsingConstructor: Boolean): GeneratedAdapter {
+    fun generateAdapter(
+        createAnnotationsUsingConstructor: Boolean,
+        useLegacyDataClassRenderer: Boolean,
+    ): GeneratedAdapter {
         when {
             Modifier.INNER in targetElement.modifiers ->
                 throw KspProcessingError("@JsonSerializable can't be applied to inner classes", targetElement)
@@ -67,7 +70,10 @@ abstract class AdapterGenerator(
         }
 
         val generatedAdapter = getGenerableAdapter()
-            .createRenderer(createAnnotationsUsingConstructor)
+            .createRenderer(
+                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
+                useLegacyDataClassRenderer = useLegacyDataClassRenderer
+            )
             .render {
                 addOriginatingKSFile(targetElement.containingFile!!)
             // TODO

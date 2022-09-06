@@ -11,12 +11,15 @@ sealed class GeneratableJsonAdapter {
 
     open val targetTypeVariables: List<TypeVariableName> get() = emptyList()
 
+    val rawTargetType by lazy {
+        ClassName(targetPackageName, targetSimpleNames)
+    }
+
     val targetType: TypeName by lazy {
-        val rawType = ClassName(targetPackageName, targetSimpleNames)
         if (targetTypeVariables.isEmpty()) {
-            rawType
+            rawTargetType
         } else {
-            rawType.parameterizedBy(targetTypeVariables)
+            rawTargetType.parameterizedBy(targetTypeVariables)
         }
     }
 

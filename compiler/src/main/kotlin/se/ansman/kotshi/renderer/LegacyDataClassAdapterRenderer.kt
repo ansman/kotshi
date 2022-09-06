@@ -1,15 +1,11 @@
 package se.ansman.kotshi.renderer
 
-import com.squareup.kotlinpoet.ANY
-import com.squareup.kotlinpoet.ARRAY
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.CHAR
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.DOUBLE
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.Dynamic
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
@@ -17,10 +13,8 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.LambdaTypeName
-import com.squareup.kotlinpoet.NOTHING
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SHORT
@@ -29,9 +23,7 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
-import com.squareup.kotlinpoet.joinToCode
 import se.ansman.kotshi.Functions
 import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.Types
@@ -56,10 +48,8 @@ import se.ansman.kotshi.model.render
 import se.ansman.kotshi.model.suggestedAdapterName
 import se.ansman.kotshi.notNull
 import se.ansman.kotshi.nullable
-import se.ansman.kotshi.rawType
-import java.lang.reflect.Constructor
 
-class DataClassAdapterRenderer(
+class LegacyDataClassAdapterRenderer(
     private val adapter: DataClassJsonAdapter,
     private val createAnnotationsUsingConstructor: Boolean
 ) : AdapterRenderer(adapter) {
@@ -68,18 +58,6 @@ class DataClassAdapterRenderer(
     private val parentLabels = adapter.polymorphicLabels.filterKeys { it !in propertyNames }
     private val serializedNames = adapter.serializedProperties.map { it.jsonName }.toSet()
     private val optionsProperty = jsonOptionsProperty(serializedNames + parentLabels.keys)
-    private val hasDefaultValueConstructor = adapter.serializedProperties.any { it.hasDefaultValue }
-
-    private val constructorProperty = PropertySpec
-        .builder(
-            nameAllocator.newName("defaultConstructor"),
-            Constructor::class.asClassName().parameterizedBy(adapter.targetType).nullable(),
-            KModifier.PRIVATE
-        )
-        .addAnnotation(Volatile::class)
-        .mutable(true)
-        .initializer("null")
-        .build()
 
     override fun TypeSpec.Builder.renderSetup() {
         primaryConstructor(
@@ -92,10 +70,6 @@ class DataClassAdapterRenderer(
         )
         addProperties(adapterKeys.values)
         addProperty(optionsProperty)
-
-        if (hasDefaultValueConstructor) {
-            addProperty(constructorProperty)
-        }
     }
 
     private fun Iterable<AdapterKey>.generatePropertySpecs(): Map<AdapterKey, PropertySpec> =
@@ -152,7 +126,6 @@ class DataClassAdapterRenderer(
                         DOUBLE,
                         SHORT,
                         BOOLEAN -> addStatement("%N.value(%L)", writerParameter, getter)
-
                         BYTE -> addStatement("%N.%M(%L)", writerParameter, Functions.Kotshi.byteValue, getter)
                         CHAR -> addStatement("%N.%M(%L)", writerParameter, Functions.Kotshi.value, getter)
                         else -> error("Property ${property.name} is not primitive ${property.type} but requested non adapter use")
@@ -185,70 +158,27 @@ class DataClassAdapterRenderer(
     }
 
     override fun FunSpec.Builder.renderFromJson(readerParameter: ParameterSpec) {
-        val maskCount = if (hasDefaultValueConstructor) {
-            (adapter.properties.size + 31) / 32
-        } else {
-            0
-        }
-        val maskNames = Array(maskCount) { index ->
-            nameAllocator.newName(if (maskCount == 1) "mask" else "mask${index + 1}")
-        }
-        val maskAllSetValues = Array(maskCount) { -1 }
-        var maskIndex = 0
-        var maskNameIndex = 0
-        val updateMaskIndexes = {
-            maskIndex++
-            if (maskIndex == 32) {
-                // Move to the next mask
-                maskIndex = 0
-                ++maskNameIndex
-            }
-        }
-        val variables = LinkedHashMap<Property, PropertyVariables>(adapter.properties.size)
-        for (property in adapter.properties) {
-            if (!property.isTransient) {
-                val inverted = (1 shl maskIndex).inv()
-                if (property.hasDefaultValue) {
-                    maskAllSetValues[maskNameIndex] = maskAllSetValues[maskNameIndex] and inverted
-                }
-                variables[property] = property.createVariables(
-                    maskName = if (hasDefaultValueConstructor) maskNames[maskNameIndex] else null,
-                    maskIndex = maskIndex
-                )
-            }
-            updateMaskIndexes()
-        }
-        val constructorPropertyTypes = adapter.properties.map {
-            it.type.asTypeBlock()
-        }
-
+        val variables = adapter.serializedProperties.associateBy({ it }, { it.createVariables() })
         this
             .addStatement(
-                "if·(%N.peek()·==·%T.NULL)·return·%N.nextNull()",
+                "if (%N.peek() == %T.NULL) return %N.nextNull()",
                 readerParameter,
                 jsonReaderToken,
                 readerParameter
             )
             .addCode("\n")
-            .applyIf(hasDefaultValueConstructor) {
-                // Initialize all our masks, defaulting to fully unset (-1)
-                for (maskName in maskNames) {
-                    addStatement("var·%L·=·-1", maskName)
-                }
-            }
             .applyEach(variables.values) { variable ->
                 addCode("%L", variable.value)
-                if (variable.localIsSet != null) {
-                    addCode("%L", variable.localIsSet)
+                if (variable.helper != null) {
+                    addCode("%L", variable.helper)
                 }
             }
             .addCode("\n")
             .addStatement("%N.beginObject()", readerParameter)
             .addWhile("%N.hasNext()", readerParameter) {
                 addWhen("%N.selectName(%N)", readerParameter, optionsProperty) {
-                    adapter.serializedProperties.forEachIndexed { propertyIndex, property ->
-                        val variable = variables.getValue(property)
-                        addWhenBranch("%L", propertyIndex) {
+                    variables.entries.forEachIndexed { index, (property, variable) ->
+                        addWhenBranch("%L", index) {
                             if (property.shouldUseAdapter) {
                                 addStatement(
                                     "%N·= %N.fromJson(%N)",
@@ -256,15 +186,11 @@ class DataClassAdapterRenderer(
                                     adapterKeys.getValue(property.adapterKey),
                                     readerParameter
                                 )
-                                if (variable.markSet != null) {
+                                if (variable.helper != null) {
                                     if (property.type.isNullable) {
-                                        addCode(variable.markSet)
+                                        addStatement("%N·= true", variable.helper)
                                     } else {
-                                        addCode("⇥")
-                                        addControlFlow("?.also") {
-                                            addCode(variable.markSet)
-                                        }
-                                        addCode("⇤")
+                                        addStatement("?.also { %N = true }", variable.helper)
                                     }
                                 }
                             } else {
@@ -282,12 +208,12 @@ class DataClassAdapterRenderer(
                                             readerParameter,
                                             *args
                                         )
-                                        if (variable.markSet != null && !property.type.isNullable) {
-                                            addCode(variable.markSet)
+                                        if (variable.helper != null && !property.type.isNullable) {
+                                            addStatement("%N·= true", variable.helper)
                                         }
                                     }
-                                    if (variable.markSet != null && property.type.isNullable) {
-                                        addCode(variable.markSet)
+                                    if (variable.helper != null && property.type.isNullable) {
+                                        addStatement("%N·= true", variable.helper)
                                     }
                                 }
 
@@ -372,18 +298,13 @@ class DataClassAdapterRenderer(
                 }
             }
             .apply {
-                addCode("return·")
-                if (hasDefaultValueConstructor) {
-                    val allMasksAreSetBlock = maskNames.withIndex()
-                        .map { (index, maskName) ->
-                            CodeBlock.of("$maskName·== 0x${Integer.toHexString(maskAllSetValues[index])}.toInt()")
-                        }
-                        .joinToCode("·&& ")
-                    beginControlFlow("if (%L)", allMasksAreSetBlock)
-                }
+                val constructorProperties = adapter.properties.filter { !it.hasDefaultValue }
+                val copyProperties = adapter.serializedProperties.filter { it.hasDefaultValue }
 
-                addCode("%T(«", adapter.targetType)
-                variables.entries.forEachIndexed { index, (property, variable) ->
+                addCode("return·%T(«", adapter.targetType)
+                constructorProperties.forEachIndexed { index, property ->
+                    val variable = variables.getValue(property)
+
                     if (index > 0) {
                         addCode(",")
                     }
@@ -392,172 +313,97 @@ class DataClassAdapterRenderer(
                         addCode("!!")
                     }
                 }
-                addCode("»\n)\n")
-                if (hasDefaultValueConstructor) {
-                    nextControlFlow("else")
-                    addComment("Reflectively invoke the synthetic defaults constructor")
-                    // Dynamic default constructor call
-                    val nonNullConstructorType = constructorProperty.type.copy(nullable = false)
-                    val args = constructorPropertyTypes
-                        .plus(0.until(maskCount).map { INT_TYPE_BLOCK }) // Masks, one every 32 params
-                        .plus(DEFAULT_CONSTRUCTOR_MARKER_TYPE_BLOCK) // Default constructor marker is always last
-                        .joinToCode(",\n")
-                    val coreLookupBlock = CodeBlock
-                        .builder()
-                        .add("%T::class.java.getDeclaredConstructor(\n", adapter.rawTargetType)
-                        .indent()
-                        .add(args)
-                        .unindent()
-                        .add("\n)")
-                        .build()
-                    val lookupBlock = if (adapter.targetTypeVariables.isNotEmpty()) {
-                        CodeBlock.of("(%L·as·%T)", coreLookupBlock, nonNullConstructorType)
-                    } else {
-                        coreLookupBlock
-                    }
-                    val initializerBlock = CodeBlock.of(
-                        "this.%1N·?: %2L.also·{ this.%1N·= it }",
-                        constructorProperty,
-                        lookupBlock
-                    )
-                    val localConstructorProperty = PropertySpec
-                        .builder(
-                            nameAllocator.newName("localConstructor"),
-                            nonNullConstructorType
-                        )
-                        .addAnnotation(
-                            AnnotationSpec.builder(Suppress::class)
-                                .addMember("%S", "UNCHECKED_CAST")
-                                .build()
-                        )
-                        .initializer(initializerBlock)
-                        .build()
-                    addCode("%L", localConstructorProperty)
-                    addCode("«%N.newInstance(", localConstructorProperty)
-                    var separator = "\n"
-                    for (property in adapter.properties) {
-                        addCode(separator)
-                        if (property.isTransient) {
-                            // We have to use the default primitive for the available type in order for
-                            // invokeDefaultConstructor to properly invoke it. Just using "null" isn't safe because
-                            // the transient type may be a primitive type.
-                            // Inline a little comment for readability indicating which parameter is it's referring to
-                            addCode(
-                                "/*·%L·*/·%L",
-                                property.name,
-                                property.type.rawType().defaultPrimitiveValue()
-                            )
-                        } else {
+                addCode("»")
+                if (constructorProperties.isNotEmpty()) addCode("\n")
+                addCode(")")
+                if (copyProperties.isNotEmpty()) {
+                    addControlFlow(".let") {
+                        addCode("it.copy(«")
+                        copyProperties.forEachIndexed { index, property ->
                             val variable = variables.getValue(property)
-                            addCode("%N", variable.value)
-                            if (variable.value.type.isNullable && property.type.isPrimitive) {
-                                addCode(" ?: %L", property.type.defaultPrimitiveValue())
+
+                            if (index > 0) {
+                                addCode(",")
+                            }
+                            addCode("\n%N = ", property.name)
+
+                            if (variable.helper == null) {
+                                addCode("%N ?: it.%N", variable.value, property.name)
+                            } else {
+                                addCode("if (%L) %N else it.%N", variable.isSet, variable.value, property.name)
                             }
                         }
-                        separator = ",\n"
+                        addCode("»\n)\n")
                     }
-                    addCode(
-                        ",\n%L,\n/*·DefaultConstructorMarker·*/·null",
-                        maskNames.map { CodeBlock.of("%L", it) }.joinToCode(", ")
-                    )
-                    addCode("\n»)\n")
-                    endControlFlow()
                 }
             }
     }
 
-    private fun Property.createVariables(
-        maskName: String?,
-        maskIndex: Int,
-    ): PropertyVariables {
-        val valueType = if (type.isPrimitive && !shouldUseAdapter) type else type.nullable()
-        val localIsSet = if (valueType.isPrimitive && !hasDefaultValue) {
-            PropertySpec
-                .builder(nameAllocator.newName("${name}IsSet"), BOOLEAN)
+    private fun Property.createVariables() =
+        LegacyPropertyVariables(
+            value = PropertySpec
+                .builder(
+                    name = nameAllocator.newName(name),
+                    type = if (type.isPrimitive && !shouldUseAdapter) type else type.nullable()
+                )
+                .initializer(
+                    when {
+                        type.isPrimitive && !shouldUseAdapter ->
+                            when (type) {
+                                BOOLEAN -> CodeBlock.of("false")
+                                BYTE -> CodeBlock.of("0")
+                                SHORT -> CodeBlock.of("0")
+                                INT -> CodeBlock.of("0")
+                                LONG -> CodeBlock.of("0L")
+                                CHAR -> CodeBlock.of("'\\u0000'")
+                                FLOAT -> CodeBlock.of("0f")
+                                DOUBLE -> CodeBlock.of("0.0")
+                                else -> throw AssertionError()
+                            }
+                        else -> CodeBlock.of("null")
+                    }
+                )
                 .mutable()
-                .initializer("false")
-                .build()
-        } else {
-            null
-        }
-        val mask = 1 shl maskIndex
-        val value = PropertySpec
-            .builder(
-                name = nameAllocator.newName(name),
-                type = valueType
-            )
-            .initializer(
-                when {
-                    type.isPrimitive && !shouldUseAdapter ->
-                        when (type) {
-                            BOOLEAN -> CodeBlock.of("false")
-                            BYTE -> CodeBlock.of("0")
-                            SHORT -> CodeBlock.of("0")
-                            INT -> CodeBlock.of("0")
-                            LONG -> CodeBlock.of("0L")
-                            CHAR -> CodeBlock.of("'\\u0000'")
-                            FLOAT -> CodeBlock.of("0f")
-                            DOUBLE -> CodeBlock.of("0.0")
-                            else -> throw AssertionError()
-                        }
-
-                    else -> CodeBlock.of("null")
-                }
-            )
-            .mutable()
-            .build()
-        return PropertyVariables(
-            value = value,
-            localIsSet = localIsSet,
-            markSet = if (localIsSet != null) {
-                CodeBlock.builder().addStatement("%N·=·true", localIsSet).build()
-            } else if (hasDefaultValue) {
-                CodeBlock.builder()
-                    .add("// \$mask = \$mask and (1 shl %L).inv()\n", maskIndex)
-                    .addStatement("%1L = %1L and 0x%2L.toInt()", maskName, Integer.toHexString(mask.inv()))
+                .build(),
+            helper = if (type.isPrimitive && !shouldUseAdapter || type.isNullable && hasDefaultValue) {
+                PropertySpec
+                    .builder(nameAllocator.newName("${name}IsSet"), BOOLEAN)
+                    .mutable()
+                    .initializer("false")
                     .build()
             } else {
                 null
-            },
-            isSet = if (localIsSet != null) {
-                CodeBlock.of("%N", localIsSet)
-            } else if (hasDefaultValue) {
-                CodeBlock.of("%1L and 0x%2L.toInt() != 0", maskName, Integer.toHexString(mask))
-            } else {
-                CodeBlock.of("%N != null", value)
-            },
-            isNotSet = if (localIsSet != null) {
-                CodeBlock.of("!%N", localIsSet)
-            } else if (hasDefaultValue) {
-                CodeBlock.of("%1L and 0x%2L.toInt() == 0", maskName, Integer.toHexString(mask))
-            } else {
-                CodeBlock.of("%N == null", value)
-            },
+            }
         )
-    }
 
 }
 
-private val INT_TYPE_BLOCK = CodeBlock.of("%T::class.javaPrimitiveType", INT)
-private val DEFAULT_CONSTRUCTOR_MARKER_TYPE_BLOCK = CodeBlock.of(
-    "%T::class.java",
-    ClassName("kotlin.jvm.internal", "DefaultConstructorMarker")
-)
-
-private data class PropertyVariables(
+private data class LegacyPropertyVariables(
     val value: PropertySpec,
-    val localIsSet: PropertySpec?,
-    val markSet: CodeBlock?,
-    val isNotSet: CodeBlock,
-    val isSet: CodeBlock,
-)
+    val helper: PropertySpec?
+) {
+    val isNotSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
+        if (helper == null) {
+            CodeBlock.of("%N == null", value)
+        } else {
+            CodeBlock.of("!%N", helper)
+        }
+    }
+    val isSet: CodeBlock by lazy(LazyThreadSafetyMode.NONE) {
+        if (helper == null) {
+            CodeBlock.of("%N != null", value)
+        } else {
+            CodeBlock.of("%N", helper)
+        }
+    }
+
+}
 
 private fun AdapterKey.annotations(createAnnotationsUsingConstructor: Boolean): CodeBlock {
     return when {
         jsonQualifiers.isEmpty() -> CodeBlock.of("")
         jsonQualifiers.singleOrNull()?.hasMethods == false && !createAnnotationsUsingConstructor ->
             CodeBlock.of(", %T::class.java", jsonQualifiers.single().annotationName)
-
         else -> CodeBlock.builder()
             .add(", setOf(")
             .applyIf(jsonQualifiers.size > 1) {
@@ -578,6 +424,7 @@ private fun AdapterKey.annotations(createAnnotationsUsingConstructor: Boolean): 
 }
 
 
+
 private val TypeName.hasTypeVariable: Boolean
     get() = when (this) {
         is ClassName -> false
@@ -586,75 +433,4 @@ private val TypeName.hasTypeVariable: Boolean
         is ParameterizedTypeName -> typeArguments.any { it.hasTypeVariable }
         is TypeVariableName -> true
         is WildcardTypeName -> inTypes.any { it.hasTypeVariable } || outTypes.any { it.hasTypeVariable }
-    }
-
-
-@OptIn(DelicateKotlinPoetApi::class)
-private fun TypeName.asTypeBlock(): CodeBlock {
-    if (annotations.isNotEmpty()) {
-        return copy(annotations = emptyList()).asTypeBlock()
-    }
-    return when (this) {
-        is ParameterizedTypeName -> {
-            if (rawType == ARRAY) {
-                val componentType = typeArguments[0]
-                if (componentType is ParameterizedTypeName) {
-                    // "generic" array just uses the component's raw type
-                    // java.lang.reflect.Array.newInstance(<raw-type>, 0).javaClass
-                    CodeBlock.of(
-                        "%T.newInstance(%L, 0).javaClass",
-                        Array::class.java.asClassName(),
-                        componentType.rawType.asTypeBlock()
-                    )
-                } else {
-                    CodeBlock.of("%T::class.java", copy(nullable = false))
-                }
-            } else {
-                rawType.asTypeBlock()
-            }
-        }
-
-        is TypeVariableName -> (bounds.firstOrNull() ?: ANY).asTypeBlock()
-        is LambdaTypeName -> rawType().asTypeBlock()
-        is ClassName -> {
-            // Check against the non-nullable version for equality, but we'll keep the nullability in
-            // consideration when creating the CodeBlock if needed.
-            when (val className = notNull()) {
-                BOOLEAN,
-                CHAR,
-                BYTE,
-                SHORT,
-                INT,
-                FLOAT,
-                LONG,
-                DOUBLE ->
-                    if (isNullable) {
-                        // Remove nullable but keep the java object type
-                        CodeBlock.of("%T::class.javaObjectType", className)
-                    } else {
-                        CodeBlock.of("%T::class.javaPrimitiveType", this)
-                    }
-
-                Types.Java.void,
-                NOTHING -> error("Parameter with void, or Nothing type is illegal")
-
-                else -> CodeBlock.of("%T::class.java", className)
-            }
-        }
-
-        else -> throw UnsupportedOperationException("Parameter with type '${javaClass.simpleName}' is illegal. Only classes, parameterized types, or type variables are allowed.")
-    }
-}
-
-private fun TypeName.defaultPrimitiveValue(): CodeBlock =
-    when (this) {
-        BOOLEAN -> CodeBlock.of("false")
-        CHAR -> CodeBlock.of("'\\u0000'")
-        BYTE -> CodeBlock.of("0.toByte()")
-        SHORT -> CodeBlock.of("0.toShort()")
-        INT -> CodeBlock.of("0")
-        FLOAT -> CodeBlock.of("0f")
-        LONG -> CodeBlock.of("0L")
-        DOUBLE -> CodeBlock.of("0.0")
-        else -> CodeBlock.of("null")
     }

@@ -35,7 +35,8 @@ class AdaptersProcessingStep(
     private val types: Types,
     private val elements: Elements,
     private val sourceVersion: SourceVersion,
-    private val createAnnotationsUsingConstructor: Boolean?
+    private val createAnnotationsUsingConstructor: Boolean?,
+    private val useLegacyDataClassRenderer: Boolean,
 ) : KotshiProcessor.GeneratingProcessingStep() {
     override val annotations: Set<Class<out Annotation>> =
         setOf(
@@ -104,7 +105,12 @@ class AdaptersProcessingStep(
                     )
                 }
 
-                adapters += generator.generateAdapter(sourceVersion, filer, createAnnotationsUsingConstructor)
+                adapters += generator.generateAdapter(
+                    sourceVersion = sourceVersion,
+                    filer = filer,
+                    createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
+                    useLegacyDataClassRenderer = useLegacyDataClassRenderer
+                )
             } catch (e: KaptProcessingError) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
             }

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KaptArguments
+
 plugins {
     `test-library`
     kotlin("kapt")
@@ -7,14 +9,16 @@ dependencies {
     kapt(projects.compiler)
 }
 
-val createAnnotationsUsingConstructor = providers.gradleProperty("kotshi.createAnnotationsUsingConstructor")
-    .orNull
-    ?.toBoolean()
+fun KaptArguments.argFromGradleProperty(name: String) {
+    val value = providers.gradleProperty(name).orNull
+    if (value != null) {
+        arg(name, value)
+    }
+}
 
-if (createAnnotationsUsingConstructor != null) {
-    kapt {
-        arguments {
-            arg("kotshi.createAnnotationsUsingConstructor", createAnnotationsUsingConstructor)
-        }
+kapt {
+    arguments {
+        argFromGradleProperty("kotshi.createAnnotationsUsingConstructor")
+        argFromGradleProperty("kotshi.useLegacyDataClassRenderer")
     }
 }

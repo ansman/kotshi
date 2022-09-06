@@ -24,6 +24,7 @@ import javax.lang.model.util.Types
 @IncrementalAnnotationProcessor(AGGREGATING)
 class KotshiProcessor : AbstractProcessor() {
     private var createAnnotationsUsingConstructor: Boolean? = null
+    private var useLegacyDataClassRenderer: Boolean = false
     private lateinit var elements: Elements
     private lateinit var types: Types
     private lateinit var metadataAccessor: MetadataAccessor
@@ -44,6 +45,7 @@ class KotshiProcessor : AbstractProcessor() {
                 elements = processingEnv.elementUtils,
                 sourceVersion = processingEnv.sourceVersion,
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
+                useLegacyDataClassRenderer = useLegacyDataClassRenderer,
             ),
             FactoryProcessingStep(
                 processor = this,
@@ -63,6 +65,7 @@ class KotshiProcessor : AbstractProcessor() {
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         createAnnotationsUsingConstructor = processingEnv.options["kotshi.createAnnotationsUsingConstructor"]?.toBooleanStrict()
+        useLegacyDataClassRenderer = processingEnv.options["kotshi.useLegacyDataClassRenderer"]?.toBooleanStrict() ?: useLegacyDataClassRenderer
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils
         metadataAccessor = MetadataAccessor(ElementsClassInspector.create(elements, processingEnv.typeUtils))
