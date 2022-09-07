@@ -5,8 +5,8 @@ import com.squareup.moshi.JsonQualifier
 import org.junit.Test
 import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation
 import se.ansman.kotshi.KotshiUtils.matches
-import kotlin.reflect.javaType
 import kotlin.reflect.KClass
+import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -262,6 +262,13 @@ class TestKotshiUtils {
         )).toString())
             .isEqualTo("@se.ansman.kotshi.TestQualifier(booleanArg=true, booleanArrayArg=[true, false], byteArg=1, byteArrayArg=[1, 2, 3], charArg=3, charArrayArg=[a, b, c], classArg=class se.ansman.kotshi.TestKotshiUtils, doubleArg=NaN, doubleArrayArg=[1.0, 2.0, 3.0], emptyArray=[], enumArg=Value2, floatArg=0.0, floatArrayArg=[1.0, 2.0, 3.0], intArg=6, intArrayArg=[1, 2, 3], longArg=8, longArrayArg=[1, 2, 3], nestedArg=@se.ansman.kotshi.TestQualifier\$Nested(arg=nested), shortArg=4, shortArrayArg=[1, 2, 3], stringArg=value, stringArrayArg=[one, two, three], ubyteArg=0, uintArg=0, ulongArg=0, ushortArg=0, vararg=[v1, v2])")
     }
+
+    @Test
+    fun testCreateJsonQualifierImplementation_annotationType() {
+        assertThat(TestQualifier::class.java.createJsonQualifierImplementation().annotationClass)
+            .isEqualTo(TestQualifier::class)
+    }
+
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test

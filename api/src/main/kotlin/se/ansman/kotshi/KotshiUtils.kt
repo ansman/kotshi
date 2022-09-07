@@ -144,7 +144,7 @@ object KotshiUtils {
 
             override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
                 when (method.name) {
-                    "annotationType" -> this
+                    "annotationType" -> this@createJsonQualifierImplementation
                     "equals" -> args!![0] === proxy || isInstance(args!![0]) && annotationMethods.all { m ->
                         annotationValuesEquals(m.invoke(args[0]), annotationArguments[m.name] ?: m.defaultValue)
                     }
