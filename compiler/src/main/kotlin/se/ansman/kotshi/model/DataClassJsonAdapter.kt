@@ -12,11 +12,5 @@ data class DataClassJsonAdapter(
     val serializeNulls: SerializeNulls,
     val constructorSignature: String,
 ) : GeneratableJsonAdapter() {
-    val adapterKeys = properties
-        .asSequence()
-        .filter { it.shouldUseAdapter }
-        .map { it.adapterKey }
-        .toSet()
-
     val serializedProperties = properties.filterNot { it.isTransient }
 }

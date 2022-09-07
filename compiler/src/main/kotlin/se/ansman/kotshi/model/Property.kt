@@ -1,7 +1,17 @@
 package se.ansman.kotshi.model
 
+import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.ARRAY
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.WildcardTypeName
+import se.ansman.kotshi.Functions
 import se.ansman.kotshi.PrimitiveAdapters
 import se.ansman.kotshi.isPrimitive
 import se.ansman.kotshi.notNull
@@ -11,7 +21,7 @@ data class Property(
     val name: String,
     val type: TypeName,
     val jsonName: String,
-    val adapterKey: AdapterKey,
+    val jsonQualifiers: Set<AnnotationModel>,
     val hasDefaultValue: Boolean,
     val shouldUseAdapter: Boolean,
     val isTransient: Boolean
@@ -37,11 +47,8 @@ data class Property(
             Property(
                 name = name,
                 type = type,
-                adapterKey = AdapterKey(
-                    type = type.unwrapTypeAlias().copy(nullable = false, annotations = emptyList()),
-                    jsonQualifiers = jsonQualifiers.toSet(),
-                ),
                 jsonName = parameterJsonName ?: propertyJsonName ?: name,
+                jsonQualifiers = jsonQualifiers.toSet(),
                 isTransient = isTransient,
                 hasDefaultValue = hasDefaultValue,
                 shouldUseAdapter = jsonQualifiers.isNotEmpty() ||
@@ -53,4 +60,52 @@ data class Property(
                     }
             )
     }
+}
+
+
+fun Property.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
+    type.asRuntimeType(typeVariableAccessor)
+
+val Property.suggestedAdapterName: String
+    get() = "${name}Adapter"
+
+private fun TypeName.asRuntimeType(typeVariableAccessor: (TypeVariableName) -> CodeBlock): CodeBlock =
+    when (val type = unwrapTypeAlias()) {
+        is ParameterizedTypeName ->
+            CodeBlock.builder()
+                .add(
+                    "%M(%T::class.javaObjectType", Functions.Moshi.newParameterizedType, if (type.rawType == ARRAY) {
+                        // Arrays are special, you cannot just do Array::class.java
+                        this
+                    } else {
+                        type.rawType.notNull()
+                    }
+                )
+                .apply {
+                    for (typeArgument in type.typeArguments) {
+                        add(", ")
+                        add(typeArgument.asRuntimeType(typeVariableAccessor))
+                    }
+                }
+                .add(")")
+                .build()
+
+        is WildcardTypeName -> when {
+            type.inTypes.size == 1 -> type.inTypes[0].asRuntimeType(typeVariableAccessor)
+            type.outTypes[0] == ANY -> ANY.asRuntimeType(typeVariableAccessor)
+            else -> type.outTypes[0].asRuntimeType(typeVariableAccessor)
+        }
+
+        is LambdaTypeName -> type.asParameterizedTypeName().asRuntimeType(typeVariableAccessor)
+        is TypeVariableName -> typeVariableAccessor(type)
+        else -> CodeBlock.of("%T::class.javaObjectType", type.notNull())
+    }
+
+private fun LambdaTypeName.asParameterizedTypeName(): ParameterizedTypeName {
+    val parameters = mutableListOf<TypeName>()
+    receiver?.let(parameters::add)
+    parameters.addAll(parameters)
+    parameters.add(returnType)
+    return ClassName("kotlin", "Function${parameters.size + (if (receiver == null) 0 else 1)}")
+        .parameterizedBy(parameters)
 }
