@@ -49,7 +49,6 @@ import se.ansman.kotshi.applyEach
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.isPrimitive
-import se.ansman.kotshi.model.AdapterKey
 import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.Property
 import se.ansman.kotshi.model.asRuntimeType
@@ -65,7 +64,7 @@ class DataClassAdapterRenderer(
     private val adapter: DataClassJsonAdapter,
     private val createAnnotationsUsingConstructor: Boolean
 ) : AdapterRenderer(adapter) {
-    private val adapterKeys = adapter.adapterKeys.generatePropertySpecs()
+    private val adapterKeys = adapter.properties.generatePropertySpecs()
     private val propertyNames = adapter.properties.mapTo(mutableSetOf()) { it.jsonName }
     private val parentLabels = adapter.polymorphicLabels.filterKeys { it !in propertyNames }
     private val serializedNames = adapter.serializedProperties.map { it.jsonName }.toSet()
@@ -120,31 +119,34 @@ class DataClassAdapterRenderer(
         }
     }
 
-    private fun Iterable<AdapterKey>.generatePropertySpecs(): Map<AdapterKey, PropertySpec> =
-        associateWith { adapterKey ->
-            PropertySpec
-                .builder(
-                    nameAllocator.newName(adapterKey.suggestedAdapterName),
-                    Types.Moshi.jsonAdapter.plusParameter(adapterKey.type),
-                    KModifier.PRIVATE
-                )
-                .initializer(
-                    CodeBlock.builder()
-                        .add("«moshi.adapter(")
-                        .add(adapterKey.asRuntimeType { typeVariableName ->
-                            val genericIndex =
-                                adapter.targetTypeVariables.indexOfFirst { it.name == typeVariableName.name }
-                            require(genericIndex >= 0) {
-                                throw IllegalStateException("Element ${adapter.targetType} is generic but is of an unknown type")
-                            }
-                            CodeBlock.of("types[$genericIndex]")
-                        })
-                        .add(adapterKey.annotations(createAnnotationsUsingConstructor))
-                        .add(")»")
-                        .build()
-                )
-                .build()
-        }
+    private fun Iterable<Property>.generatePropertySpecs(): Map<Property, PropertySpec> =
+        asSequence()
+            .filter { it.shouldUseAdapter }
+            .associateWith { property ->
+                PropertySpec
+                    .builder(
+                        nameAllocator.newName(property.suggestedAdapterName),
+                        Types.Moshi.jsonAdapter.plusParameter(property.type),
+                        KModifier.PRIVATE
+                    )
+                    .initializer(
+                        CodeBlock.builder()
+                            .add("moshi.adapter(«\n")
+                            .add(property.asRuntimeType { typeVariableName ->
+                                val genericIndex =
+                                    adapter.targetTypeVariables.indexOfFirst { it.name == typeVariableName.name }
+                                require(genericIndex >= 0) {
+                                    throw IllegalStateException("Element ${adapter.targetType} is generic but is of an unknown type")
+                                }
+                                CodeBlock.of("types[$genericIndex]")
+                            })
+                            .add(",\n %L", property.annotations(createAnnotationsUsingConstructor))
+                            .add(",\n %S", property.name)
+                            .add("\n»)")
+                            .build()
+                    )
+                    .build()
+            }
 
     override fun FunSpec.Builder.renderToJson(
         writerParameter: ParameterSpec,
@@ -161,7 +163,7 @@ class DataClassAdapterRenderer(
 
                     if (property.shouldUseAdapter) {
                         addCode(
-                            "%N.toJson(%N, ", adapterKeys.getValue(property.adapterKey),
+                            "%N.toJson(%N, ", adapterKeys.getValue(property),
                             writerParameter
                         )
                             .addCode(getter)
@@ -275,7 +277,7 @@ class DataClassAdapterRenderer(
                                 addStatement(
                                     "%N·= %N.fromJson(%N)",
                                     variable.value,
-                                    adapterKeys.getValue(property.adapterKey),
+                                    adapterKeys.getValue(property),
                                     readerParameter
                                 )
                                 if (variable.markSet != null) {
@@ -478,11 +480,10 @@ class DataClassAdapterRenderer(
                         }
                         separator = ",\n"
                     }
-                    addCode(
-                        ",\n%L,\n/*·DefaultConstructorMarker·*/·null",
-                        maskNames.map { CodeBlock.of("%L", it) }.joinToCode(", ")
-                    )
-                    addCode("\n»)\n")
+                    for (maskName in maskNames) {
+                        addCode(",\n%L", maskName)
+                    }
+                    addCode(",\n/*·DefaultConstructorMarker·*/·null\n»)\n")
                     endControlFlow()
                 }
             }
@@ -574,30 +575,23 @@ private data class PropertyVariables(
     val isSet: CodeBlock,
 )
 
-private fun AdapterKey.annotations(createAnnotationsUsingConstructor: Boolean): CodeBlock {
-    return when {
-        jsonQualifiers.isEmpty() -> CodeBlock.of("")
-        jsonQualifiers.singleOrNull()?.hasMethods == false && !createAnnotationsUsingConstructor ->
-            CodeBlock.of(", %T::class.java", jsonQualifiers.single().annotationName)
-
-        else -> CodeBlock.builder()
-            .add(", setOf(")
-            .applyIf(jsonQualifiers.size > 1) {
-                indent()
-                add("\n")
-            }
-            .applyEachIndexed(jsonQualifiers.sortedBy { it.annotationName }) { index, qualifier ->
-                if (index > 0) add(",\n")
-                add(qualifier.render(createAnnotationsUsingConstructor))
-            }
-            .applyIf(jsonQualifiers.size > 1) {
-                unindent()
-                add("\n")
-            }
-            .add(")")
-            .build()
-    }
-}
+private fun Property.annotations(createAnnotationsUsingConstructor: Boolean): CodeBlock =
+    CodeBlock.builder()
+        .add("%M(", Functions.Kotlin.setOf)
+        .applyIf(jsonQualifiers.size > 1) {
+            indent()
+            add("\n")
+        }
+        .applyEachIndexed(jsonQualifiers.sortedBy { it.annotationName }) { index, qualifier ->
+            if (index > 0) add(",\n")
+            add(qualifier.render(createAnnotationsUsingConstructor))
+        }
+        .applyIf(jsonQualifiers.size > 1) {
+            unindent()
+            add("\n")
+        }
+        .add(")")
+        .build()
 
 
 private val TypeName.hasTypeVariable: Boolean

@@ -15,6 +15,7 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonQualifier
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.Types
 import java.io.IOException
 import java.lang.reflect.Type
 
@@ -50,6 +51,11 @@ object Functions {
         val typeArgumentsOrFail = KotshiUtils::class.java.member("typeArgumentsOrFail")
         val createJsonQualifierImplementation = KotshiUtils::class.member("createJsonQualifierImplementation")
         val matches = KotshiUtils::class.member("matches")
+    }
+
+    object Moshi {
+        val newParameterizedType = Types::class.member("newParameterizedType")
+        val getRawType = Types::class.member("getRawType")
     }
 }
 

@@ -23,7 +23,6 @@ import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.hasParameters
 import se.ansman.kotshi.mapTypeArguments
 import se.ansman.kotshi.model.JsonAdapterFactory
-import se.ansman.kotshi.model.moshiTypes
 import se.ansman.kotshi.model.render
 import se.ansman.kotshi.nullable
 import se.ansman.kotshi.rawType
@@ -112,7 +111,7 @@ internal class JsonAdapterFactoryRenderer(
         annotations: MutableSet<AnnotationSpec>,
         properties: MutableSet<PropertySpec>,
     ) =
-        addStatement("val·rawType·=·%T.getRawType(%N)", moshiTypes, typesParam)
+        addStatement("val·rawType·=·%M(%N)", Functions.Moshi.getRawType, typesParam)
             .addControlFlow("when") {
                 for (adapter in factory.manuallyRegisteredAdapters.sorted()) {
                     addCode("rawType·==·%T::class.java", adapter.targetType.rawType())
@@ -173,7 +172,7 @@ internal class JsonAdapterFactoryRenderer(
         }
         return addStatement("if·(%N.isNotEmpty()) return·null", annotationsParam)
             .addCode("\n")
-            .addControlFlow("return·when·(%T.getRawType(%N))", moshiTypes, typesParam) {
+            .addControlFlow("return·when·(%M(%N))", Functions.Moshi.getRawType, typesParam) {
                 for (adapter in factory.generatedAdapters.sorted()) {
                     addCode("%T::class.java·->«\n", adapter.adapter.targetType.rawType())
                     addAdapterConstructorCall(
