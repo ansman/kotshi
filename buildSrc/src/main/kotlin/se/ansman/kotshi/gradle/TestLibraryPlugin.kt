@@ -20,10 +20,11 @@ abstract class TestLibraryPlugin : Plugin<Project> {
 
         with(target.dependencies) {
             add("implementation", target.project(":api"))
+            add("implementation", target.project(":compiler"))
             add("implementation", deps.moshi.current)
             add("compileOnly", deps.findBugs)
             add("testImplementation", deps.truth)
-            add("testImplementation", deps.compiletesting)
+            add("testImplementation", deps.compileTesting.core)
             add("testImplementation", deps.junit)
             add("testImplementation", deps.kotlin.junit)
         }

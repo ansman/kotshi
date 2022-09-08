@@ -6,11 +6,15 @@ import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Errors.defaultSealedValueIsGeneric
+import se.ansman.kotshi.Errors.multipleJsonDefaultValueInSealedClass
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.logKotshiError
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.SealedClassJsonAdapter
@@ -35,11 +39,15 @@ class SealedClassAdapterGenerator(
 
     override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
         val implementations = findSealedClassImplementations().toList()
+        if (implementations.isEmpty()) {
+            throw KaptProcessingError(Errors.noSealedSubclasses, targetElement)
+        }
+
         val annotation = targetElement.getAnnotation(Polymorphic::class.java)!!
 
         val subtypes = implementations.mapNotNull { subtypeElement ->
             val typeSpec = metadataAccessor.getTypeSpec(subtypeElement)
-            val subtype = SealedClassJsonAdapter.Subtype(
+            SealedClassJsonAdapter.Subtype(
                 type = typeSpec.getTypeName(),
                 wildcardType = typeSpec.getTypeName { STAR },
                 superClass = typeSpec.superclass,
@@ -47,20 +55,11 @@ class SealedClassAdapterGenerator(
                     ?.value
                     ?: return@mapNotNull run {
                         if (KModifier.SEALED !in typeSpec.modifiers && subtypeElement.getAnnotation(JsonDefaultValue::class.java) == null) {
-                            throw KaptProcessingError(
-                                "Missing @PolymorphicLabel on ${typeSpec.getTypeName()}",
-                                subtypeElement
-                            )
+                            messager.logKotshiError(Errors.polymorphicSubclassMustHavePolymorphicLabel, subtypeElement)
                         }
-
                         null
                     },
             )
-            subtype
-        }
-
-        if (subtypes.isEmpty()) {
-            throw KaptProcessingError("No classes annotated with @PolymorphicLabel", targetElement)
         }
 
         return SealedClassJsonAdapter(
@@ -79,17 +78,14 @@ class SealedClassAdapterGenerator(
                         null
                     } else {
                         if (typeSpec.typeVariables.isNotEmpty()) {
-                            throw KaptProcessingError(
-                                "The default value of a sealed class cannot be generic",
-                                targetElement
-                            )
+                            throw KaptProcessingError(defaultSealedValueIsGeneric, targetElement)
                         }
                         typeSpec.tag<ClassName>()!!
                     }
                 }
                 .let { defaultValues ->
                     if (defaultValues.size > 1) {
-                        throw KaptProcessingError("Multiple subclasses annotated with @JsonDefaultValue", targetElement)
+                        throw KaptProcessingError(multipleJsonDefaultValueInSealedClass, targetElement)
                     } else {
                         defaultValues.singleOrNull()
                     }

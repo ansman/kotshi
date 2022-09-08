@@ -12,5 +12,5 @@ data class DataClassJsonAdapter(
     val serializeNulls: SerializeNulls,
     val constructorSignature: String,
 ) : GeneratableJsonAdapter() {
-    val serializedProperties = properties.filterNot { it.isTransient }
+    val serializedProperties = properties.filterNot { it.isIgnored }
 }

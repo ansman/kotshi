@@ -1,5 +1,3 @@
-@file:OptIn(InternalKotshiApi::class)
-
 package se.ansman.kotshi.kapt.generators
 
 import com.google.auto.common.MoreElements
@@ -14,7 +12,7 @@ import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
-import se.ansman.kotshi.InternalKotshiApi
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 import se.ansman.kotshi.ProguardConfig
@@ -71,14 +69,11 @@ abstract class AdapterGenerator(
     ): GeneratedAdapter {
         when {
             kmClass.isInner ->
-                throw KaptProcessingError("@JsonSerializable can't be applied to inner classes", targetElement)
+                throw KaptProcessingError(Errors.dataClassCannotBeInner, targetElement)
             kmClass.flags.isLocal ->
-                throw KaptProcessingError("@JsonSerializable can't be applied to local classes", targetElement)
+                throw KaptProcessingError(Errors.dataClassCannotBeLocal, targetElement)
             !kmClass.flags.isPublic && !kmClass.flags.isInternal ->
-                throw KaptProcessingError(
-                    "Classes annotated with @JsonSerializable must public or internal",
-                    targetElement
-                )
+                throw KaptProcessingError(Errors.privateClass, targetElement)
         }
 
         val generatedAdapter = getGeneratableJsonAdapter()
@@ -86,6 +81,7 @@ abstract class AdapterGenerator(
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor
                     ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor,
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
+                error = { KaptProcessingError(it, targetElement) },
             )
             .render {
                 addOriginatingElement(targetElement)
@@ -102,11 +98,8 @@ abstract class AdapterGenerator(
     protected fun getPolymorphicLabels(): Map<String, String> =
         targetElement.getPolymorphicLabels(
             supertypes = { supertypes() },
-            hasAnnotation = { getAnnotation(it) != null },
-            getPolymorphicLabelKey = { getAnnotation(Polymorphic::class.java)?.labelKey },
-            getPolymorphicLabel = { getAnnotation(PolymorphicLabel::class.java)?.value },
-            error = ::KaptProcessingError
-        )
+            getPolymorphicLabelKey = { getAnnotation(Polymorphic::class.java)?.labelKey }
+        ) { getAnnotation(PolymorphicLabel::class.java)?.value }
 
 
     private fun TypeElement.supertypes(): Sequence<TypeElement> = sequence {

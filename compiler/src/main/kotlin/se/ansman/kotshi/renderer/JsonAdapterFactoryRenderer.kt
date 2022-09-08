@@ -61,7 +61,13 @@ internal class JsonAdapterFactoryRenderer(
                     .apply {
                         when (factory.usageType) {
                             JsonAdapterFactory.UsageType.Standalone -> addSuperinterface(Types.Moshi.jsonAdapterFactory)
-                            is JsonAdapterFactory.UsageType.Subclass -> addSuperinterface(factory.usageType.parent)
+                            is JsonAdapterFactory.UsageType.Subclass -> {
+                                if (factory.usageType.parentIsInterface) {
+                                    addSuperinterface(factory.usageType.parent)
+                                } else {
+                                    superclass(factory.usageType.parent)
+                                }
+                            }
                         }
                     }
                     .addAnnotations(annotations)

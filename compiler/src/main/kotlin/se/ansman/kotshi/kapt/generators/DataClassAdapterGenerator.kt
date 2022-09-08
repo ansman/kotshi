@@ -7,6 +7,8 @@ import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.KmConstructor
 import kotlinx.metadata.jvm.signature
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
@@ -37,34 +39,31 @@ class DataClassAdapterGenerator(
 
     private val config = element.getAnnotation(JsonSerializable::class.java)
 
-    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
-        DataClassJsonAdapter(
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
+        val primaryConstructor = targetTypeSpec.primaryConstructor!!
+        if (KModifier.PRIVATE in primaryConstructor.modifiers || KModifier.PROTECTED in primaryConstructor.modifiers) {
+            throw KaptProcessingError(Errors.privateDataClassConstructor, targetElement)
+        }
+        return DataClassJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,
             targetTypeVariables = targetTypeSpec.typeVariables,
             polymorphicLabels = getPolymorphicLabels(),
-            properties = targetTypeSpec.primaryConstructor
-                ?.parameters
-                ?.map { parameter -> parameter.toProperty() }
-                ?.takeUnless { it.isEmpty() }
-                ?: throw KaptProcessingError("Could not find any data class properties.", targetElement),
+            properties = primaryConstructor
+                .parameters
+                .map { parameter -> parameter.toProperty() },
             serializeNulls = config.serializeNulls,
-            constructorSignature = targetTypeSpec.primaryConstructor!!.tag<KmConstructor>()!!.signature!!.toString()
+            constructorSignature = primaryConstructor.tag<KmConstructor>()!!.signature!!.toString()
         )
+    }
 
     private fun ParameterSpec.toProperty(): Property {
         val property = targetTypeSpec.propertySpecs.find { it.name == name }
-            ?: throw KaptProcessingError("Could not find property for parameter $name", targetElement)
+            ?: throw KaptProcessingError("Internal error! Could not find property for parameter $name. Please file an issue at https://github.com/ansman/kotshi", targetElement)
 
 
         if (KModifier.PRIVATE in property.modifiers || KModifier.PROTECTED in property.modifiers) {
-            throw KaptProcessingError("Property $name must be public or internal", targetElement)
-        }
-
-        val isTransient = property.annotations.any { it.typeName == se.ansman.kotshi.Types.Kotlin.transient } ||
-            annotations.isJsonIgnore() || property.annotations.isJsonIgnore()
-        if (isTransient && defaultValue == null) {
-            throw KaptProcessingError("Transient property $name must declare a default value", targetElement)
+            throw KaptProcessingError(privateDataClassProperty(name), targetElement)
         }
 
         return Property.create(
@@ -75,8 +74,10 @@ class DataClassAdapterGenerator(
             useAdaptersForPrimitives = config.useAdaptersForPrimitives,
             parameterJsonName = annotations.jsonName(),
             propertyJsonName = property.annotations.jsonName(),
-            isTransient = isTransient,
+            isTransient = property.annotations.any { it.typeName == se.ansman.kotshi.Types.Kotlin.transient },
+            isJsonIgnore = annotations.isJsonIgnore() ?: property.annotations.isJsonIgnore(),
             hasDefaultValue = defaultValue != null,
+            error = { KaptProcessingError(it, targetElement) }
         )
     }
 }

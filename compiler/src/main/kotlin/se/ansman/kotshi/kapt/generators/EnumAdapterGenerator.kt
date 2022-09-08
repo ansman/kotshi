@@ -3,9 +3,10 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.metadata.isEnum
 import kotlinx.metadata.KmClass
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Types.Kotshi.jsonDefaultValue
-import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.KaptProcessingError
+import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.jsonName
 import se.ansman.kotshi.model.EnumJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter
@@ -38,14 +39,12 @@ class EnumAdapterGenerator(
                 .filter { (_, constant) ->
                     constant.annotationSpecs.any { it.typeName == jsonDefaultValue }
                 }
-                .takeIf { it.isNotEmpty() }
-                ?.let { defaultValues ->
-                    defaultValues.singleOrNull()
-                        ?.toEntry()
-                        ?: throw KaptProcessingError(
-                            "Only one enum entry can be annotated with @JsonDefaultValue",
-                            targetElement
-                        )
+                .let { defaultValues ->
+                    when (defaultValues.size) {
+                        0 -> null
+                        1 -> defaultValues[0].toEntry()
+                        else -> throw KaptProcessingError(Errors.multipleJsonDefaultValueInEnum, targetElement)
+                    }
                 }
         )
 

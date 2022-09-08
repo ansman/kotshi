@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.metadata.toKmClass
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.isLocal
+import se.ansman.kotshi.Errors.javaClassNotSupported
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 
@@ -26,7 +27,7 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
 
     fun getMetadata(type: Element): Metadata =
         getMetadataOrNull(type)
-            ?: throw KaptProcessingError("Class must be written in Kotlin", type)
+            ?: throw KaptProcessingError(javaClassNotSupported, type)
 
     fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) { metadata.toKmClass() }
     fun getKmClass(type: Element): KmClass = getKmClass(getMetadata(type))

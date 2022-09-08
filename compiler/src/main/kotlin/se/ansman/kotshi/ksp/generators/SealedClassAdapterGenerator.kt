@@ -8,6 +8,10 @@ import com.google.devtools.ksp.symbol.Modifier.SEALED
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import se.ansman.kotshi.Errors.defaultSealedValueIsGeneric
+import se.ansman.kotshi.Errors.multipleJsonDefaultValueInSealedClass
+import se.ansman.kotshi.Errors.noSealedSubclasses
+import se.ansman.kotshi.Errors.polymorphicSubclassMustHavePolymorphicLabel
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.Polymorphic.Fallback
@@ -35,15 +39,15 @@ class SealedClassAdapterGenerator(
 
     override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
         val sealedSubclasses = targetElement.getAllSealedSubclasses().toList()
+        if (sealedSubclasses.isEmpty()) {
+            throw KspProcessingError(noSealedSubclasses, targetElement)
+        }
         val annotation = targetElement.getAnnotation(Polymorphic::class.java)!!
         val labelKey = annotation.getValue<String>("labelKey")
         val subtypes = sealedSubclasses
             .mapNotNull { it.toSubtype() }
             .toList()
 
-        if (subtypes.isEmpty()) {
-            throw KspProcessingError("No classes annotated with @PolymorphicLabel", targetElement)
-        }
 
         return SealedClassJsonAdapter(
             targetPackageName = targetClassName.packageName,
@@ -58,14 +62,14 @@ class SealedClassAdapterGenerator(
                 .filter { it.getAnnotation<JsonDefaultValue>() != null }
                 .map {
                     if (it.typeParameters.isNotEmpty()) {
-                        throw KspProcessingError("The default value of a sealed class cannot be generic", it)
+                        throw KspProcessingError(defaultSealedValueIsGeneric, it)
                     }
                     it.toClassName()
                 }
                 .toList()
                 .let { defaultValues ->
                     if (defaultValues.size > 1) {
-                        throw KspProcessingError("Multiple subclasses annotated with @JsonDefaultValue", targetElement)
+                        throw KspProcessingError(multipleJsonDefaultValueInSealedClass, targetElement)
                     } else {
                         defaultValues.singleOrNull()
                     }
@@ -86,7 +90,7 @@ class SealedClassAdapterGenerator(
             label = getAnnotation(PolymorphicLabel::class.java)?.getValue("value")
                 ?: run {
                     if (SEALED !in modifiers && getAnnotation<JsonDefaultValue>() == null) {
-                        throw KspProcessingError("Missing @PolymorphicLabel on ${toClassName()}", this)
+                        throw KspProcessingError(polymorphicSubclassMustHavePolymorphicLabel, this)
                     }
                     return null
                 }
