@@ -3,7 +3,12 @@ package se.ansman.kotshi.model
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Errors.nestedSealedClassHasPolymorphicLabel
+import se.ansman.kotshi.Errors.nestedSealedClassMissingPolymorphicLabel
+import se.ansman.kotshi.Errors.nestedSealedClassMustBePolymorphic
 import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
 
@@ -41,25 +46,22 @@ fun <T> T.getSealedSubtypes(
     getPolymorphicLabelKey: T.() -> String?,
     getPolymorphicLabel: T.() -> String?,
     error: (String, T) -> Throwable,
-    labelKey: String = getPolymorphicLabelKey(this) ?: throw error(
-        "Sealed classes must be annoted with @Polymorphic",
-        this
-    )
+    labelKey: String = getPolymorphicLabelKey() ?: throw error(Errors.sealedClassMustBePolymorphic, this)
 ): Sequence<T> = getSealedSubclasses().flatMap {
+    if (!it.hasAnnotation(JsonSerializable::class.java)) {
+        throw error(Errors.polymorphicSubclassMustHaveJsonSerializable, it)
+    }
     when {
         it.isSealed() -> {
             val subclassLabelKey = it.getPolymorphicLabelKey()
-                ?: throw error("Children of a sealed class must be annotated with @Polymorphic", it)
+                ?: throw error(nestedSealedClassMustBePolymorphic, it)
 
             val subclassLabel = it.getPolymorphicLabel()
 
             when {
                 subclassLabelKey == labelKey -> {
                     if (subclassLabel != null) {
-                        throw error(
-                            "Children of a sealed class with the same label key must not be annotated with @PolymorphicLabel",
-                            it
-                        )
+                        throw error(nestedSealedClassHasPolymorphicLabel, it)
                     }
                     it.getSealedSubtypes(
                         getSealedSubclasses = getSealedSubclasses,
@@ -72,19 +74,13 @@ fun <T> T.getSealedSubtypes(
                     )
                 }
                 subclassLabel == null -> {
-                    throw error(
-                        "Children of a sealed class with a different label key must be annotated with @PolymorphicLabel",
-                        it
-                    )
+                    throw error(nestedSealedClassMissingPolymorphicLabel, it)
                 }
                 else -> sequenceOf(it)
             }
         }
         !it.hasAnnotation(PolymorphicLabel::class.java) && !it.hasAnnotation(JsonDefaultValue::class.java) ->
-            throw error(
-                "Subclasses of sealed classes must be annotated with @PolymorphicLabel or @JsonDefaultValue",
-                it
-            )
+            throw error(Errors.polymorphicSubclassMustHavePolymorphicLabel, it)
         else -> sequenceOf(it)
     }
 }

@@ -20,7 +20,11 @@ object deps {
     const val autocommon = "com.google.auto:auto-common:0.11"
     const val junit = "junit:junit:4.12"
     const val truth = "com.google.truth:truth:0.30"
-    const val compiletesting = "com.google.testing.compile:compile-testing:0.10"
+    object compileTesting {
+        const val version = "1.4.9"
+        const val core = "com.github.tschuchortdev:kotlin-compile-testing:$version"
+        const val ksp = "com.github.tschuchortdev:kotlin-compile-testing-ksp:$version"
+    }
     object moshi {
         const val oldestSupported = "com.squareup.moshi:moshi:1.8.0"
         const val current = "com.squareup.moshi:moshi:1.13.0"

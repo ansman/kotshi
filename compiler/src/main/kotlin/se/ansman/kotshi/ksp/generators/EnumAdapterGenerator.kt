@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.moshi.Json
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonProperty
@@ -34,7 +35,7 @@ class EnumAdapterGenerator(
 
         val defaultValues = entries.filter { it.getAnnotation<JsonDefaultValue>() != null }
         if (defaultValues.size > 1) {
-            throw KspProcessingError("Only one enum entry can be annotated with @JsonDefaultValue", targetElement)
+            throw KspProcessingError(Errors.multipleJsonDefaultValueInEnum, targetElement)
         }
 
         return EnumJsonAdapter(

@@ -16,6 +16,7 @@ kotlin {
 
 dependencies {
     ksp(projects.compiler)
+    testImplementation(deps.compileTesting.ksp)
 }
 
 fun KspExtension.argFromGradleProperty(name: String) {

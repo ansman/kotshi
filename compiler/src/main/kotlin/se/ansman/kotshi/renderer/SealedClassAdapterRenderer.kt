@@ -16,6 +16,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.withIndent
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Functions.Kotshi.value
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.TypeRenderer
@@ -31,7 +32,10 @@ import se.ansman.kotshi.applyIf
 import se.ansman.kotshi.model.SealedClassJsonAdapter
 import java.lang.reflect.ParameterizedType
 
-class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : AdapterRenderer(adapter) {
+class SealedClassAdapterRenderer(
+    private val adapter: SealedClassJsonAdapter,
+    private val error: (String) -> Throwable,
+) : AdapterRenderer(adapter) {
     private val labelKeyOptions = PropertySpec
         .builder(nameAllocator.newName("labelKeyOptions"), Types.Moshi.jsonReaderOptions, KModifier.PRIVATE)
         .initializer("%T.of(%S)", Types.Moshi.jsonReaderOptions, adapter.labelKey)
@@ -60,20 +64,14 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
     }
 
     private val defaultAdapterIndex = adapter.subtypes.indexOfFirst { it.type == adapter.defaultType }
-    private val defaultAdapterProperty = adapter.defaultType
-        ?.takeIf { defaultAdapterIndex == -1 }
-        ?.let { defaultType ->
-            PropertySpec
-                .builder(nameAllocator.newName("defaultAdapter"), adapterType, KModifier.PRIVATE)
-                .apply {
-                    if (defaultAdapterIndex == -1) {
-                        initializer("moshi.adapter<%T>(%T::class.java)", adapter.targetType, defaultType)
-                    } else {
-                        initializer("%N[%L]", adapters, defaultAdapterIndex)
-                    }
-                }
-                .build()
-        }
+    private val defaultAdapterProperty = if (adapter.defaultType != null && defaultAdapterIndex == -1) {
+        PropertySpec
+            .builder(nameAllocator.newName("defaultAdapter"), adapterType, KModifier.PRIVATE)
+            .initializer("moshi.adapter<%T>(%T::class.java)", adapter.targetType, adapter.defaultType)
+            .build()
+    } else {
+        null
+    }
 
     private val defaultAdapterAccessor = when {
         defaultAdapterIndex != -1 -> CodeBlock.of("%N[%L]", adapters, defaultAdapterIndex)
@@ -178,7 +176,7 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
 
     private fun SealedClassJsonAdapter.Subtype.render(forceBox: Boolean = false): CodeBlock {
         val renderer = TypeRenderer { typeVariable ->
-            val superParameters = (superClass as ParameterizedTypeName?)?.typeArguments
+            val superParameters = (superClass as? ParameterizedTypeName)?.typeArguments ?: emptyList()
 
             fun TypeName.findAccessor(typesIndex: Int): CodeBlock? {
                 return when (this) {
@@ -226,7 +224,7 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
                     }
                 }
             }
-            superParameters?.forEachIndexed { index, superParameter ->
+            superParameters.forEachIndexed { index, superParameter ->
                 val accessor = superParameter.findAccessor(index) ?: return@forEachIndexed
                 return@TypeRenderer CodeBlock.builder()
                     .add("types[%L]\n", index)
@@ -236,7 +234,8 @@ class SealedClassAdapterRenderer(private val adapter: SealedClassJsonAdapter) : 
                     .build()
             }
 
-            throw IllegalArgumentException("Could not determine type of type variable ${typeVariable.name} for type $type.")
+
+            throw error(Errors.sealedSubclassMustNotHaveGeneric(typeVariable.name))
         }
 
         return renderer.render(type, forceBox = forceBox)

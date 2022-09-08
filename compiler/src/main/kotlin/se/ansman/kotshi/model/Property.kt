@@ -11,6 +11,7 @@ import com.squareup.kotlinpoet.STRING
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Functions
 import se.ansman.kotshi.PrimitiveAdapters
 import se.ansman.kotshi.isPrimitive
@@ -24,10 +25,10 @@ data class Property(
     val jsonQualifiers: Set<AnnotationModel>,
     val hasDefaultValue: Boolean,
     val shouldUseAdapter: Boolean,
-    val isTransient: Boolean
+    val isIgnored: Boolean
 ) {
     init {
-        if (isTransient) {
+        if (isIgnored) {
             require(hasDefaultValue)
         }
     }
@@ -42,14 +43,28 @@ data class Property(
             parameterJsonName: String?,
             propertyJsonName: String?,
             isTransient: Boolean,
+            isJsonIgnore: Boolean?,
             hasDefaultValue: Boolean,
-        ): Property =
-            Property(
+            error: (String) -> Throwable
+        ): Property {
+            if (isJsonIgnore == false && isTransient) {
+                throw error(Errors.nonIgnoredDataClassPropertyMustNotBeTransient(name))
+            }
+
+            if (!hasDefaultValue) {
+                if (isTransient) {
+                    throw error(Errors.transientDataClassPropertyWithoutDefaultValue(name))
+                } else if (isJsonIgnore == true) {
+                    throw error(Errors.ignoredDataClassPropertyWithoutDefaultValue(name))
+                }
+            }
+
+            return Property(
                 name = name,
                 type = type,
                 jsonName = parameterJsonName ?: propertyJsonName ?: name,
                 jsonQualifiers = jsonQualifiers.toSet(),
-                isTransient = isTransient,
+                isIgnored = isTransient || isJsonIgnore == true,
                 hasDefaultValue = hasDefaultValue,
                 shouldUseAdapter = jsonQualifiers.isNotEmpty() ||
                     !type.notNull().isPrimitive && type.notNull() != STRING ||
@@ -59,6 +74,7 @@ data class Property(
                         PrimitiveAdapters.DISABLED -> false
                     }
             )
+        }
     }
 }
 

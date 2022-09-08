@@ -126,7 +126,7 @@ internal data class JsonAdapterFactory(
         object Standalone : UsageType()
 
         /** Generates an object that implements the given [parent] which in turn implements JsonAdapter.Factory */
-        data class Subclass(val parent: TypeName) : UsageType()
+        data class Subclass(val parent: TypeName, val parentIsInterface: Boolean) : UsageType()
     }
 }
 

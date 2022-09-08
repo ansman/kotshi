@@ -20,12 +20,10 @@ fun List<AnnotationSpec>.jsonName(): String? =
             ?.takeUnless { it == JSON_UNSET_NAME }
     }
 
-fun List<AnnotationSpec>.isJsonIgnore(): Boolean =
-    find(Types.Moshi.json)
-        ?.let { spec ->
-            requireNotNull<AnnotationMirror>(spec.tag()).getValueOrNull("ignore")
-        }
-        ?: false
+fun List<AnnotationSpec>.isJsonIgnore(): Boolean? =
+    find(Types.Moshi.json)?.let { spec ->
+        requireNotNull<AnnotationMirror>(spec.tag()).getValueOrNull("ignore")
+    }
 
 fun List<AnnotationSpec>.qualifiers(metadataAccessor: MetadataAccessor): Set<AnnotationModel> =
     mapNotNullTo(mutableSetOf()) { spec ->

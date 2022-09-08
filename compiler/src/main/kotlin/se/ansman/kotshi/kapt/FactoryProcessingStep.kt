@@ -9,11 +9,20 @@ import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
 import com.squareup.kotlinpoet.metadata.isAbstract
+import com.squareup.kotlinpoet.metadata.isClass
 import com.squareup.kotlinpoet.metadata.isCompanionObjectClass
+import com.squareup.kotlinpoet.metadata.isEnumClass
+import com.squareup.kotlinpoet.metadata.isInnerClass
 import com.squareup.kotlinpoet.metadata.isInterface
+import com.squareup.kotlinpoet.metadata.isInternal
+import com.squareup.kotlinpoet.metadata.isLocal
+import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isObjectClass
+import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.moshi.JsonAdapter
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
 import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.RegisterJsonAdapter
@@ -30,13 +39,13 @@ import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
-import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
 class FactoryProcessingStep(
@@ -62,29 +71,20 @@ class FactoryProcessingStep(
         roundEnv: RoundEnvironment
     ) {
         val elements = elementsByAnnotation[KotshiJsonAdapterFactory::class.java]
+            .map(MoreElements::asType)
+        val manuallyRegisteredAdapters = elementsByAnnotation.getManualAdapters(elements.isNotEmpty()).toList()
         if (elements.size > 1) {
-            messager.printMessage(
-                Diagnostic.Kind.ERROR,
-                "Multiple classes found with annotations @KotshiJsonAdapterFactory",
-                elements.first()
-            )
+            messager.logKotshiError(Errors.multipleFactories(elements.map { it.qualifiedName.toString() }), elements.first())
         } else for (element in elements) {
             try {
-                generateFactory(MoreElements.asType(element), elementsByAnnotation)
+                generateFactory(element, manuallyRegisteredAdapters)
             } catch (e: KaptProcessingError) {
-                logError(e.message, e.element)
+                messager.logKotshiError(e)
             }
         }
     }
 
-    private fun logError(message: String, element: Element) {
-        messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: $message", element)
-    }
-
-    private fun generateFactory(
-        element: TypeElement,
-        elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>
-    ) {
+    private fun generateFactory(element: TypeElement, manuallyRegisteredAdapters: List<RegisteredAdapter>) {
         val elementClassName = createClassName(metadataAccessor.getKmClass(element).name)
         val factory = JsonAdapterFactory(
             targetType = elementClassName,
@@ -92,16 +92,17 @@ class FactoryProcessingStep(
                 element.asType().implements(JsonAdapter.Factory::class) &&
                 Modifier.ABSTRACT in element.modifiers
             ) {
-                JsonAdapterFactory.UsageType.Subclass(elementClassName)
+                messager.logKotshiWarning(abstractFactoriesAreDeprecated, element)
+                JsonAdapterFactory.UsageType.Subclass(elementClassName, parentIsInterface = element.kind == ElementKind.INTERFACE)
             } else {
                 JsonAdapterFactory.UsageType.Standalone
             },
             generatedAdapters = generatedAdapters,
-            manuallyRegisteredAdapters = elementsByAnnotation.getManualAdapters().toList(),
+            manuallyRegisteredAdapters = manuallyRegisteredAdapters,
         )
 
-        val createAnnotationsUsingConstructor = createAnnotationsUsingConstructor ?:
-            metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
+        val createAnnotationsUsingConstructor =
+            createAnnotationsUsingConstructor ?: metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
 
         JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
             .render {
@@ -112,18 +113,38 @@ class FactoryProcessingStep(
     }
 
     @OptIn(DelicateKotlinPoetApi::class, ExperimentalKotshiApi::class)
-    private fun SetMultimap<Class<out Annotation>, Element>.getManualAdapters(): Sequence<RegisteredAdapter> =
+    private fun SetMultimap<Class<out Annotation>, Element>.getManualAdapters(hasFactory: Boolean): Sequence<RegisteredAdapter> =
         this[RegisterJsonAdapter::class.java]
             .asSequence()
             .map { MoreElements.asType(it) }
             .mapNotNull { element ->
                 val kmClass = metadataAccessor.getKmClassOrNull(element) ?: run {
-                    logError("Only Kotlin classes can be annotated with @RegisterJsonAdapter", element)
+                    messager.logKotshiError(Errors.javaClassNotSupported, element)
                     return@mapNotNull null
                 }
+                if (!kmClass.isObject && (!kmClass.isClass ||
+                        kmClass.flags.isAbstract ||
+                        kmClass.flags.isLocal ||
+                        kmClass.flags.isInnerClass ||
+                        kmClass.flags.isSealed ||
+                        kmClass.flags.isEnumClass
+                        )
+                ) {
+                    messager.logKotshiError(Errors.invalidRegisterAdapterType, element)
+                    return@mapNotNull null
+                }
+                if (!kmClass.flags.isPublic && !kmClass.flags.isInternal) {
+                    messager.logKotshiError(Errors.invalidRegisterAdapterVisibility, element)
+                    return@mapNotNull null
+                }
+
+                if (!hasFactory) {
+                    messager.logKotshiError(Errors.registeredAdapterWithoutFactory, element)
+                }
+
                 val annotation = element.getAnnotation(RegisterJsonAdapter::class.java)!!
                 element.getManualAdapter(
-                    logError = ::logError,
+                    logError = messager::logKotshiError,
                     getSuperClass = {
                         superclass.takeUnless { it.kind == TypeKind.NONE }?.let(MoreTypes::asTypeElement)
                     },

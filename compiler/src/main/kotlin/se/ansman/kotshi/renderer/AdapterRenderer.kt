@@ -113,9 +113,8 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
     protected abstract fun FunSpec.Builder.renderFromJson(readerParameter: ParameterSpec)
     protected abstract fun FunSpec.Builder.renderToJson(writerParameter: ParameterSpec, valueParameter: ParameterSpec)
 
-    protected fun jsonOptionsProperty(jsonNames: Collection<String>): PropertySpec {
-        require(jsonNames.isNotEmpty())
-        return PropertySpec.builder(nameAllocator.newName("options"), jsonReaderOptions, KModifier.PRIVATE)
+    protected fun jsonOptionsProperty(jsonNames: Collection<String>): PropertySpec =
+        PropertySpec.builder(nameAllocator.newName("options"), jsonReaderOptions, KModifier.PRIVATE)
             .initializer(
                 CodeBlock.Builder()
                     .add("%T.of(«", jsonReaderOptions)
@@ -130,7 +129,6 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
                     .add("»)")
                     .build())
             .build()
-    }
 
     companion object {
         const val moshiParameterName = "moshi"
@@ -141,6 +139,7 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
 fun GeneratableJsonAdapter.createRenderer(
     createAnnotationsUsingConstructor: Boolean,
     useLegacyDataClassRenderer: Boolean,
+    error: (String) -> Throwable,
 ): AdapterRenderer =
     when (this) {
         is DataClassJsonAdapter ->
@@ -151,5 +150,5 @@ fun GeneratableJsonAdapter.createRenderer(
             }
         is EnumJsonAdapter -> EnumAdapterRenderer(this)
         is ObjectJsonAdapter -> ObjectAdapterRenderer(this)
-        is SealedClassJsonAdapter -> SealedClassAdapterRenderer(this)
+        is SealedClassJsonAdapter -> SealedClassAdapterRenderer(this, error)
     }

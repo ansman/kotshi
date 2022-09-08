@@ -8,6 +8,8 @@ import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isSealed
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.Polymorphic
@@ -22,9 +24,11 @@ import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.NestingKind
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
-import javax.tools.Diagnostic
 
 class AdaptersProcessingStep(
     override val processor: KotshiProcessor,
@@ -40,14 +44,35 @@ class AdaptersProcessingStep(
 ) : KotshiProcessor.GeneratingProcessingStep() {
     override val annotations: Set<Class<out Annotation>> =
         setOf(
+            Polymorphic::class.java,
+            JsonDefaultValue::class.java,
             JsonSerializable::class.java,
             KotshiJsonAdapterFactory::class.java
         )
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>, roundEnv: RoundEnvironment) {
+    override fun process(
+        elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>,
+        roundEnv: RoundEnvironment
+    ) {
         for (element in elementsByAnnotation[Polymorphic::class.java]) {
             if (element.getAnnotation(JsonSerializable::class.java) == null) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: Classes annotated with @Polymorphic must also be annotated with @JsonSerializable", element)
+                messager.logKotshiError(Errors.polymorphicClassMustHaveJsonSerializable, element)
+            }
+        }
+
+        for (element in elementsByAnnotation[JsonDefaultValue::class.java]) {
+            when (element.kind) {
+                ElementKind.ENUM_CONSTANT -> {
+                    // Ok
+                }
+                ElementKind.CLASS -> {
+                    val metadata = metadataAccessor.getKmClass(element)
+                    if (!metadata.isObject && !metadata.isData) {
+                        messager.logKotshiError(Errors.jsonDefaultValueAppliedToInvalidType, element)
+                    }
+
+                }
+                else -> messager.logKotshiError(Errors.jsonDefaultValueAppliedToInvalidType, element)
             }
         }
 
@@ -61,6 +86,19 @@ class AdaptersProcessingStep(
             try {
                 val metadata = metadataAccessor.getKmClass(element)
                 val typeElement = MoreElements.asType(element)
+                when (typeElement.nestingKind!!) {
+                    NestingKind.MEMBER ->
+                        if (Modifier.STATIC !in typeElement.modifiers) {
+                            throw KaptProcessingError(Errors.dataClassCannotBeInner, typeElement)
+                        }
+
+                    NestingKind.TOP_LEVEL -> {
+                        // Allowed
+                    }
+
+                    NestingKind.ANONYMOUS,
+                    NestingKind.LOCAL -> throw KaptProcessingError(Errors.dataClassCannotBeLocal, typeElement)
+                }
 
                 val generator = when {
                     metadata.isData -> DataClassAdapterGenerator(
@@ -72,6 +110,7 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager,
                     )
+
                     metadata.isEnum -> EnumAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
@@ -81,6 +120,7 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager
                     )
+
                     metadata.isObject -> ObjectAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
@@ -90,6 +130,7 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager
                     )
+
                     metadata.flags.isSealed -> SealedClassAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
@@ -99,10 +140,8 @@ class AdaptersProcessingStep(
                         globalConfig = globalConfig,
                         messager = messager
                     )
-                    else -> throw KaptProcessingError(
-                        "@JsonSerializable can only be applied to enums, objects, sealed classes and data classes",
-                        typeElement
-                    )
+
+                    else -> throw KaptProcessingError(Errors.unsupportedSerializableType, typeElement)
                 }
 
                 adapters += generator.generateAdapter(
@@ -112,7 +151,7 @@ class AdaptersProcessingStep(
                     useLegacyDataClassRenderer = useLegacyDataClassRenderer
                 )
             } catch (e: KaptProcessingError) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "Kotshi: ${e.message}", e.element)
+                messager.logKotshiError(e)
             }
         }
     }

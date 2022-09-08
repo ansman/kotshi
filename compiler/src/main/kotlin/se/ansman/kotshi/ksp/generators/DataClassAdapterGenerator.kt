@@ -2,6 +2,8 @@ package se.ansman.kotshi.ksp.generators
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.isInternal
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -9,6 +11,8 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.JSON_UNSET_NAME
 import se.ansman.kotshi.JsonProperty
@@ -44,17 +48,22 @@ class DataClassAdapterGenerator(
         ?: globalConfig.serializeNulls
 
     @OptIn(KspExperimental::class)
-    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter =
-        DataClassJsonAdapter(
+    override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
+        val primaryConstructor = targetElement.primaryConstructor!!
+        if (!primaryConstructor.isPublic() && !primaryConstructor.isInternal()) {
+            throw KspProcessingError(Errors.privateDataClassConstructor, primaryConstructor)
+        }
+        return DataClassJsonAdapter(
             targetPackageName = targetClassName.packageName,
             targetSimpleNames = targetClassName.simpleNames,
             targetTypeVariables = targetTypeVariables,
             polymorphicLabels = polymorphicLabels,
-            properties = targetElement.primaryConstructor!!.parameters.map { it.toProperty() },
+            properties = primaryConstructor.parameters.map { it.toProperty() },
             serializeNulls = serializeNulls,
-            constructorSignature = resolver.mapToJvmSignature(targetElement.primaryConstructor!!)
-                ?: throw KspProcessingError("Failed to resolve signature for constructor", targetElement.primaryConstructor!!),
+            constructorSignature = resolver.mapToJvmSignature(primaryConstructor)
+                ?: throw KspProcessingError("Failed to resolve signature for constructor", primaryConstructor),
         )
+    }
 
     @OptIn(ExperimentalKotshiApi::class)
     private fun KSValueParameter.toProperty(): Property {
@@ -70,19 +79,12 @@ class DataClassAdapterGenerator(
             .toList()
 
         if (Modifier.PRIVATE in property.modifiers || Modifier.PROTECTED in property.modifiers) {
-            throw KspProcessingError("Property $name must be public or internal", property)
+            throw KspProcessingError(privateDataClassProperty(name), property)
         }
-
 
         val jsonAnnotation = getAnnotation<Json>()
         val propertyJsonAnnotation = property.getAnnotation<Json>()
-        @Suppress("RemoveExplicitTypeArguments")
-        val isTransient = property.getAnnotation<Transient>() != null ||
-            (jsonAnnotation ?: propertyJsonAnnotation)?.getValue<Boolean?>("ignore") ?: false
 
-        if (isTransient && !hasDefault) {
-            throw KspProcessingError("Transient property $name must declare a default value", property)
-        }
         return Property.create(
             name = name,
             type = type,
@@ -95,8 +97,10 @@ class DataClassAdapterGenerator(
             propertyJsonName = (property.getAnnotation<JsonProperty>() ?: propertyJsonAnnotation)
                 ?.getValue<String?>("name")
                 ?.takeUnless { it == JSON_UNSET_NAME },
-            isTransient = isTransient,
-            hasDefaultValue = hasDefault
+            isTransient = property.getAnnotation<Transient>() != null,
+            isJsonIgnore = (jsonAnnotation ?: propertyJsonAnnotation)?.getValue("ignore"),
+            hasDefaultValue = hasDefault,
+            error = { KspProcessingError(it, property) }
         )
     }
 }

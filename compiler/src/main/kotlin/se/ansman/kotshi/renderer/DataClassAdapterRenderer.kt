@@ -222,7 +222,7 @@ class DataClassAdapterRenderer(
         var maskNameIndex = 0
         val variables = LinkedHashMap<Property, PropertyVariables>(adapter.properties.size)
         for (property in adapter.properties) {
-            if (!property.isTransient) {
+            if (!property.isIgnored) {
                 val inverted = (1 shl maskIndex).inv()
                 if (property.hasDefaultValue) {
                     maskAllSetValues[maskNameIndex] = maskAllSetValues[maskNameIndex] and inverted
@@ -458,7 +458,7 @@ class DataClassAdapterRenderer(
                     var separator = "\n"
                     for (property in adapter.properties) {
                         addCode(separator)
-                        if (property.isTransient) {
+                        if (property.isIgnored) {
                             // We have to use the default primitive for the available type in order for
                             // invokeDefaultConstructor to properly invoke it. Just using "null" isn't safe because
                             // the transient type may be a primitive type.
