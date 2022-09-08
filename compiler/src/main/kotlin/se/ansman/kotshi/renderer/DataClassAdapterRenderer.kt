@@ -220,14 +220,6 @@ class DataClassAdapterRenderer(
         val maskAllSetValues = Array(maskCount) { -1 }
         var maskIndex = 0
         var maskNameIndex = 0
-        fun updateMaskIndexes() {
-            maskIndex++
-            if (maskIndex == 32) {
-                // Move to the next mask
-                maskIndex = 0
-                ++maskNameIndex
-            }
-        }
         val variables = LinkedHashMap<Property, PropertyVariables>(adapter.properties.size)
         for (property in adapter.properties) {
             if (!property.isTransient) {
@@ -240,7 +232,12 @@ class DataClassAdapterRenderer(
                     maskIndex = maskIndex
                 )
             }
-            updateMaskIndexes()
+            ++maskIndex
+            if (maskIndex == 32) {
+                // Move to the next mask
+                maskIndex = 0
+                ++maskNameIndex
+            }
         }
         val constructorPropertyTypes = adapter.properties.map {
             it.type.asTypeBlock()
