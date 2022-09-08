@@ -220,7 +220,7 @@ class DataClassAdapterRenderer(
         val maskAllSetValues = Array(maskCount) { -1 }
         var maskIndex = 0
         var maskNameIndex = 0
-        val updateMaskIndexes = {
+        fun updateMaskIndexes() {
             maskIndex++
             if (maskIndex == 32) {
                 // Move to the next mask
