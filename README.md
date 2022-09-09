@@ -13,20 +13,24 @@ Most of the limitations will be addressed as the support for Kotlin annotation p
 You can find the generated documentation by visiting [kotshi.ansman.se](https://kotshi.ansman.se/).
 
 ## Usage
-First you must annotate your objects with the `@JsonSerializable` annotation:
-```kotlin
-@JsonSerializable
-data class Person(
-    val name: String,
-    val email: String?,
-    val hasVerifiedAccount: Boolean,
-    // This property has a different name in the Json than here so @JsonProperty must be applied.
-    @JsonProperty(name = "created_at")
-    val signUpDate: Date,
-    // This field has a default value which will be used if the field is missing.
-    val jobTitle: String? = null
-)
-```
+First you must annotate your objects with the `@JsonSerializable` annotation
+<details open>
+  <summary>Annotated class</summary>
+  
+  ```kotlin
+  @JsonSerializable
+  data class Person(
+      val name: String,
+      val email: String?,
+      val hasVerifiedAccount: Boolean,
+      // This property has a different name in the Json than here so @JsonProperty must be applied.
+      @JsonProperty(name = "created_at")
+      val signUpDate: Date,
+      // This field has a default value which will be used if the field is missing.
+      val jobTitle: String? = null
+  )
+  ```
+</details>
 
 The following types are supported:
 * `object` (serialized as an empty JSON object)
@@ -34,18 +38,27 @@ The following types are supported:
 * `enum class`
 * `sealed class`
 
-Then create a class that will be your factory:
-```kotlin
-@KotshiJsonAdapterFactory
-object ApplicationJsonAdapterFactory : JsonAdapter.Factory by KotshiApplicationJsonAdapterFactory
-```
+Then create a class that will be your factory.
+<details open>
+  <summary>Factory setup</summary>
+  
+  ```kotlin
+  @KotshiJsonAdapterFactory
+  object ApplicationJsonAdapterFactory : JsonAdapter.Factory by KotshiApplicationJsonAdapterFactory
+  ```
+</details>
 
-Lastly just add the factory to your Moshi instance, and you're all set:
-```kotlin
-val moshi = Moshi.Builder()
-    .add(ApplicationJsonAdapterFactory)
-    .build()
-```
+Lastly just add the factory to your Moshi instance, and you're all set.
+
+<details open>
+  <summary>Add to moshi</summary>
+
+  ```kotlin
+  val moshi = Moshi.Builder()
+      .add(ApplicationJsonAdapterFactory)
+      .build()
+  ```
+</details>
 
 By default adapters aren't requested for primitive types (even boxed primitive
 types) since it is worse for performance and most people will not have custom
@@ -98,28 +111,31 @@ This option enables a new way of creating annotations instances at runtime. Norm
 the qualifier annotations but as of 1.5.30 of Kotlin you can enable creating annotations by calling the constructor.
 
 This behavior is enabled by default when using language version 1.6 but can be explicitly enabled or disabled using this
-option. You can enable it like this:
-```kotlin
-// If you are using Groovy build scripts this will be `tasks.withType(KotlinCompile) {`
-// This is only needed when using Kotlin 1.5
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        languageVersion = "1.6"
-    }
-}
+option.
 
-// When using KAPT
-kapt {
-    arguments {
-        arg("kotshi.createAnnotationsUsingConstructor", false)
-    }
-}
+Examples:
+<details open>
+  <summary>KSP</summary>
 
-// When using KSP
-ksp {
+  ```kotlin
+  ksp {
     arg("kotshi.createAnnotationsUsingConstructor", "false")
-}
-```
+  }
+  ```
+</details>
+
+
+<details>
+  <summary>KAPT</summary>
+
+  ```kotlin
+  kapt {
+    arguments {
+      arg("kotshi.createAnnotationsUsingConstructor", false)
+    }
+  }
+  ```
+</details>
 
 See more about instantiating annotations here: https://kotlinlang.org/docs/whatsnew1530.html#instantiation-of-annotation-classes
 
@@ -128,6 +144,30 @@ This option allows you to use the old way of creating classes with parameters th
 
 From 2.10.0 reflection is used create data classes, but by setting this option to `true` the old behavior can be used 
 instead which used the `copy` method.
+
+Examples:
+<details open>
+  <summary>KSP</summary>
+
+  ```kotlin
+  ksp {
+      arg("kotshi.createAnnotationsUsingConstructor", "false")
+  }
+  ```
+</details>
+
+
+<details>
+  <summary>KAPT</summary>
+
+  ```kotlin
+  kapt {
+      arguments {
+          arg("kotshi.useLegacyDataClassRenderer", true)
+      }
+  }
+  ```
+</details>
 
 ## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
@@ -139,22 +179,70 @@ instead which used the `copy` method.
 
 ## Download
 
-```kotlin
-plugins {
-    ...
-    kotlin("kapt")
-    // If you are using KSP then use this
-    id("com.google.devtools.ksp") version "<version>"
-}
+<details open>
+  <summary>Kotlin with KSP</summary>
 
-dependencies {
+  ```kotlin
+  plugins {
+    id("com.google.devtools.ksp") version "<version>"
+  }
+  
+  dependencies {
+    val kotshiVersion = "2.9.0"
+    implementation("se.ansman.kotshi:api:$kotshiVersion")
+    ksp("se.ansman.kotshi:compiler:$kotshiVersion")
+  }
+  ```
+</details>
+
+<details>
+  <summary>Kotlin with KAPT</summary>
+
+  ```kotlin
+  plugins {
+    kotlin("kapt")
+  }
+  
+  dependencies {
     val kotshiVersion = "2.9.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
-    // If you are using KSP then you use instead
-    ksp("se.ansman.kotshi:compiler:$kotshiVersion")
-}
-```
+  }
+  ```
+</details>
+
+<details>
+  <summary>Groovy with KSP</summary>
+
+  ```groovy
+  plugins {
+    id "com.google.devtools.ksp" version "<version>"
+  }
+  
+  dependencies {
+    def kotshiVersion = "2.9.0"
+    implementation "se.ansman.kotshi:api:$kotshiVersion"
+    ksp "se.ansman.kotshi:compiler:$kotshiVersion"
+  }
+  ```
+</details>
+
+<details>
+  <summary>Groovy with KAPT</summary>
+
+  ```groovy
+  plugins {
+    id "org.jetbrains.kotlin.kapt"
+  }
+  
+  dependencies {
+    def kotshiVersion = "2.9.0"
+    implementation "se.ansman.kotshi:api:$kotshiVersion"
+    kapt "se.ansman.kotshi:compiler:$kotshiVersion"
+  }
+  ```
+</details>
+
 Snapshots of the development version are available in [the sonatype snapshots repository](https://oss.sonatype.org/#view-repositories;snapshots~browsestorage~se/ansman/kotshi/).
 
 ## License
