@@ -124,9 +124,9 @@ class SealedClassAdapterRenderer(
                 addControlFlow("val·adapter·= if·(labelIndex·==·-1)", close = false) {
                     if (adapter.onInvalid == Polymorphic.Fallback.FAIL || adapter.defaultType == null && adapter.onInvalid == Polymorphic.Fallback.DEFAULT) {
                         addStatement(
-                            "throw·%T(%S)",
+                            "throw·%T(%S + peek.nextString())",
                             jsonDataException,
-                            "Expected one of $labels for key '${adapter.labelKey}' but found \${peek.nextString()}"
+                            "Expected one of $labels for key '${adapter.labelKey}' but found "
                         )
                     } else if (adapter.onInvalid == Polymorphic.Fallback.NULL) {
                         addStatement("%N.skipValue()", readerParameter)
