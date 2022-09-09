@@ -22,18 +22,22 @@ import se.ansman.kotshi.Errors.privateDataClassConstructor
 import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.Errors.transientDataClassPropertyWithoutDefaultValue
 import se.ansman.kotshi.Errors.unsupportedSerializableType
+import java.io.File
 
 abstract class BaseGeneratorTest {
     @Rule
     @JvmField
     val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
+    protected abstract val processorClassName: String
+    protected open val extraGeneratedFiles: List<File> get() = emptyList()
+
     @Test
     fun `data class must not be private`() {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             private data class Foo(val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateClass)
     }
@@ -44,7 +48,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo private constructor(val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateDataClassConstructor)
     }
@@ -54,7 +58,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(private val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateDataClassProperty("property"))
     }
@@ -64,7 +68,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@Transient val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(transientDataClassPropertyWithoutDefaultValue("property"))
     }
@@ -74,7 +78,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = true) val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(ignoredDataClassPropertyWithoutDefaultValue("property"))
     }
@@ -84,7 +88,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = false) @Transient val property: String)
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(nonIgnoredDataClassPropertyMustNotBeTransient("property"))
     }
@@ -98,7 +102,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.PolymorphicLabel("implementation")
               data class Implementation(val value: String) : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.sealedClassMustBePolymorphic)
     }
@@ -113,7 +117,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.PolymorphicLabel("implementation")
               data class Implementation<T>(val value: T) : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.sealedSubclassMustNotHaveGeneric("T"))
     }
@@ -128,7 +132,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.JsonDefaultValue
               data class Implementation<T>(val value: T) : SealedClass<T>()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.defaultSealedValueIsGeneric)
     }
@@ -149,7 +153,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.JsonDefaultValue
               object Default : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.multipleJsonDefaultValueInSealedClass)
     }
@@ -163,7 +167,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.PolymorphicLabel("implementation")
               data class Implementation(val value: String) : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.polymorphicClassMustHaveJsonSerializable)
     }
@@ -174,7 +178,7 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             @se.ansman.kotshi.Polymorphic("type")
             sealed class SealedClass
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.noSealedSubclasses)
     }
@@ -188,7 +192,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.PolymorphicLabel("implementation")
               data class Implementation(val value: String) : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.polymorphicSubclassMustHaveJsonSerializable)
     }
@@ -202,7 +206,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.JsonSerializable
               data class Implementation(val value: String) : SealedClass()
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.polymorphicSubclassMustHavePolymorphicLabel)
     }
@@ -214,7 +218,7 @@ abstract class BaseGeneratorTest {
            @se.ansman.kotshi.JsonSerializable
            sealed inner class Inner(val value: String)
          }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.dataClassCannotBeInner)
     }
@@ -224,7 +228,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
            @se.ansman.kotshi.JsonSerializable
            private object Singleton
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateClass)
     }
@@ -239,7 +243,7 @@ abstract class BaseGeneratorTest {
              @se.ansman.kotshi.JsonSerializable
              data class Implementation(val value: String) : SealedClass()
            }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateClass)
     }
@@ -259,7 +263,7 @@ abstract class BaseGeneratorTest {
                data class Implementation(val value: String) : Nested()
              }
            }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(jsonDefaultValueAppliedToInvalidType)
     }
@@ -277,7 +281,7 @@ abstract class BaseGeneratorTest {
                data class Implementation(val value: String) : Nested()
              }
            }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(nestedSealedClassMustBePolymorphic)
     }
@@ -297,7 +301,7 @@ abstract class BaseGeneratorTest {
                data class Implementation(val value: String) : Nested()
              }
            }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(nestedSealedClassHasPolymorphicLabel)
     }
@@ -316,7 +320,7 @@ abstract class BaseGeneratorTest {
                data class Implementation(val value: String) : SealedClass()
              }
            }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(nestedSealedClassMissingPolymorphicLabel)
     }
@@ -328,7 +332,7 @@ abstract class BaseGeneratorTest {
             private enum class SomeEnum {
               Value1,
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(privateClass)
     }
@@ -343,7 +347,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.JsonDefaultValue
               Value2
             }
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(multipleJsonDefaultValueInEnum)
     }
@@ -353,7 +357,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             interface Interface
-        """.trimIndent()))
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(unsupportedSerializableType)
     }
@@ -363,8 +367,7 @@ abstract class BaseGeneratorTest {
         val result = compile(java("JavaType.java", """
             @se.ansman.kotshi.JsonSerializable
             class JavaType {}
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(javaClassNotSupported)
     }
@@ -376,8 +379,7 @@ abstract class BaseGeneratorTest {
             object Factory1 : com.squareup.moshi.JsonAdapter.Factory
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object Factory2 : com.squareup.moshi.JsonAdapter.Factory
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.multipleFactories(listOf("Factory1", "Factory2")))
     }
@@ -387,8 +389,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             abstract class Factory : com.squareup.moshi.JsonAdapter.Factory
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val kotshiFactory = result.tryLoadClass("KotshiFactory")
         if (kotshiFactory != null) {
@@ -401,8 +402,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object Factory : com.squareup.moshi.JsonAdapter.Factory by KotshiFactory
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val factory = result.tryLoadClass("KotshiFactory")
         if (factory != null) {
@@ -415,8 +415,7 @@ abstract class BaseGeneratorTest {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             interface Factory : com.squareup.moshi.JsonAdapter.Factory
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         assertThat(result.messages).contains(Errors.abstractFactoriesAreDeprecated)
         val kotshiFactory = result.tryLoadClass("KotshiFactory")
@@ -430,8 +429,7 @@ abstract class BaseGeneratorTest {
         val result = compile(java("Factory.java", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             interface Factory extends com.squareup.moshi.JsonAdapter.Factory {}
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(javaClassNotSupported)
     }
@@ -441,8 +439,7 @@ abstract class BaseGeneratorTest {
         val result = compile(java("Adapter.java", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             abstract class Adapter extends com.squareup.moshi.JsonAdapter<String> {}
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(javaClassNotSupported)
     }
@@ -451,11 +448,10 @@ abstract class BaseGeneratorTest {
     fun `registered adapters must be objects or classes`() {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.RegisterJsonAdapter
-            abstract class ManuallyRegistedAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegistedAdapter.Type>() {
+            abstract class ManuallyRegisteredAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegisteredAdapter.Type>() {
                 object Type
             }
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.invalidRegisterAdapterType)
     }
@@ -464,13 +460,12 @@ abstract class BaseGeneratorTest {
     fun `registered adapters must be public or internal`() {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.RegisterJsonAdapter
-            private object ManuallyRegistedAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegistedAdapter.Type>() {
+            private object ManuallyRegisteredAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegisteredAdapter.Type>() {
                 override fun fromJson(reader: com.squareup.moshi.JsonReader): Type = throw UnsupportedOperationException()
                 override fun toJson(writer: com.squareup.moshi.JsonWriter, value: Type?) = throw UnsupportedOperationException()
                 object Type
             }
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.invalidRegisterAdapterVisibility)
     }
@@ -479,28 +474,104 @@ abstract class BaseGeneratorTest {
     fun `cannot register adapter without factory`() {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.RegisterJsonAdapter
-            object ManuallyRegistedAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegistedAdapter.Type>() {
+            object ManuallyRegisteredAdapter : com.squareup.moshi.JsonAdapter<ManuallyRegisteredAdapter.Type>() {
                 override fun fromJson(reader: com.squareup.moshi.JsonReader): Type = throw UnsupportedOperationException()
                 override fun toJson(writer: com.squareup.moshi.JsonWriter, value: Type?) = throw UnsupportedOperationException()
                 object Type
             }
-        """.trimIndent())
-        )
+        """))
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains(Errors.registeredAdapterWithoutFactory)
     }
 
-    protected fun compile(vararg sources: SourceFile) =
+    @Test
+    fun `can add jdk 8 generated annotation`() {
+        val generated = java("Generated.java", """
+            package javax.annotation;
+            import java.lang.annotation.*;
+            import static java.lang.annotation.ElementType.*;
+            import static java.lang.annotation.RetentionPolicy.*;
+            
+            @Documented
+            @Retention(SOURCE)
+            @Target({PACKAGE, TYPE, METHOD, CONSTRUCTOR, FIELD, LOCAL_VARIABLE, PARAMETER})
+            public @interface Generated {
+                String[] value();
+                String date() default "";
+                String comments() default "";
+            }
+        """)
+        val source = kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            object TestObject
+
+            @se.ansman.kotshi.KotshiJsonAdapterFactory
+            object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
+        """)
+        val annotationClass = "javax.annotation.Generated"
+        val result = compile(generated, source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        result.generatedFiles
+            .plus(extraGeneratedFiles)
+            .filter { it.name.endsWith(".kt") && "Kotshi" in it.name }
+            .map { it.readText() }
+            .onEach {
+                assertThat(it).contains("@Generated")
+                assertThat(it).contains("\"$processorClassName\"")
+                assertThat(it).contains("comments = \"https://github.com/ansman/kotshi\"")
+            }
+            .let { assertThat(it).hasSize(2) }
+    }
+
+    @Test
+    fun `can add jdk 9 generated annotation`() {
+        val source = kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            object TestObject
+
+            @se.ansman.kotshi.KotshiJsonAdapterFactory
+            object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
+        """)
+        val annotationClass = "javax.annotation.processing.Generated"
+        val result = compile(source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        result.generatedFiles
+            .plus(extraGeneratedFiles)
+            .filter { it.name.endsWith(".kt") && "Kotshi" in it.name }
+            .map { it.readText() }
+            .forEach {
+                assertThat(it).contains("@Generated")
+                assertThat(it).contains("\"$processorClassName\"")
+                assertThat(it).contains("comments = \"https://github.com/ansman/kotshi\"")
+            }
+    }
+
+    @Test
+    fun `cannot add invalid generated annotation`() {
+        val source = kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            object TestObject
+
+            @se.ansman.kotshi.KotshiJsonAdapterFactory
+            object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
+        """)
+        val annotationClass = "foo.bar.Generated"
+        val result = compile(source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains(Errors.invalidGeneratedAnnotation(annotationClass))
+    }
+
+    protected fun compile(vararg sources: SourceFile, options: Map<String, String> = emptyMap()) =
         KotlinCompilation()
             .apply {
                 workingDir = temporaryFolder.root
                 this.sources = sources.asList()
                 inheritClassPath = true
                 messageOutputStream = System.out // see diagnostics in real time
-                setUp()
+                setUp(options)
             }
             .compile()
 
-    protected abstract fun KotlinCompilation.setUp()
+    protected abstract fun KotlinCompilation.setUp(options: Map<String, String>)
     protected abstract fun KotlinCompilation.Result.tryLoadClass(name: String): Class<*>?
 }

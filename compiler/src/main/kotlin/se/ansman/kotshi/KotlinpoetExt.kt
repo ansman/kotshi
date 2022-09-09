@@ -1,12 +1,11 @@
 package se.ansman.kotshi
 
-import com.google.auto.common.GeneratedAnnotations
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BYTE
 import com.squareup.kotlinpoet.CHAR
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DOUBLE
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FLOAT
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
@@ -14,10 +13,7 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asClassName
 import se.ansman.kotshi.kapt.KotshiProcessor
-import javax.lang.model.SourceVersion
-import javax.lang.model.util.Elements
 
 val TypeName.isPrimitive: Boolean
     get() = when (this) {
@@ -35,19 +31,13 @@ val TypeName.isPrimitive: Boolean
 fun TypeName.nullable(): TypeName = if (isNullable) this else copy(nullable = true)
 fun TypeName.notNull(): TypeName = if (isNullable) copy(nullable = false) else this
 
-fun TypeSpec.Builder.maybeAddGeneratedAnnotation(elements: Elements, sourceVersion: SourceVersion) =
-    apply {
-        val typeElement = GeneratedAnnotations.generatedAnnotation(elements, sourceVersion)
-            .orElse(null)
-            ?: return@apply
+fun TypeSpec.Builder.addGeneratedAnnotation(annotationClass: ClassName, processorClass: ClassName) =
         addAnnotation(
-            @OptIn(DelicateKotlinPoetApi::class)
-            AnnotationSpec.builder(typeElement.asClassName())
-                .addMember("%S", KotshiProcessor::class.java.canonicalName)
+            AnnotationSpec.builder(annotationClass)
+                .addMember("%S", processorClass.canonicalName)
                 .addMember("comments = %S", "https://github.com/ansman/kotshi")
                 .build()
         )
-    }
 
 inline fun FunSpec.Builder.addControlFlow(
     controlFlow: String,

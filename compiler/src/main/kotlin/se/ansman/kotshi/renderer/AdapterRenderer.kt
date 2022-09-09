@@ -20,6 +20,7 @@ import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.EnumJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.ObjectJsonAdapter
 import se.ansman.kotshi.model.SealedClassJsonAdapter
 import se.ansman.kotshi.nullable
@@ -39,7 +40,7 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
 
     protected open fun TypeSpec.createProguardRule(): ProguardConfig? = null
 
-    fun render(typeSpecModifier: TypeSpec.Builder.() -> Unit = {}): GeneratedAdapter {
+    fun render(generatedAnnotation: GeneratedAnnotation?, typeSpecModifier: TypeSpec.Builder.() -> Unit = {}): GeneratedAdapter {
         check(!isUsed)
         isUsed = true
         val value = ParameterSpec.builder("value", adapter.targetType.nullable()).build()
@@ -47,6 +48,7 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
         val reader = ParameterSpec.builder("reader", Types.Moshi.jsonReader).build()
         val typeSpec = TypeSpec.classBuilder(adapter.adapterName)
             .addModifiers(KModifier.INTERNAL)
+            .apply { generatedAnnotation?.toAnnotationSpec()?.let(::addAnnotation) }
             .addAnnotation(Types.Kotshi.internalKotshiApi)
             .addAnnotation(AnnotationSpec.builder(Types.Kotlin.suppress)
                 // https://github.com/square/moshi/issues/1023

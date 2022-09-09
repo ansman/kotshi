@@ -20,14 +20,13 @@ import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.supportsCreatingAnnotationsWithConstructor
-import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.renderer.createRenderer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
-import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
@@ -62,7 +61,7 @@ abstract class AdapterGenerator(
         }
 
     fun generateAdapter(
-        sourceVersion: SourceVersion,
+        generatedAnnotation: GeneratedAnnotation?,
         filer: Filer,
         createAnnotationsUsingConstructor: Boolean?,
         useLegacyDataClassRenderer: Boolean,
@@ -83,9 +82,8 @@ abstract class AdapterGenerator(
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                 error = { KaptProcessingError(it, targetElement) },
             )
-            .render {
+            .render(generatedAnnotation) {
                 addOriginatingElement(targetElement)
-                maybeAddGeneratedAnnotation(elements, sourceVersion)
             }
 
         generatedAdapter.fileSpec.writeTo(filer)

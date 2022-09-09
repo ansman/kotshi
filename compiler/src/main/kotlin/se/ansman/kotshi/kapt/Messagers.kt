@@ -8,10 +8,10 @@ fun Messager.logKotshiError(error: KaptProcessingError) {
     logKotshiError(error.message, error.element)
 }
 
-fun Messager.logKotshiError(message: String, element: Element) {
+fun Messager.logKotshiError(message: String, element: Element?) {
     printMessage(Diagnostic.Kind.ERROR, "Kotshi: $message", element)
 }
 
-fun Messager.logKotshiWarning(message: String, element: Element) {
+fun Messager.logKotshiWarning(message: String, element: Element?) {
     printMessage(Diagnostic.Kind.WARNING, "Kotshi: $message", element)
 }

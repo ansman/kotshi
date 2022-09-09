@@ -30,4 +30,6 @@ object Errors {
     fun nonIgnoredDataClassPropertyMustNotBeTransient(propertyName: String) = "Property $propertyName cannot have ignore = false and @Transient"
     fun sealedSubclassMustNotHaveGeneric(typeVariableName: String) = "Could not determine type of type variable $typeVariableName. This can happen when sealed subclasses have type variables that are not present in all superclasses."
     fun multipleFactories(names: List<String>) = "Multiple classes found with annotations @KotshiJsonAdapterFactory: ${names.sorted().joinToString()}"
+    fun invalidGeneratedAnnotation(name: String): String =
+        "Invalid value $name for option ${Options.generatedAnnotation}. Possible values are ${Options.possibleGeneratedAnnotations.keys.joinToString()}"
 }

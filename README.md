@@ -169,6 +169,41 @@ Examples:
   ```
 </details>
 
+#### `kotshi.generatedAnnotation`
+This option tells Kotshi to add the `@Generated` annotation to all generated classes which is disabled by default.
+
+For Java 9+ use `javax.annotation.processing.Generated` and for Java 8 and below use `javax.annotation.Generated`. 
+
+Examples:
+<details open>
+  <summary>KSP</summary>
+
+  ```kotlin
+  ksp {
+      // When using Java 9 and above
+      arg("kotshi.generatedAnnotation", "javax.annotation.processing.Generated")
+      // When using Java 8 and below
+      arg("kotshi.generatedAnnotation", "javax.annotation.Generated")
+  }
+  ```
+</details>
+
+
+<details>
+  <summary>KAPT</summary>
+
+  ```kotlin
+  kapt {
+      arguments {
+        // When using Java 9 and above
+        arg("kotshi.generatedAnnotation", "javax.annotation.processing.Generated")
+        // When using Java 8 and below
+        arg("kotshi.generatedAnnotation", "javax.annotation.Generated")
+      }
+  }
+  ```
+</details>
+
 ## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
 * Only data classes, enums, sealed classes and objects are supported.

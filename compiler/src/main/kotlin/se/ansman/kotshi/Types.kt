@@ -98,6 +98,8 @@ object Types {
     }
 
     object Java {
+        val generatedJDK9 = ClassName("javax.annotation.processing", "Generated")
+        val generatedPreJDK9 = ClassName("javax.annotation", "Generated")
         val clazz = ClassName("java.lang", "Class")
         val string = ClassName("java.lang", "String")
         val type = Type::class.java.asClassName()
