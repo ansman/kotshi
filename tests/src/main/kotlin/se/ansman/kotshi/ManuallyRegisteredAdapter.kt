@@ -6,11 +6,11 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
-import se.ansman.kotshi.ManuallyRegistedGenericAdapter.GenericType
+import se.ansman.kotshi.ManuallyRegisteredGenericAdapter.GenericType
 import java.lang.reflect.Type
 
 @RegisterJsonAdapter
-object ManuallyRegistedAdapter : JsonAdapter<ManuallyRegistedAdapter.Type>() {
+object ManuallyRegisteredAdapter : JsonAdapter<ManuallyRegisteredAdapter.Type>() {
     override fun fromJson(reader: JsonReader): Type = throw UnsupportedOperationException()
     override fun toJson(writer: JsonWriter, value: Type?) = throw UnsupportedOperationException()
 
@@ -53,7 +53,7 @@ abstract class AbstractAdapter<T> : JsonAdapter<List<T>>() {
 }
 
 @RegisterJsonAdapter
-class ManuallyRegistedGenericAdapter<T : Number>(val types: Array<Type>, val moshi: Moshi) :
+class ManuallyRegisteredGenericAdapter<T : Number>(val types: Array<Type>, val moshi: Moshi) :
     JsonAdapter<GenericType<T>>() {
     override fun fromJson(reader: JsonReader): GenericType<T> = throw UnsupportedOperationException()
     override fun toJson(writer: JsonWriter, value: GenericType<T>?) = throw UnsupportedOperationException()
@@ -64,8 +64,8 @@ class ManuallyRegistedGenericAdapter<T : Number>(val types: Array<Type>, val mos
 
 @OptIn(InternalKotshiApi::class)
 @RegisterJsonAdapter
-class ManuallyRegistedWrappedGenericAdapter :
-    NamedJsonAdapter<ManuallyRegistedWrappedGenericAdapter.GenericType<List<String>>>("Test") {
+class ManuallyRegisteredWrappedGenericAdapter :
+    NamedJsonAdapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>("Test") {
     override fun fromJson(reader: JsonReader): GenericType<List<String>> = throw UnsupportedOperationException()
     override fun toJson(writer: JsonWriter, value: GenericType<List<String>>?) = throw UnsupportedOperationException()
 
