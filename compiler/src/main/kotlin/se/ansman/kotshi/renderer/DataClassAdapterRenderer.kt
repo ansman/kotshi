@@ -140,8 +140,8 @@ class DataClassAdapterRenderer(
                                 }
                                 CodeBlock.of("types[$genericIndex]")
                             })
-                            .add(",\n %L", property.annotations(createAnnotationsUsingConstructor))
-                            .add(",\n %S", property.name)
+                            .add(",\n%L", property.annotations(createAnnotationsUsingConstructor))
+                            .add(",\n%S", property.name)
                             .add("\n»)")
                             .build()
                     )
@@ -153,21 +153,24 @@ class DataClassAdapterRenderer(
         valueParameter: ParameterSpec
     ) {
         fun addBody(): FunSpec.Builder =
-            addStatement("%N.beginObject()", writerParameter)
+            addStatement("%N", writerParameter)
+                .addCode("⇥")
+                .addStatement(".beginObject()")
                 .applyEach(parentLabels.entries) { (key, value) ->
-                    addStatement("%N.name(%S).value(%S)", writerParameter, key, value)
+                    addStatement(".name(%S).value(%S)", key, value)
                 }
                 .applyEach(adapter.serializedProperties) { property ->
-                    addStatement("%N.name(%S)", writerParameter, property.jsonName)
+                    addCode(".name(%S)", property.jsonName)
                     val getter = CodeBlock.of("%N.%L", valueParameter, property.name)
 
                     if (property.shouldUseAdapter) {
-                        addCode(
-                            "%N.toJson(%N, ", adapterKeys.getValue(property),
-                            writerParameter
-                        )
-                            .addCode(getter)
-                            .addCode(")\n")
+                        addCode(".%M {\n", Functions.Kotlin.apply)
+                        addCode("⇥")
+                        addCode("%N.toJson(this, ", adapterKeys.getValue(property))
+                        addCode(getter)
+                        addCode(")\n")
+                        addCode("⇤")
+                        addCode("}")
                     } else when (property.type.notNull()) {
                         STRING,
                         INT,
@@ -175,14 +178,15 @@ class DataClassAdapterRenderer(
                         FLOAT,
                         DOUBLE,
                         SHORT,
-                        BOOLEAN -> addStatement("%N.value(%L)", writerParameter, getter)
-
-                        BYTE -> addStatement("%N.%M(%L)", writerParameter, Functions.Kotshi.byteValue, getter)
-                        CHAR -> addStatement("%N.%M(%L)", writerParameter, Functions.Kotshi.value, getter)
+                        BOOLEAN -> addCode(".value(%L)", getter)
+                        BYTE -> addCode(".%M(%L)", Functions.Kotshi.byteValue, getter)
+                        CHAR -> addCode(".%M(%L)", Functions.Kotshi.value, getter)
                         else -> error("Property ${property.name} is not primitive ${property.type} but requested non adapter use")
                     }
+                    addCode("\n")
                 }
-                .addStatement("%N.endObject()", writerParameter)
+                .addStatement(".endObject()", writerParameter)
+                .addCode("⇤")
 
         addIf("%N == null", valueParameter) {
             addStatement("%N.nullValue()", writerParameter)

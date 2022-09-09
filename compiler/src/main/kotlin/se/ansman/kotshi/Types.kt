@@ -24,6 +24,7 @@ object Functions {
     object Kotlin {
         val typeOf = MemberName("kotlin.reflect", "typeOf")
         val setOf = MemberName("kotlin.collections", "setOf")
+        val apply = MemberName("kotlin", "apply")
         val javaType = MemberName("kotlin.reflect", "javaType")
         val booleanArrayOf = MemberName("kotlin", "booleanArrayOf")
         val byteArrayOf = MemberName("kotlin", "byteArrayOf")
