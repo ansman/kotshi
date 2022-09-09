@@ -18,11 +18,11 @@ import se.ansman.kotshi.kapt.generators.EnumAdapterGenerator
 import se.ansman.kotshi.kapt.generators.ObjectAdapterGenerator
 import se.ansman.kotshi.kapt.generators.SealedClassAdapterGenerator
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.GlobalConfig
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
@@ -38,7 +38,7 @@ class AdaptersProcessingStep(
     private val adapters: MutableList<GeneratedAdapter>,
     private val types: Types,
     private val elements: Elements,
-    private val sourceVersion: SourceVersion,
+    private val generatedAnnotation: GeneratedAnnotation?,
     private val createAnnotationsUsingConstructor: Boolean?,
     private val useLegacyDataClassRenderer: Boolean,
 ) : KotshiProcessor.GeneratingProcessingStep() {
@@ -145,7 +145,7 @@ class AdaptersProcessingStep(
                 }
 
                 adapters += generator.generateAdapter(
-                    sourceVersion = sourceVersion,
+                    generatedAnnotation = generatedAnnotation,
                     filer = filer,
                     createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
                     useLegacyDataClassRenderer = useLegacyDataClassRenderer

@@ -14,6 +14,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.Visibility
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -30,6 +31,7 @@ import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable
 import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.Options
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.RegisterJsonAdapter
 import se.ansman.kotshi.SerializeNulls
@@ -38,6 +40,7 @@ import se.ansman.kotshi.ksp.generators.EnumAdapterGenerator
 import se.ansman.kotshi.ksp.generators.ObjectAdapterGenerator
 import se.ansman.kotshi.ksp.generators.SealedClassAdapterGenerator
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.JsonAdapterFactory.Companion.getManualAdapter
@@ -45,13 +48,22 @@ import se.ansman.kotshi.model.findKotshiConstructor
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 
 class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
-    private val createAnnotationsUsingConstructor = environment.options["kotshi.createAnnotationsUsingConstructor"]
+    private val createAnnotationsUsingConstructor = environment.options[Options.createAnnotationsUsingConstructor]
         ?.toBooleanStrict()
         ?: environment.kotlinVersion.isAtLeast(1, 6)
 
-    private val useLegacyDataClassRenderer = environment.options["kotshi.useLegacyDataClassRenderer"]
+    private val useLegacyDataClassRenderer = environment.options[Options.useLegacyDataClassRenderer]
         ?.toBooleanStrict()
         ?: false
+
+    private val generatedAnnotation = environment.options[Options.generatedAnnotation]
+        ?.let { name ->
+            Options.possibleGeneratedAnnotations[name] ?: run {
+                environment.logger.logKotshiError(Errors.invalidGeneratedAnnotation(name), node = null)
+                null
+            }
+        }
+        ?.let { GeneratedAnnotation(it, KotshiSymbolProcessor::class.asClassName()) }
 
     @OptIn(ExperimentalKotshiApi::class, KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -176,6 +188,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     Visibility.INTERNAL -> {
                         // Ok
                     }
+
                     else -> {
                         environment.logger.logKotshiError(Errors.invalidRegisterAdapterVisibility, it)
                     }
@@ -239,7 +252,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     manuallyRegisteredAdapters = manualAdapters,
                 )
                 JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
-                    .render { addOriginatingKSFile(targetFactory.containingFile!!) }
+                    .render(generatedAnnotation) { addOriginatingKSFile(targetFactory.containingFile!!) }
                     .writeTo(environment.codeGenerator, aggregating = true)
             } catch (e: KspProcessingError) {
                 environment.logger.logKotshiError(e)
@@ -307,7 +320,8 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
 
                 generator.generateAdapter(
                     createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
-                    useLegacyDataClassRenderer = useLegacyDataClassRenderer
+                    useLegacyDataClassRenderer = useLegacyDataClassRenderer,
+                    generatedAnnotation = generatedAnnotation,
                 )
             } catch (e: KspProcessingError) {
                 environment.logger.logKotshiError(e)

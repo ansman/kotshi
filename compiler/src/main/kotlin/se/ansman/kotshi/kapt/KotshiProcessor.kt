@@ -5,10 +5,14 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSetMultimap
 import com.google.common.collect.Multimaps
 import com.google.common.collect.SetMultimap
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.classinspectors.ElementsClassInspector
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType.AGGREGATING
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Options
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
@@ -25,6 +29,7 @@ import javax.lang.model.util.Types
 class KotshiProcessor : AbstractProcessor() {
     private var createAnnotationsUsingConstructor: Boolean? = null
     private var useLegacyDataClassRenderer: Boolean = false
+    private var generatedAnnotation: GeneratedAnnotation? = null
     private lateinit var elements: Elements
     private lateinit var types: Types
     private lateinit var metadataAccessor: MetadataAccessor
@@ -43,7 +48,7 @@ class KotshiProcessor : AbstractProcessor() {
                 adapters = adapters,
                 types = types,
                 elements = processingEnv.elementUtils,
-                sourceVersion = processingEnv.sourceVersion,
+                generatedAnnotation = generatedAnnotation,
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
             ),
@@ -53,7 +58,7 @@ class KotshiProcessor : AbstractProcessor() {
                 filer = processingEnv.filer,
                 types = processingEnv.typeUtils,
                 elements = processingEnv.elementUtils,
-                sourceVersion = processingEnv.sourceVersion,
+                generatedAnnotation = generatedAnnotation,
                 generatedAdapters = adapters,
                 metadataAccessor = metadataAccessor,
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
@@ -64,8 +69,16 @@ class KotshiProcessor : AbstractProcessor() {
     @Synchronized
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
-        createAnnotationsUsingConstructor = processingEnv.options["kotshi.createAnnotationsUsingConstructor"]?.toBooleanStrict()
-        useLegacyDataClassRenderer = processingEnv.options["kotshi.useLegacyDataClassRenderer"]?.toBooleanStrict() ?: useLegacyDataClassRenderer
+        createAnnotationsUsingConstructor = processingEnv.options[Options.createAnnotationsUsingConstructor]?.toBooleanStrict()
+        useLegacyDataClassRenderer = processingEnv.options[Options.useLegacyDataClassRenderer]?.toBooleanStrict() ?: useLegacyDataClassRenderer
+        generatedAnnotation = processingEnv.options[Options.generatedAnnotation]
+            ?.let { name ->
+                Options.possibleGeneratedAnnotations[name] ?: run {
+                    processingEnv.messager.logKotshiError(Errors.invalidGeneratedAnnotation(name), element = null)
+                    null
+                }
+            }
+            ?.let { GeneratedAnnotation(it, KotshiProcessor::class.asClassName()) }
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils
         metadataAccessor = MetadataAccessor(ElementsClassInspector.create(elements, processingEnv.typeUtils))

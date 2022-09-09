@@ -5,6 +5,7 @@ package se.ansman.kotshi.kapt
 import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.google.common.collect.SetMultimap
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
@@ -27,8 +28,8 @@ import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.RegisterJsonAdapter
 import se.ansman.kotshi.constructors
-import se.ansman.kotshi.maybeAddGeneratedAnnotation
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.JsonAdapterFactory.Companion.getManualAdapter
 import se.ansman.kotshi.model.RegisteredAdapter
@@ -37,7 +38,6 @@ import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
@@ -54,7 +54,7 @@ class FactoryProcessingStep(
     override val filer: Filer,
     private val types: Types,
     private val elements: Elements,
-    private val sourceVersion: SourceVersion,
+    private val generatedAnnotation: GeneratedAnnotation?,
     private val generatedAdapters: List<GeneratedAdapter>,
     private val metadataAccessor: MetadataAccessor,
     private val createAnnotationsUsingConstructor: Boolean?,
@@ -105,8 +105,7 @@ class FactoryProcessingStep(
             createAnnotationsUsingConstructor ?: metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
 
         JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
-            .render {
-                maybeAddGeneratedAnnotation(elements, sourceVersion)
+            .render(generatedAnnotation) {
                 addOriginatingElement(element)
             }
             .writeTo(filer)

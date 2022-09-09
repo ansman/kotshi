@@ -7,10 +7,10 @@ fun KSPLogger.logKotshiError(error: KspProcessingError) {
     logKotshiError(error.message, error.node)
 }
 
-fun KSPLogger.logKotshiError(message: String, node: KSNode) {
+fun KSPLogger.logKotshiError(message: String, node: KSNode?) {
     error("Kotshi: $message", node)
 }
 
-fun KSPLogger.logKotshiWarning(message: String, node: KSNode) {
+fun KSPLogger.logKotshiWarning(message: String, node: KSNode?) {
     warn("Kotshi: $message", node)
 }

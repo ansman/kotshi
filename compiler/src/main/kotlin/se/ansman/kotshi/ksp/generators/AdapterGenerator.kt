@@ -26,6 +26,7 @@ import se.ansman.kotshi.ksp.getValue
 import se.ansman.kotshi.ksp.toTypeParameterResolver
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.renderer.createRenderer
 import java.io.OutputStreamWriter
@@ -37,6 +38,7 @@ abstract class AdapterGenerator(
     protected val globalConfig: GlobalConfig,
     protected val resolver: Resolver,
 ) {
+    @Suppress("unused")
     protected val logger get() = environment.logger
     protected val typeParameterResolver = targetElement.toTypeParameterResolver()
     protected val targetClassName = targetElement.toClassName()
@@ -63,12 +65,15 @@ abstract class AdapterGenerator(
     fun generateAdapter(
         createAnnotationsUsingConstructor: Boolean,
         useLegacyDataClassRenderer: Boolean,
+        generatedAnnotation: GeneratedAnnotation?,
     ): GeneratedAdapter {
         when {
             Modifier.INNER in targetElement.modifiers ->
                 throw KspProcessingError(Errors.dataClassCannotBeInner, targetElement)
+
             targetElement.isLocal() ->
                 throw KspProcessingError(Errors.dataClassCannotBeLocal, targetElement)
+
             !targetElement.isPublic() && !targetElement.isInternal() ->
                 throw KspProcessingError(Errors.privateClass, targetElement)
         }
@@ -79,10 +84,8 @@ abstract class AdapterGenerator(
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                 error = { KspProcessingError(it, targetElement) },
             )
-            .render {
+            .render(generatedAnnotation) {
                 addOriginatingKSFile(targetElement.containingFile!!)
-            // TODO
-//            maybeAddGeneratedAnnotation(elements, sourceVersion)
             }
 
         generatedAdapter.fileSpec.writeTo(environment.codeGenerator, aggregating = false)

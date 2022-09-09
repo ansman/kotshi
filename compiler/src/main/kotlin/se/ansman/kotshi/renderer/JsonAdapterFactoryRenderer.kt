@@ -22,6 +22,7 @@ import se.ansman.kotshi.addControlFlow
 import se.ansman.kotshi.applyEachIndexed
 import se.ansman.kotshi.hasParameters
 import se.ansman.kotshi.mapTypeArguments
+import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.render
 import se.ansman.kotshi.nullable
@@ -34,7 +35,7 @@ internal class JsonAdapterFactoryRenderer(
 ) {
     private val nameAllocator = NameAllocator()
 
-    fun render(typeSpecModifier: TypeSpec.Builder.() -> Unit): FileSpec {
+    fun render(generatedAnnotation: GeneratedAnnotation?, typeSpecModifier: TypeSpec.Builder.() -> Unit): FileSpec {
         val annotations = mutableSetOf<AnnotationSpec>()
         val properties = mutableSetOf<PropertySpec>()
         val createFunction = makeCreateFunction(
@@ -58,6 +59,7 @@ internal class JsonAdapterFactoryRenderer(
             .addType(
                 TypeSpec.objectBuilder(factory.factoryClassName)
                     .addModifiers(KModifier.INTERNAL)
+                    .apply { generatedAnnotation?.toAnnotationSpec()?.let(::addAnnotation) }
                     .apply {
                         when (factory.usageType) {
                             JsonAdapterFactory.UsageType.Standalone -> addSuperinterface(Types.Moshi.jsonAdapterFactory)

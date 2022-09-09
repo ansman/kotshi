@@ -1,7 +1,10 @@
 package se.ansman.kotshi.gradle
 
+import deps
+import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -15,6 +18,20 @@ abstract class TestLibraryPlugin : Plugin<Project> {
             }
             getByName("test") {
                 it.java.srcDir(target.rootProject.rootDir.resolve("tests/src/test/kotlin"))
+            }
+        }
+        target.tasks.withType(JavaCompile::class.java) { task ->
+            task.sourceCompatibility = "11"
+            task.targetCompatibility = "11"
+        }
+        target.extensions.configure(JavaPluginExtension::class.java) { extension ->
+            extension.sourceCompatibility = JavaVersion.VERSION_11
+            extension.targetCompatibility = JavaVersion.VERSION_11
+        }
+
+        target.tasks.withType(KotlinCompile::class.java) { task ->
+            task.kotlinOptions {
+                jvmTarget = "11"
             }
         }
 
