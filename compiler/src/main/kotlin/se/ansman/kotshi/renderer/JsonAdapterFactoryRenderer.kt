@@ -104,71 +104,76 @@ internal class JsonAdapterFactoryRenderer(
                 .build()
         }
 
+        val rawTypeProperty = PropertySpec.builder("rawType", Types.Java.clazz.parameterizedBy(STAR))
+            .initializer("%M(%N)", Functions.Moshi.getRawType, typeParam)
+            .build()
         return createSpec
-            .addRegisteredAdapters(typeParam, annotationsParam, moshiParam, annotations, properties)
-            .addGeneratedAdapters(typeParam, annotationsParam, moshiParam)
+            .addCode("%L", rawTypeProperty)
+            .addRegisteredAdapters(rawTypeProperty, typeParam, annotationsParam, moshiParam, annotations, properties)
+            .addGeneratedAdapters(rawTypeProperty, typeParam, annotationsParam, moshiParam)
             .build()
     }
 
     private fun FunSpec.Builder.addRegisteredAdapters(
-        typesParam: ParameterSpec,
+        rawTypeProperty: PropertySpec,
+        typeParam: ParameterSpec,
         annotationsParam: ParameterSpec,
         moshiParam: ParameterSpec,
         annotations: MutableSet<AnnotationSpec>,
         properties: MutableSet<PropertySpec>,
     ) =
-        addStatement("val·rawType·=·%M(%N)", Functions.Moshi.getRawType, typesParam)
-            .addControlFlow("when") {
-                for (adapter in factory.manuallyRegisteredAdapters.sorted()) {
-                    addCode("rawType·==·%T::class.java", adapter.targetType.rawType())
-                    if (adapter.qualifiers.isNotEmpty()) {
-                        val qualifiers = PropertySpec
-                            .builder(
-                                nameAllocator.newName(adapter.adapterClassName.simpleName.replaceFirstChar(Char::lowercaseChar) + "Qualifiers"),
-                                Set::class.parameterizedBy(Annotation::class)
-                            )
-                            .addModifiers(KModifier.PRIVATE)
-                            .initializer(CodeBlock.Builder()
-                                .add("%M(⇥", Functions.Kotlin.setOf)
-                                .applyEachIndexed(adapter.qualifiers) { i, qualifier ->
-                                    if (i > 0) add(",")
-                                    add("\n")
-                                    add(qualifier.render(createAnnotationsUsingConstructor))
-                                }
-                                .add("⇤\n)")
-                                .build())
-                            .build()
-                            .also(properties::add)
-                        addCode("·&&·\n⇥%N == %N⇤", annotationsParam, qualifiers)
-                    }
-                    if (adapter.requiresDeepTypeCheck) {
-                        addCode(
-                            "·&&·\n⇥%M(%M<%T>().%M, %N)⇤",
-                            Functions.Kotshi.matches,
-                            Functions.Kotlin.typeOf,
-                            adapter.targetType.unwrapTypeVariables(),
-                            Functions.Kotlin.javaType,
-                            typesParam
+        addControlFlow("when") {
+            for (adapter in factory.manuallyRegisteredAdapters.sorted()) {
+                addCode("%N·==·%T::class.java", rawTypeProperty, adapter.targetType.rawType())
+                if (adapter.qualifiers.isNotEmpty()) {
+                    val qualifiers = PropertySpec
+                        .builder(
+                            nameAllocator.newName(adapter.adapterClassName.simpleName.replaceFirstChar(Char::lowercaseChar) + "Qualifiers"),
+                            Set::class.parameterizedBy(Annotation::class)
                         )
-                        annotations.add(AnnotationSpec.builder(Types.Kotlin.experimentalStdlibApi).build())
-                    }
-                    addCode("·->« return·")
-                    val constructor = adapter.constructor
-                    if (constructor == null) {
-                        addCode("%T", adapter.adapterTypeName)
-                    } else {
-                        addAdapterConstructorCall(
-                            adapterTypeName = adapter.adapterTypeName,
-                            constructor = adapter.constructor,
-                            moshiParam = moshiParam,
-                            typesParam = typesParam,
-                        )
-                    }
-                    addCode("»\n")
+                        .addModifiers(KModifier.PRIVATE)
+                        .initializer(CodeBlock.Builder()
+                            .add("%M(⇥", Functions.Kotlin.setOf)
+                            .applyEachIndexed(adapter.qualifiers) { i, qualifier ->
+                                if (i > 0) add(",")
+                                add("\n")
+                                add(qualifier.render(createAnnotationsUsingConstructor))
+                            }
+                            .add("⇤\n)")
+                            .build())
+                        .build()
+                        .also(properties::add)
+                    addCode("·&&·\n⇥%N == %N⇤", annotationsParam, qualifiers)
                 }
+                if (adapter.requiresDeepTypeCheck) {
+                    addCode(
+                        "·&&·\n⇥%M(%M<%T>().%M, %N)⇤",
+                        Functions.Kotshi.matches,
+                        Functions.Kotlin.typeOf,
+                        adapter.targetType.unwrapTypeVariables(),
+                        Functions.Kotlin.javaType,
+                        typeParam
+                    )
+                    annotations.add(AnnotationSpec.builder(Types.Kotlin.experimentalStdlibApi).build())
+                }
+                addCode("·->« return·")
+                val constructor = adapter.constructor
+                if (constructor == null) {
+                    addCode("%T", adapter.adapterTypeName)
+                } else {
+                    addAdapterConstructorCall(
+                        adapterTypeName = adapter.adapterTypeName,
+                        constructor = adapter.constructor,
+                        moshiParam = moshiParam,
+                        typeParam = typeParam,
+                    )
+                }
+                addCode("»\n")
             }
+        }
 
     private fun FunSpec.Builder.addGeneratedAdapters(
+        rawTypeProperty: PropertySpec,
         typesParam: ParameterSpec,
         annotationsParam: ParameterSpec,
         moshiParam: ParameterSpec,
@@ -178,14 +183,14 @@ internal class JsonAdapterFactoryRenderer(
         }
         return addStatement("if·(%N.isNotEmpty()) return·null", annotationsParam)
             .addCode("\n")
-            .addControlFlow("return·when·(%M(%N))", Functions.Moshi.getRawType, typesParam) {
+            .addControlFlow("return·when·(%N)", rawTypeProperty) {
                 for (adapter in factory.generatedAdapters.sorted()) {
                     addCode("%T::class.java·->«\n", adapter.adapter.targetType.rawType())
                     addAdapterConstructorCall(
                         adapterTypeName = adapter.adapter.adapterTypeName,
                         constructor = adapter.constructor,
                         moshiParam = moshiParam,
-                        typesParam = typesParam,
+                        typeParam = typesParam,
                     )
                     addCode("»\n")
                 }
@@ -197,7 +202,7 @@ internal class JsonAdapterFactoryRenderer(
         adapterTypeName: TypeName,
         constructor: KotshiConstructor,
         moshiParam: ParameterSpec,
-        typesParam: ParameterSpec,
+        typeParam: ParameterSpec,
     ): FunSpec.Builder = apply {
         addCode("%T(", adapterTypeName.mapTypeArguments { NOTHING })
         if (constructor.hasParameters) {
@@ -214,7 +219,7 @@ internal class JsonAdapterFactoryRenderer(
             addCode(
                 "\n%N = %N.%M",
                 constructor.typesParameterName,
-                typesParam,
+                typeParam,
                 Functions.Kotshi.typeArgumentsOrFail
             )
         }
