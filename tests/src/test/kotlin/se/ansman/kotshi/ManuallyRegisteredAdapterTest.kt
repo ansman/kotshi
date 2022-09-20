@@ -10,15 +10,15 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertSame
 
-class ManuallyRegistedAdapterTest {
+class ManuallyRegisteredAdapterTest {
     private val moshi = Moshi.Builder()
         .add(TestFactory)
         .build()
 
     @Test
     fun testRegistersRegularAdapter() {
-        assertThat(moshi.adapter(ManuallyRegistedAdapter.Type::class.java))
-            .isSameAs(ManuallyRegistedAdapter)
+        assertThat(moshi.adapter(ManuallyRegisteredAdapter.Type::class.java))
+            .isSameAs(ManuallyRegisteredAdapter)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -57,8 +57,8 @@ class ManuallyRegistedAdapterTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun testRegistersGenericAdapter() {
-        val adapter = moshi.adapter<String>(typeOf<ManuallyRegistedGenericAdapter.GenericType<Int>>().javaType)
-        assertIs<ManuallyRegistedGenericAdapter<*>>(adapter)
+        val adapter = moshi.adapter<String>(typeOf<ManuallyRegisteredGenericAdapter.GenericType<Int>>().javaType)
+        assertIs<ManuallyRegisteredGenericAdapter<*>>(adapter)
         assertSame(moshi, adapter.moshi)
         assertThat(adapter.types)
             .asList()
@@ -67,13 +67,13 @@ class ManuallyRegistedAdapterTest {
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun testManuallyRegistedWrappedGenericAdapter() {
+    fun testManuallyRegisteredWrappedGenericAdapter() {
         assertFailsWith<IllegalArgumentException> {
-            moshi.adapter<ManuallyRegistedWrappedGenericAdapter.GenericType<List<Int>>>()
+            moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<Int>>>()
         }
-        assertIs<ManuallyRegistedWrappedGenericAdapter>(
-            moshi.adapter<ManuallyRegistedWrappedGenericAdapter.GenericType<List<String>>>(
-                typeOf<ManuallyRegistedWrappedGenericAdapter.GenericType<List<String>>>().javaType
+        assertIs<ManuallyRegisteredWrappedGenericAdapter>(
+            moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>(
+                typeOf<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>().javaType
             )
         )
     }
