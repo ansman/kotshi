@@ -5,6 +5,7 @@ import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -39,12 +40,14 @@ import se.ansman.kotshi.ksp.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.ksp.generators.EnumAdapterGenerator
 import se.ansman.kotshi.ksp.generators.ObjectAdapterGenerator
 import se.ansman.kotshi.ksp.generators.SealedClassAdapterGenerator
+import se.ansman.kotshi.model.DefaultConstructorAccessor
 import se.ansman.kotshi.model.GeneratedAdapter
 import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.JsonAdapterFactory.Companion.getManualAdapter
 import se.ansman.kotshi.model.findKotshiConstructor
+import se.ansman.kotshi.renderer.DefaultConstructorAccessorsRenderer
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 
 class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
@@ -67,48 +70,8 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
 
     @OptIn(ExperimentalKotshiApi::class, KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        for (annotated in resolver.getSymbolsWithAnnotation(Polymorphic::class.qualifiedName!!)) {
-            if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
-                environment.logger.logKotshiError(javaClassNotSupported, annotated)
-                continue
-            }
-            require(annotated is KSClassDeclaration)
-            if (annotated.getAnnotation<JsonSerializable>() == null) {
-                environment.logger.logKotshiError(polymorphicClassMustHaveJsonSerializable, annotated)
-            }
-        }
-
-        for (annotated in resolver.getSymbolsWithAnnotation(JsonDefaultValue::class.qualifiedName!!)) {
-            if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
-                environment.logger.logKotshiError(javaClassNotSupported, annotated)
-                continue
-            }
-            when (annotated) {
-                is KSClassDeclaration -> {
-                    when (annotated.classKind) {
-                        ClassKind.ENUM_ENTRY,
-                        ClassKind.OBJECT -> {
-                            // OK
-                        }
-
-                        ClassKind.CLASS ->
-                            if (Modifier.DATA !in annotated.modifiers) {
-                                environment.logger.logKotshiError(
-                                    Errors.jsonDefaultValueAppliedToInvalidType,
-                                    annotated
-                                )
-                            }
-
-                        else -> environment.logger.logKotshiError(
-                            Errors.jsonDefaultValueAppliedToInvalidType,
-                            annotated
-                        )
-                    }
-                }
-
-                else -> environment.logger.logKotshiError(Errors.jsonDefaultValueAppliedToInvalidType, annotated)
-            }
-        }
+        validatePolymorphicAnnotations(resolver)
+        validateJsonDefaultValueAnnotations(resolver)
 
         val factories = resolver.getSymbolsWithAnnotation(KotshiJsonAdapterFactory::class.qualifiedName!!)
             .mapNotNull {
@@ -151,7 +114,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
             }
             ?: GlobalConfig.DEFAULT
 
-
+        val defaultConstructorAccessors = mutableListOf<DefaultConstructorAccessor>()
         val manualAdapters = resolver.getSymbolsWithAnnotation(RegisterJsonAdapter::class.qualifiedName!!)
             .onEach {
                 if (targetFactory == null) {
@@ -228,9 +191,21 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
             }
             .toList()
 
-        val generatedAdapters = generateAdapters(resolver, globalConfig)
+        val generatedAdapters = generateAdapters(resolver, globalConfig, defaultConstructorAccessors)
+
 
         if (targetFactory != null) {
+            if (defaultConstructorAccessors.isNotEmpty()) {
+                val renderer = DefaultConstructorAccessorsRenderer(defaultConstructorAccessors)
+                environment.codeGenerator.createNewFile(
+                    dependencies = Dependencies(false, targetFactory.containingFile!!),
+                    targetFactory.packageName.asString(),
+                    renderer.className,
+                    extensionName = "class"
+                ).use { outputStream ->
+                    outputStream.write(renderer.render(targetFactory.packageName.asString()))
+                }
+            }
             try {
                 val jsonAdapterFactoryType = resolver.getClassDeclarationByName<JsonAdapter.Factory>()!!
                     .asType(emptyList())
@@ -265,7 +240,58 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
         return emptyList()
     }
 
-    private fun generateAdapters(resolver: Resolver, globalConfig: GlobalConfig): List<GeneratedAdapter> =
+    private fun validatePolymorphicAnnotations(resolver: Resolver) {
+        for (annotated in resolver.getSymbolsWithAnnotation(Polymorphic::class.qualifiedName!!)) {
+            if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
+                environment.logger.logKotshiError(javaClassNotSupported, annotated)
+                continue
+            }
+            require(annotated is KSClassDeclaration)
+            if (annotated.getAnnotation<JsonSerializable>() == null) {
+                environment.logger.logKotshiError(polymorphicClassMustHaveJsonSerializable, annotated)
+            }
+        }
+    }
+
+    private fun validateJsonDefaultValueAnnotations(resolver: Resolver) {
+        for (annotated in resolver.getSymbolsWithAnnotation(JsonDefaultValue::class.qualifiedName!!)) {
+            if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
+                environment.logger.logKotshiError(javaClassNotSupported, annotated)
+                continue
+            }
+            when (annotated) {
+                is KSClassDeclaration -> {
+                    when (annotated.classKind) {
+                        ClassKind.ENUM_ENTRY,
+                        ClassKind.OBJECT -> {
+                            // OK
+                        }
+
+                        ClassKind.CLASS ->
+                            if (Modifier.DATA !in annotated.modifiers) {
+                                environment.logger.logKotshiError(
+                                    Errors.jsonDefaultValueAppliedToInvalidType,
+                                    annotated
+                                )
+                            }
+
+                        else -> environment.logger.logKotshiError(
+                            Errors.jsonDefaultValueAppliedToInvalidType,
+                            annotated
+                        )
+                    }
+                }
+
+                else -> environment.logger.logKotshiError(Errors.jsonDefaultValueAppliedToInvalidType, annotated)
+            }
+        }
+    }
+
+    private fun generateAdapters(
+        resolver: Resolver,
+        globalConfig: GlobalConfig,
+        defaultConstructorAccessors: MutableList<DefaultConstructorAccessor>
+    ): List<GeneratedAdapter> =
         resolver.getSymbolsWithAnnotation(JsonSerializable::class.qualifiedName!!).mapNotNull { annotated ->
             if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
                 environment.logger.logKotshiError(javaClassNotSupported, annotated)
@@ -285,7 +311,9 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                                     element = annotated,
                                     globalConfig = globalConfig,
                                     resolver = resolver,
-                                )
+                                ).also {
+                                    it.defaultConstructorAccessor?.let(defaultConstructorAccessors::add)
+                                }
                             }
 
                             Modifier.SEALED in annotated.modifiers -> {

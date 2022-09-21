@@ -23,5 +23,7 @@ dependencies {
     implementation(deps.kotlinpoet.ksp)
     implementation(deps.moshi.oldestSupported)
     implementation(deps.ksp.api)
-    implementation(deps.asm)
+    implementation(platform(deps.asm.bom))
+    implementation(deps.asm.core)
+    implementation(deps.asm.commons)
 }

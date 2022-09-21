@@ -42,5 +42,9 @@ object deps {
         const val api = "com.google.devtools.ksp:symbol-processing-api:$version"
     }
 
-    const val asm = "org.ow2.asm:asm:9.3"
+    object asm {
+        const val bom = "org.ow2.asm:asm-bom:9.3"
+        const val core = "org.ow2.asm:asm"
+        const val commons = "org.ow2.asm:asm-commons"
+    }
 }

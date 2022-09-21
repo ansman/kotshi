@@ -7,8 +7,10 @@ import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
 import se.ansman.kotshi.Errors
@@ -26,6 +28,7 @@ import se.ansman.kotshi.ksp.getValue
 import se.ansman.kotshi.ksp.isJsonQualifier
 import se.ansman.kotshi.ksp.toAnnotationModel
 import se.ansman.kotshi.model.DataClassJsonAdapter
+import se.ansman.kotshi.model.DefaultConstructorAccessor
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.Property
@@ -36,6 +39,26 @@ class DataClassAdapterGenerator(
     globalConfig: GlobalConfig,
     resolver: Resolver,
 ) : AdapterGenerator(environment, element, globalConfig, resolver) {
+    private val primaryConstructor = targetElement.primaryConstructor!!
+    val defaultConstructorAccessor: DefaultConstructorAccessor? = primaryConstructor
+        .takeIf { it.parameters.any(KSValueParameter::hasDefault) }
+        ?.let { constructor ->
+            DefaultConstructorAccessor(
+                targetType = targetClassName.reflectionName().replace('.', '/'),
+                parameters = constructor.parameters.map { parameter ->
+                    val type = parameter.type.resolve()
+                    DefaultConstructorAccessor.Parameter(
+                        type = type.asJvmDescriptor(resolver),
+                        name = parameter.name!!.asString(),
+                        nullability = when (type.nullability) {
+                            Nullability.NULLABLE -> DefaultConstructorAccessor.Parameter.Nullability.NULLABLE
+                            Nullability.NOT_NULL -> DefaultConstructorAccessor.Parameter.Nullability.NOT_NULL
+                            Nullability.PLATFORM -> DefaultConstructorAccessor.Parameter.Nullability.PLATFORM
+                        }
+                    )
+                }
+            )
+        }
 
     init {
         require(Modifier.DATA in element.modifiers)
@@ -49,7 +72,6 @@ class DataClassAdapterGenerator(
 
     @OptIn(KspExperimental::class)
     override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
-        val primaryConstructor = targetElement.primaryConstructor!!
         if (!primaryConstructor.isPublic() && !primaryConstructor.isInternal()) {
             throw KspProcessingError(Errors.privateDataClassConstructor, primaryConstructor)
         }
@@ -104,3 +126,10 @@ class DataClassAdapterGenerator(
         )
     }
 }
+
+@OptIn(KspExperimental::class)
+private fun KSType.asJvmDescriptor(resolver: Resolver): String =
+    resolver.mapToJvmSignature(declaration) ?:
+    requireNotNull(resolver.mapToJvmSignature(declaration)) {
+        throw IllegalArgumentException("Cannot map $declaration to JVM signature")
+    }

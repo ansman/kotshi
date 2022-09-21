@@ -5,7 +5,6 @@ package se.ansman.kotshi.kapt
 import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.google.common.collect.SetMultimap
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
