@@ -22,7 +22,7 @@ import com.squareup.moshi.JsonQualifier
  * }
  *
  * // Registers this adapter for the type `Instant` with the qualifier ISO8601.
- * @JsonQualfier
+ * @JsonQualifier
  * annotation class ISO8601
  *
  * @RegisterJsonAdapter
