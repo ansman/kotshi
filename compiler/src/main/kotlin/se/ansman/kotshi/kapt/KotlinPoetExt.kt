@@ -12,7 +12,6 @@ import javax.lang.model.element.AnnotationMirror
 
 
 fun List<AnnotationSpec>.find(typeName: ClassName): AnnotationSpec? = find { it.typeName == typeName }
-fun List<AnnotationSpec>.has(typeName: ClassName): Boolean = find(typeName) != null
 
 fun List<AnnotationSpec>.jsonName(): String? =
     (find(Types.Kotshi.jsonProperty) ?: find(Types.Moshi.json))?.let { spec ->

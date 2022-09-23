@@ -4,7 +4,6 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import se.ansman.kotshi.kapt.KotshiProcessor
 import se.ansman.kotshi.ksp.KotshiSymbolProcessor
 import se.ansman.kotshi.ksp.KotshiSymbolProcessorProvider
 import java.io.File

@@ -1,13 +1,7 @@
 package se.ansman.kotshi.model
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.Dynamic
-import com.squareup.kotlinpoet.LambdaTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.moshi.JsonAdapter
 import se.ansman.kotshi.KotshiConstructor
 import se.ansman.kotshi.Types

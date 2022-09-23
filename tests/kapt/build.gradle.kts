@@ -15,10 +15,3 @@ fun KaptArguments.argFromGradleProperty(name: String) {
         arg(name, value)
     }
 }
-
-kapt {
-    arguments {
-        argFromGradleProperty("kotshi.createAnnotationsUsingConstructor")
-        argFromGradleProperty("kotshi.useLegacyDataClassRenderer")
-    }
-}

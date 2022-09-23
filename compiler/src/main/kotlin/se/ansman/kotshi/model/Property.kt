@@ -1,22 +1,8 @@
 package se.ansman.kotshi.model
 
-import com.squareup.kotlinpoet.ANY
-import com.squareup.kotlinpoet.ARRAY
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.LambdaTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.WildcardTypeName
-import se.ansman.kotshi.Errors
-import se.ansman.kotshi.Functions
-import se.ansman.kotshi.PrimitiveAdapters
-import se.ansman.kotshi.isPrimitive
-import se.ansman.kotshi.notNull
-import se.ansman.kotshi.unwrapTypeAlias
+import se.ansman.kotshi.*
 
 data class Property(
     val name: String,

@@ -1,11 +1,7 @@
 package se.ansman.kotshi
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.tag
 
 internal val TypeSpec.typeName: TypeName
     get() = tag<ClassName>()!!

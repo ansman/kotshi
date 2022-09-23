@@ -1,18 +1,8 @@
 package se.ansman.kotshi.model
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.LONG
-import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.withIndent
-import se.ansman.kotshi.Functions
-import se.ansman.kotshi.Types
-import se.ansman.kotshi.applyEach
-import se.ansman.kotshi.applyEachIndexed
-import se.ansman.kotshi.applyIf
-import se.ansman.kotshi.withoutVariance
+import se.ansman.kotshi.*
 
 data class AnnotationModel(
     val annotationName: ClassName,
