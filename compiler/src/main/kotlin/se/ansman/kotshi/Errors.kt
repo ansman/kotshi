@@ -1,7 +1,7 @@
 package se.ansman.kotshi
 
 object Errors {
-    const val sealedClassMustBePolymorphic = "Sealed classes must be annoted with @Polymorphic"
+    const val sealedClassMustBePolymorphic = "Sealed classes must be annotated with @Polymorphic"
     const val nestedSealedClassMustBePolymorphic = "Children of a sealed class must be annotated with @Polymorphic"
     const val defaultSealedValueIsGeneric = "The default value of a sealed class cannot be generic"
     const val javaClassNotSupported = "Only Kotlin types are supported"

@@ -1,13 +1,9 @@
 package se.ansman.kotshi.kapt
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.metadata.toKmClass
-import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.isLocal
 import se.ansman.kotshi.Errors.javaClassNotSupported
@@ -19,7 +15,7 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
     private val kmClassPerMetadata = mutableMapOf<Metadata, KmClass>()
     private val typeSpecPerKmClass = mutableMapOf<KmClass, TypeSpec>()
 
-    @OptIn(DelicateKotlinPoetApi::class) // OK because we are using the class name for comparisson
+    @OptIn(DelicateKotlinPoetApi::class) // OK because we are using the class name for comparison
     fun getMetadataOrNull(type: Element): Metadata? =
         metadataPerType.getOrPut((type as TypeElement).asClassName()) {
             type.getAnnotation(Metadata::class.java)

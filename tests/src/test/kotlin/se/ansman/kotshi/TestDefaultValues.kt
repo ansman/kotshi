@@ -1,10 +1,6 @@
 package se.ansman.kotshi
 
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.JsonWriter
-import com.squareup.moshi.Moshi
+import com.squareup.moshi.*
 import okio.Buffer
 import org.junit.Before
 import org.junit.Test

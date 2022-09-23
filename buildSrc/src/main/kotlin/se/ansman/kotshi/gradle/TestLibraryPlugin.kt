@@ -14,10 +14,10 @@ abstract class TestLibraryPlugin : Plugin<Project> {
 
         target.sourceSets {
             getByName("main") {
-                it.java.srcDir(target.rootProject.rootDir.resolve("tests/src/main/kotlin"))
+                it.java.srcDir(target.rootDir.resolve("tests/src/main/kotlin"))
             }
             getByName("test") {
-                it.java.srcDir(target.rootProject.rootDir.resolve("tests/src/test/kotlin"))
+                it.java.srcDirs(target.rootDir.resolve("tests/src/test/kotlin"))
             }
         }
         target.tasks.withType(JavaCompile::class.java) { task ->

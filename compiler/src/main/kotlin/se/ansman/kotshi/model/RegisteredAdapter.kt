@@ -1,12 +1,6 @@
 package se.ansman.kotshi.model
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.Dynamic
-import com.squareup.kotlinpoet.LambdaTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.kotlinpoet.*
 import se.ansman.kotshi.KotshiConstructor
 
 internal data class RegisteredAdapter(

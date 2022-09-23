@@ -15,11 +15,7 @@ import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import com.squareup.kotlinpoet.ksp.writeTo
-import se.ansman.kotshi.Errors
-import se.ansman.kotshi.Polymorphic
-import se.ansman.kotshi.PolymorphicLabel
-import se.ansman.kotshi.ProguardConfig
-import se.ansman.kotshi.getPolymorphicLabels
+import se.ansman.kotshi.*
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getValue
