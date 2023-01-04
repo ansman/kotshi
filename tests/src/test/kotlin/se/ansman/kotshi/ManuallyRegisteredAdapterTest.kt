@@ -18,7 +18,7 @@ class ManuallyRegisteredAdapterTest {
     @Test
     fun testRegistersRegularAdapter() {
         assertThat(moshi.adapter(ManuallyRegisteredAdapter.Type::class.java))
-            .isSameAs(ManuallyRegisteredAdapter)
+            .isSameInstanceAs(ManuallyRegisteredAdapter)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
