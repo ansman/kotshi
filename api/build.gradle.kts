@@ -1,5 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.incremental.mkdirsOrThrow
+//import org.jetbrains.kotlin.incremental.mkdirsOrThrow
 import java.net.URL
 
 plugins {
@@ -35,7 +35,7 @@ val buildPackagesDocs by tasks.registering(Task::class) {
     inputs.file(readme)
     outputs.file(packagesMarkdown)
     doFirst {
-        packagesMarkdown.parentFile.mkdirsOrThrow()
+//        packagesMarkdown.parentFile!!.mkdirsOrThrow()
         packagesMarkdown.writer().use { writer ->
             writer.write("# Module kotshi\n\n")
             readme.reader().use { reader ->
