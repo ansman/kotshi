@@ -23,6 +23,7 @@ import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.Errors.transientDataClassPropertyWithoutDefaultValue
 import se.ansman.kotshi.Errors.unsupportedSerializableType
 import java.io.File
+import kotlin.test.assertEquals
 
 abstract class BaseGeneratorTest {
     @Rule
@@ -574,4 +575,9 @@ abstract class BaseGeneratorTest {
 
     protected abstract fun KotlinCompilation.setUp(options: Map<String, String>)
     protected abstract fun KotlinCompilation.Result.tryLoadClass(name: String): Class<*>?
+    protected fun KotlinCompilation.Result.getSourceByName(name: String): String =
+        sourcesGeneratedByAnnotationProcessor.plus(extraGeneratedFiles)
+            .first { it.name == name }
+            .readText()
+            .trim()
 }
