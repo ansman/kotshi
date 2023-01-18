@@ -193,9 +193,6 @@ class DataClassAdapterRenderer(
                 ++maskNameIndex
             }
         }
-        val constructorPropertyTypes = adapter.properties.map {
-            it.type.asTypeBlock()
-        }
 
         this
             .addStatement(
@@ -373,6 +370,9 @@ class DataClassAdapterRenderer(
                     addComment("Reflectively invoke the synthetic defaults constructor")
                     // Dynamic default constructor call
                     val nonNullConstructorType = constructorProperty.type.copy(nullable = false)
+                    val constructorPropertyTypes = adapter.properties.map {
+                        it.type.unwrapTypeAlias().asTypeBlock()
+                    }
                     val args = constructorPropertyTypes
                         .plus(0.until(maskCount).map { INT_TYPE_BLOCK }) // Masks, one every 32 params
                         .plus(DEFAULT_CONSTRUCTOR_MARKER_TYPE_BLOCK) // Default constructor marker is always last
