@@ -447,7 +447,7 @@ class DataClassAdapterRenderer(
         val valueType = if (type.isPrimitive && !shouldUseAdapter) type else type.nullable()
         val localIsSet = if (valueType.isPrimitive && !hasDefaultValue) {
             PropertySpec
-                .builder(nameAllocator.newName("${name}IsSet"), BOOLEAN)
+                .builder(nameAllocator.newName("${variableName}IsSet"), BOOLEAN)
                 .mutable()
                 .initializer("false")
                 .build()
@@ -457,7 +457,7 @@ class DataClassAdapterRenderer(
         val mask = 1 shl maskIndex
         val value = PropertySpec
             .builder(
-                name = nameAllocator.newName(name),
+                name = nameAllocator.newName(variableName),
                 type = valueType
             )
             .initializer(
