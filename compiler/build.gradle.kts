@@ -1,5 +1,5 @@
 plugins {
-    `published-library`
+    id("published-library")
     kotlin("kapt")
 }
 
@@ -13,16 +13,16 @@ tasks.compileKotlin {
 
 dependencies {
     implementation(projects.api)
-    implementation(deps.autoService.api)
-    kapt(deps.autoService.compiler)
-    implementation(deps.incap.api)
-    kapt(deps.incap.compiler)
-    implementation(deps.autocommon)
-    implementation(deps.kotlinpoet.core)
-    implementation(deps.kotlinpoet.metadata)
-    implementation(deps.kotlinpoet.ksp)
-    implementation(deps.kotlinxMetadata)
-    implementation(deps.moshi.oldestSupported)
-    implementation(deps.ksp.api)
-    implementation(deps.asm)
+    implementation(libs.auto.service.api)
+    kapt(libs.auto.service.compiler)
+    implementation(libs.incap.api)
+    kapt(libs.incap.compiler)
+    implementation(libs.auto.common)
+    implementation(libs.kotlinpoet.core)
+    implementation(libs.kotlinpoet.metadata)
+    implementation(libs.kotlinpoet.ksp)
+    implementation(libs.kotlinx.metadata)
+    implementation(libs.moshi.oldestSupported)
+    implementation(libs.ksp.api)
+    implementation(libs.asm)
 }

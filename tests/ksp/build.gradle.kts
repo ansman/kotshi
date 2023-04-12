@@ -1,8 +1,8 @@
 import com.google.devtools.ksp.gradle.KspExtension
 
 plugins {
-    `test-library`
-    id("com.google.devtools.ksp") version deps.ksp.version
+    id("test-library")
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -16,7 +16,7 @@ kotlin {
 
 dependencies {
     ksp(projects.compiler)
-    testImplementation(deps.compileTesting.ksp)
+    testImplementation(libs.compileTesting.ksp)
 }
 
 fun KspExtension.argFromGradleProperty(name: String) {
