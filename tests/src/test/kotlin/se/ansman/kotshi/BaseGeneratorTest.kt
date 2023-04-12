@@ -1,6 +1,9 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonAdapter
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -22,8 +25,8 @@ import se.ansman.kotshi.Errors.privateDataClassConstructor
 import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.Errors.transientDataClassPropertyWithoutDefaultValue
 import se.ansman.kotshi.Errors.unsupportedSerializableType
+import se.ansman.kotshi.assertions.isAssignableTo
 import java.io.File
-import kotlin.test.assertEquals
 
 abstract class BaseGeneratorTest {
     @Rule
@@ -39,8 +42,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             private data class Foo(val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateClass)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateClass)
     }
 
     @Test
@@ -50,8 +53,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             data class Foo private constructor(val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateDataClassConstructor)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateDataClassConstructor)
     }
 
     @Test
@@ -60,8 +63,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             data class Foo(private val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateDataClassProperty("property"))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateDataClassProperty("property"))
     }
 
     @Test
@@ -70,8 +73,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@Transient val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(transientDataClassPropertyWithoutDefaultValue("property"))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(transientDataClassPropertyWithoutDefaultValue("property"))
     }
 
     @Test
@@ -80,8 +83,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = true) val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(ignoredDataClassPropertyWithoutDefaultValue("property"))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(ignoredDataClassPropertyWithoutDefaultValue("property"))
     }
 
     @Test
@@ -90,8 +93,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = false) @Transient val property: String)
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(nonIgnoredDataClassPropertyMustNotBeTransient("property"))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(nonIgnoredDataClassPropertyMustNotBeTransient("property"))
     }
 
     @Test
@@ -104,8 +107,8 @@ abstract class BaseGeneratorTest {
               data class Implementation(val value: String) : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.sealedClassMustBePolymorphic)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.sealedClassMustBePolymorphic)
     }
 
     @Test
@@ -119,8 +122,8 @@ abstract class BaseGeneratorTest {
               data class Implementation<T>(val value: T) : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.sealedSubclassMustNotHaveGeneric("T"))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.sealedSubclassMustNotHaveGeneric("T"))
     }
 
     @Test
@@ -134,8 +137,8 @@ abstract class BaseGeneratorTest {
               data class Implementation<T>(val value: T) : SealedClass<T>()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.defaultSealedValueIsGeneric)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.defaultSealedValueIsGeneric)
     }
 
     @Test
@@ -155,8 +158,8 @@ abstract class BaseGeneratorTest {
               object Default : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.multipleJsonDefaultValueInSealedClass)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.multipleJsonDefaultValueInSealedClass)
     }
 
     @Test
@@ -169,8 +172,8 @@ abstract class BaseGeneratorTest {
               data class Implementation(val value: String) : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.polymorphicClassMustHaveJsonSerializable)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.polymorphicClassMustHaveJsonSerializable)
     }
 
     @Test
@@ -180,8 +183,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.Polymorphic("type")
             sealed class SealedClass
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.noSealedSubclasses)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.noSealedSubclasses)
     }
 
     @Test
@@ -194,8 +197,8 @@ abstract class BaseGeneratorTest {
               data class Implementation(val value: String) : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.polymorphicSubclassMustHaveJsonSerializable)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.polymorphicSubclassMustHaveJsonSerializable)
     }
 
     @Test
@@ -208,8 +211,8 @@ abstract class BaseGeneratorTest {
               data class Implementation(val value: String) : SealedClass()
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.polymorphicSubclassMustHavePolymorphicLabel)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.polymorphicSubclassMustHavePolymorphicLabel)
     }
 
     @Test
@@ -220,8 +223,8 @@ abstract class BaseGeneratorTest {
            sealed inner class Inner(val value: String)
          }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.dataClassCannotBeInner)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.dataClassCannotBeInner)
     }
 
     @Test
@@ -230,8 +233,8 @@ abstract class BaseGeneratorTest {
            @se.ansman.kotshi.JsonSerializable
            private object Singleton
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateClass)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateClass)
     }
 
     @Test
@@ -245,8 +248,8 @@ abstract class BaseGeneratorTest {
              data class Implementation(val value: String) : SealedClass()
            }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateClass)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateClass)
     }
 
     @Test
@@ -265,8 +268,8 @@ abstract class BaseGeneratorTest {
              }
            }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(jsonDefaultValueAppliedToInvalidType)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(jsonDefaultValueAppliedToInvalidType)
     }
 
     @Test
@@ -283,8 +286,8 @@ abstract class BaseGeneratorTest {
              }
            }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(nestedSealedClassMustBePolymorphic)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(nestedSealedClassMustBePolymorphic)
     }
 
     @Test
@@ -303,8 +306,8 @@ abstract class BaseGeneratorTest {
              }
            }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(nestedSealedClassHasPolymorphicLabel)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(nestedSealedClassHasPolymorphicLabel)
     }
 
     @Test
@@ -322,8 +325,8 @@ abstract class BaseGeneratorTest {
              }
            }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(nestedSealedClassMissingPolymorphicLabel)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(nestedSealedClassMissingPolymorphicLabel)
     }
 
     @Test
@@ -334,8 +337,8 @@ abstract class BaseGeneratorTest {
               Value1,
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(privateClass)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(privateClass)
     }
 
     @Test
@@ -349,8 +352,8 @@ abstract class BaseGeneratorTest {
               Value2
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(multipleJsonDefaultValueInEnum)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(multipleJsonDefaultValueInEnum)
     }
 
     @Test
@@ -359,8 +362,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             interface Interface
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(unsupportedSerializableType)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(unsupportedSerializableType)
     }
 
     @Test
@@ -369,8 +372,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.JsonSerializable
             class JavaType {}
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(javaClassNotSupported)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(javaClassNotSupported)
     }
 
     @Test
@@ -381,8 +384,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object Factory2 : com.squareup.moshi.JsonAdapter.Factory
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.multipleFactories(listOf("Factory1", "Factory2")))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.multipleFactories(listOf("Factory1", "Factory2")))
     }
 
     @Test
@@ -391,7 +394,7 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             abstract class Factory : com.squareup.moshi.JsonAdapter.Factory
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val kotshiFactory = result.tryLoadClass("KotshiFactory")
         if (kotshiFactory != null) {
             assertThat(kotshiFactory).isAssignableTo(result.classLoader.loadClass("Factory"))
@@ -404,21 +407,25 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object Factory : com.squareup.moshi.JsonAdapter.Factory by KotshiFactory
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         val factory = result.tryLoadClass("KotshiFactory")
         if (factory != null) {
-            assertThat(factory).isAssignableTo(JsonAdapter.Factory::class.java)
+            assertThat(factory).isAssignableTo<JsonAdapter.Factory>()
         }
     }
 
     @Test
     fun `factories can be interfaces`() {
-        val result = compile(kotlin("source.kt", """
+        val result = compile(
+            kotlin(
+                "source.kt", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             interface Factory : com.squareup.moshi.JsonAdapter.Factory
-        """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        assertThat(result.messages).contains(Errors.abstractFactoriesAreDeprecated)
+        """
+            )
+        )
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::messages).contains(Errors.abstractFactoriesAreDeprecated)
         val kotshiFactory = result.tryLoadClass("KotshiFactory")
         if (kotshiFactory != null) {
             assertThat(kotshiFactory).isAssignableTo(result.classLoader.loadClass("Factory"))
@@ -431,8 +438,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             interface Factory extends com.squareup.moshi.JsonAdapter.Factory {}
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(javaClassNotSupported)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(javaClassNotSupported)
     }
 
     @Test
@@ -441,8 +448,8 @@ abstract class BaseGeneratorTest {
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             abstract class Adapter extends com.squareup.moshi.JsonAdapter<String> {}
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(javaClassNotSupported)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(javaClassNotSupported)
     }
 
     @Test
@@ -453,8 +460,8 @@ abstract class BaseGeneratorTest {
                 object Type
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.invalidRegisterAdapterType)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.invalidRegisterAdapterType)
     }
 
     @Test
@@ -467,8 +474,8 @@ abstract class BaseGeneratorTest {
                 object Type
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.invalidRegisterAdapterVisibility)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.invalidRegisterAdapterVisibility)
     }
 
     @Test
@@ -481,8 +488,8 @@ abstract class BaseGeneratorTest {
                 object Type
             }
         """))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.registeredAdapterWithoutFactory)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.registeredAdapterWithoutFactory)
     }
 
     @Test
@@ -511,7 +518,7 @@ abstract class BaseGeneratorTest {
         """)
         val annotationClass = "javax.annotation.Generated"
         val result = compile(generated, source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         result.generatedFiles
             .plus(extraGeneratedFiles)
             .filter { it.name.endsWith(".kt") && "Kotshi" in it.name }
@@ -535,7 +542,7 @@ abstract class BaseGeneratorTest {
         """)
         val annotationClass = "javax.annotation.processing.Generated"
         val result = compile(source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
         result.generatedFiles
             .plus(extraGeneratedFiles)
             .filter { it.name.endsWith(".kt") && "Kotshi" in it.name }
@@ -558,8 +565,8 @@ abstract class BaseGeneratorTest {
         """)
         val annotationClass = "foo.bar.Generated"
         val result = compile(source, options = mapOf("kotshi.generatedAnnotation" to annotationClass))
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains(Errors.invalidGeneratedAnnotation(annotationClass))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result::messages).contains(Errors.invalidGeneratedAnnotation(annotationClass))
     }
 
     protected fun compile(vararg sources: SourceFile, options: Map<String, String> = emptyMap()) =

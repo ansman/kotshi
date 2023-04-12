@@ -1,33 +1,8 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.11.0"
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        mavenLocal()
-    }
-    tasks.withType<Javadoc> { enabled = false }
-    tasks.withType<KotlinCompile> {
-        kotlinOptions {
-            freeCompilerArgs = freeCompilerArgs + listOf(
-                "-opt-in=kotlin.RequiresOptIn"
-            )
-        }
-    }
+    kotlin("jvm") version libs.versions.kotlin.get() apply false
+    alias(libs.plugins.kotlinx.binaryCompatibilityValidator)
 }
 
 apiValidation {
     allprojects.filterNot { it.path == ":api" }.mapTo(ignoredProjects) { it.name }
-}
-
-tasks.register("publishSnapshot") {
-    if (version.toString().endsWith("-SNAPSHOT")) {
-        for (project in allprojects) {
-            project.tasks.findByName("publishAllPublicationsToSonatypeSnapshotsRepository")?.let { dependsOn(it) }
-        }
-    }
 }

@@ -1,6 +1,8 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
 import com.squareup.moshi.JsonQualifier
 import org.junit.Test
 import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation

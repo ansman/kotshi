@@ -13,8 +13,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v2
       with:
-        distribution: 'temurin'
-        java-version: '11'
+        distribution: 'zulu'
+        java-version: '19'
         cache: 'gradle'
     - name: Run Checks
       run: ./gradlew check --continue --stacktrace -Pkotshi.createAnnotationsUsingConstructor=false
@@ -24,8 +24,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v2
       with:
-        distribution: 'temurin'
-        java-version: '11'
+        distribution: 'zulu'
+        java-version: '19'
         cache: 'gradle'
     - name: Run Checks
       run: ./gradlew check --continue --stacktrace
@@ -35,8 +35,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v2
       with:
-        distribution: 'temurin'
-        java-version: '11'
+        distribution: 'zulu'
+        java-version: '19'
         cache: 'gradle'
     - name: Run Checks
       run: ./gradlew check --continue --stacktrace -Pkotshi.useLegacyDataClassRenderer=true
@@ -47,8 +47,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v2
       with:
-        distribution: 'temurin'
-        java-version: '11'
+        distribution: 'zulu'
+        java-version: '19'
         cache: 'gradle'
     - name: Deploy snapshot
       run: ./gradlew publishSnapshot --stacktrace

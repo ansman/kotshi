@@ -1,6 +1,10 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotInstanceOf
+import assertk.assertions.isSameAs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import org.junit.Test
@@ -18,7 +22,7 @@ class ManuallyRegisteredAdapterTest {
     @Test
     fun testRegistersRegularAdapter() {
         assertThat(moshi.adapter(ManuallyRegisteredAdapter.Type::class.java))
-            .isSameInstanceAs(ManuallyRegisteredAdapter)
+            .isSameAs(ManuallyRegisteredAdapter)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -61,7 +65,6 @@ class ManuallyRegisteredAdapterTest {
         assertIs<ManuallyRegisteredGenericAdapter<*>>(adapter)
         assertSame(moshi, adapter.moshi)
         assertThat(adapter.types)
-            .asList()
             .containsExactly(Int::class.javaObjectType)
     }
 

@@ -1,8 +1,11 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.isInstanceOf
 import com.squareup.moshi.Moshi
 import org.junit.Test
+import se.ansman.kotshi.assertions.isEmpty
 import kotlin.test.assertEquals
 
 class TestClassWithQualifierWithEmptyArrays {
@@ -21,23 +24,23 @@ class TestClassWithQualifierWithEmptyArrays {
                         val annotation = annotations.single() as QualifierWithArrays
                         assertThat(annotation.booleanArrayArg).isEmpty()
                         assertThat(annotation.byteArrayArg).isEmpty()
-                        assertThat(annotation.ubyteArrayArg).apply {
+                        assertThat(annotation.ubyteArrayArg).all {
                             isInstanceOf(UByteArray::class.java)
                             isEmpty()
                         }
                         assertThat(annotation.charArrayArg).isEmpty()
                         assertThat(annotation.shortArrayArg).isEmpty()
-                        assertThat(annotation.ushortArrayArg).apply {
+                        assertThat(annotation.ushortArrayArg).all {
                             isInstanceOf(UShortArray::class.java)
                             isEmpty()
                         }
                         assertThat(annotation.intArrayArg).isEmpty()
-                        assertThat(annotation.uintArrayArg).apply {
+                        assertThat(annotation.uintArrayArg).all {
                             isInstanceOf(UIntArray::class.java)
                             isEmpty()
                         }
                         assertThat(annotation.longArrayArg).isEmpty()
-                        assertThat(annotation.ulongArrayArg).apply {
+                        assertThat(annotation.ulongArrayArg).all {
                             isInstanceOf(ULongArray::class.java)
                             isEmpty()
                         }

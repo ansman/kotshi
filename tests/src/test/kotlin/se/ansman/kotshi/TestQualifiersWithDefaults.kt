@@ -1,6 +1,8 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -18,21 +20,21 @@ class TestQualifiersWithDefaults {
                     String::class.java -> {
                         ++callCount
                         val annotation = annotations.single() as QualifierWithDefaults
-                        assertThat(annotation.vararg).isEqualTo(arrayOf("vararg"))
+                        assertThat(annotation.vararg).containsExactly("vararg")
                         assertThat(annotation.string).isEqualTo("Hello")
                         moshi.adapter(String::class.java)
                     }
                     Int::class.javaObjectType -> {
                         ++callCount
                         val annotation = annotations.single() as QualifierWithDefaults
-                        assertThat(annotation.vararg).isEqualTo(arrayOf("not", "default"))
+                        assertThat(annotation.vararg).containsExactly("not", "default")
                         assertThat(annotation.string).isEqualTo("Hello")
                         moshi.adapter(Int::class.java)
                     }
                     Boolean::class.javaObjectType -> {
                         ++callCount
                         val annotation = annotations.single() as QualifierWithDefaults
-                        assertThat(annotation.vararg).isEqualTo(arrayOf("vararg"))
+                        assertThat(annotation.vararg).containsExactly("vararg")
                         assertThat(annotation.string).isEqualTo("not default")
                         moshi.adapter(Boolean::class.java)
                     }
