@@ -16,6 +16,7 @@ sourceSets {
 }
 
 tasks.withType<Test>().configureEach {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     jvmArgs(
         "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -28,6 +29,7 @@ tasks.withType<Test>().configureEach {
         "--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
         "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     )
+}
 
 dependencies {
     implementation(project(":api"))

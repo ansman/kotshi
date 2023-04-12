@@ -1,5 +1,7 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
@@ -36,7 +38,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         )
 
         with(compile(factory)) {
-            com.google.common.truth.Truth.assertThat(exitCode)
+            assertThat(this::exitCode)
                 .isEqualTo(KotlinCompilation.ExitCode.OK)
             assertEquals(
                 """
@@ -75,7 +77,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         """.trimIndent()
         )
         with(compile(factory, object1)) {
-            com.google.common.truth.Truth.assertThat(exitCode)
+            assertThat(this::exitCode)
                 .isEqualTo(KotlinCompilation.ExitCode.OK)
             assertEquals(
                 """
@@ -125,7 +127,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         """.trimIndent()
         )
         with(compile(factory, object1, object2)) {
-            com.google.common.truth.Truth.assertThat(exitCode)
+            assertThat(this::exitCode)
                 .isEqualTo(KotlinCompilation.ExitCode.OK)
             assertEquals(
                 """
@@ -177,7 +179,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         """.trimIndent()
         )
         with(compile(factory, object1, object2)) {
-            com.google.common.truth.Truth.assertThat(exitCode)
+            assertThat(this::exitCode)
                 .isEqualTo(KotlinCompilation.ExitCode.OK)
             assertEquals(
                 """
@@ -223,7 +225,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         }
 
         with(compile(factory, object2)) {
-            com.google.common.truth.Truth.assertThat(exitCode)
+            assertThat(this::exitCode)
                 .isEqualTo(KotlinCompilation.ExitCode.OK)
             assertEquals(
                 """

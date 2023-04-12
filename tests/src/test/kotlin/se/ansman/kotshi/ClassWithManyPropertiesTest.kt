@@ -1,6 +1,8 @@
 package se.ansman.kotshi
 
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isNotNull
 import com.squareup.moshi.Moshi
 import org.junit.Test
 
@@ -13,6 +15,7 @@ class ClassWithManyPropertiesTest {
     @Test
     fun canReadJson() {
         assertThat(adapter.fromJson("{}"))
-            .isEqualTo(ClassWithManyProperties())
+            .isNotNull()
+            .isDataClassEqualTo(ClassWithManyProperties())
     }
 }
