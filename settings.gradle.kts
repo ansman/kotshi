@@ -20,10 +20,4 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-
-    versionCatalogs {
-        create("libs") {
-            from(file("gradle/libs.versions.toml"))
-        }
-    }
 }
