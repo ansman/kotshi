@@ -7,17 +7,20 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import se.ansman.kotshi.ksp.KotshiSymbolProcessor
 import se.ansman.kotshi.ksp.KotshiSymbolProcessorProvider
 import java.io.File
 import kotlin.test.assertEquals
 
+@Execution(ExecutionMode.SAME_THREAD)
 class KspGeneratorTest : BaseGeneratorTest() {
     override val processorClassName: String get() = KotshiSymbolProcessor::class.java.canonicalName
 
     override val extraGeneratedFiles: List<File>
-        get() = temporaryFolder.root.resolve("ksp/sources/kotlin/").listFiles()?.asList() ?: emptyList()
+        get() = temporaryFolder.resolve("ksp/sources/kotlin/").listFiles()?.asList() ?: emptyList()
 
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
         kspIncremental = true

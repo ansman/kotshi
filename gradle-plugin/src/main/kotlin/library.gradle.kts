@@ -25,10 +25,23 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    systemProperties(
+        "junit.jupiter.execution.parallel.enabled" to "true",
+        "junit.jupiter.execution.parallel.config.strategy" to "dynamic",
+        "junit.jupiter.execution.parallel.config.dynamic.factor" to "1",
+        "junit.jupiter.execution.parallel.mode.default" to "concurrent",
+        "junit.jupiter.execution.parallel.mode.classes.default" to "concurrent",
+    )
+}
+
 tasks.withType<Javadoc> { enabled = false }
 
 dependencies {
     testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertk)
     testImplementation(libs.kotlin.test.junit)
 }
