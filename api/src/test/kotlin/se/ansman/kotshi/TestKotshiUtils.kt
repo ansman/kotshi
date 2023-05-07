@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotEqualTo
 import com.squareup.moshi.JsonQualifier
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import se.ansman.kotshi.KotshiUtils.createJsonQualifierImplementation
 import se.ansman.kotshi.KotshiUtils.matches
 import kotlin.reflect.KClass

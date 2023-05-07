@@ -9,9 +9,8 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.SourceFile.Companion.java
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import se.ansman.kotshi.Errors.ignoredDataClassPropertyWithoutDefaultValue
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import se.ansman.kotshi.Errors.jsonDefaultValueAppliedToInvalidType
@@ -29,9 +28,8 @@ import se.ansman.kotshi.assertions.isAssignableTo
 import java.io.File
 
 abstract class BaseGeneratorTest {
-    @Rule
-    @JvmField
-    val temporaryFolder: TemporaryFolder = TemporaryFolder()
+    @TempDir
+    lateinit var temporaryFolder: File
 
     protected abstract val processorClassName: String
     protected open val extraGeneratedFiles: List<File> get() = emptyList()
@@ -572,7 +570,7 @@ abstract class BaseGeneratorTest {
     protected fun compile(vararg sources: SourceFile, options: Map<String, String> = emptyMap()) =
         KotlinCompilation()
             .apply {
-                workingDir = temporaryFolder.root
+                workingDir = temporaryFolder
                 this.sources = sources.asList()
                 inheritClassPath = true
                 messageOutputStream = System.out // see diagnostics in real time
