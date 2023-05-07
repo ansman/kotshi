@@ -1,14 +1,14 @@
 [versions]
-kotlin = "1.8.0"
+kotlin = "1.8.21"
 auto-service = "1.0.1"
-kotlinpoet = "1.12.0"
+kotlinpoet = "1.13.1"
 compileTesting = "1.5.0"
 incap = "0.3"
-ksp = "1.8.0-1.0.8"
+ksp = "1.8.21-1.0.11"
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.11.0"
+kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.13.0"
 
 [libraries]
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -25,7 +25,7 @@ kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoe
 kotlinpoet-metadata = { module = "com.squareup:kotlinpoet-metadata", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
-kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0"
+kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.6.0"
 
 junit = "junit:junit:4.12"
 assertk = "com.willowtreeapps.assertk:assertk-jvm:0.25"
