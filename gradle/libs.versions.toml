@@ -1,7 +1,7 @@
 [versions]
 kotlin = "1.8.21"
 auto-service = "1.0.1"
-kotlinpoet = "1.13.1"
+kotlinpoet = "1.13.2"
 compileTesting = "1.5.0"
 incap = "0.3"
 ksp = "1.8.21-1.0.11"
