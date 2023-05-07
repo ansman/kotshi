@@ -1,4 +1,4 @@
-# Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) [![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api.svg)](https://central.sonatype.dev/namespace/se.ansman.kotshi)
+# Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) [![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api.svg)](https://central.sonatype.com/search?namespace=se.ansman.kotshi)
 An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
