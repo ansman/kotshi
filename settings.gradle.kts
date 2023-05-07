@@ -20,10 +20,10 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-    @Suppress("UnstableApiUsage")
+
     versionCatalogs {
         create("libs") {
-            from(files("libs.versions.toml"))
+            from(file("gradle/libs.versions.toml"))
         }
     }
 }

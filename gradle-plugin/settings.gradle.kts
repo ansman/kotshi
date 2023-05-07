@@ -7,12 +7,13 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
     }
     versionCatalogs {
         create("libs") {
-            from(files("../libs.versions.toml"))
+            from(file("../gradle/libs.versions.toml"))
         }
     }
 }
