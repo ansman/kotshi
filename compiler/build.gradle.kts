@@ -1,6 +1,7 @@
 plugins {
     id("published-library")
     kotlin("kapt")
+    id("com.github.johnrengelman.shadow")
 }
 
 tasks.compileKotlin {
@@ -11,6 +12,9 @@ tasks.compileKotlin {
     }
 }
 
+val shade by configurations.named("compileShaded")
+
+@Suppress("UnstableApiUsage")
 dependencies {
     implementation(projects.api)
     implementation(libs.auto.service.api)
@@ -19,10 +23,21 @@ dependencies {
     kapt(libs.incap.compiler)
     implementation(libs.auto.common)
     implementation(libs.kotlinpoet.core)
-    implementation(libs.kotlinpoet.metadata)
+    shade(libs.kotlinpoet.metadata) {
+        exclude("org.jetbrains.kotlin")
+        exclude("com.squareup", "kotlinpoet")
+        exclude("com.google.guava")
+        exclude("com.google.auto", "auto-common")
+    }
     implementation(libs.kotlinpoet.ksp)
-    implementation(libs.kotlinx.metadata)
+    shade(libs.kotlinx.metadata) {
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+    }
     implementation(libs.moshi.oldestSupported)
     implementation(libs.ksp.api)
     implementation(libs.asm)
+}
+
+tasks.shadowJar {
+    relocate("com.squareup.kotlinpoet.metadata", "se.ansman.kotshi.compiler.kotlinpoet.metadata")
 }

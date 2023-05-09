@@ -2,7 +2,7 @@
 2. Change the version in `gradle.properties` to a non-snapshot version.
 3. Update the `README.md` with the new version.
 4. `git commit -am "Prepare for release X.Y.Z"` (where X.Y.Z is the new version)
-5. `./gradlew clean publishAllPublicationsToMavenCentralRepository --no-parallel`.
+5. `./publish.sh`.
 6. Close and release on [Sonatype](https://oss.sonatype.org/#stagingRepositories).
 7. Update the `gradle.properties` to the next SNAPSHOT version.
 8. `git commit -am "Prepare next development version"`
