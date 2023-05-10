@@ -2,10 +2,9 @@
 import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
-import org.gradle.api.internal.tasks.userinput.UserInputHandler
-import org.gradle.configurationcache.extensions.serviceOf
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.dokka.gradle.DokkaTask
+import java.io.ByteArrayOutputStream
 import java.net.URL
 
 plugins {
@@ -147,8 +146,15 @@ if (providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() == true)
         gradle.taskGraph.whenReady {
             if (hasTask("${path}:sign${publication.name.replaceFirstChar(Char::uppercase)}Publication")) {
                 rootProject.extensions.extraProperties.getOrPut("signing.gnupg.passphrase") {
-                    val inputHandler = serviceOf<UserInputHandler>()
-                    inputHandler.askQuestion("Signing key passphrase: ", "")
+                    val output = ByteArrayOutputStream()
+                    exec {
+                        commandLine("op", "read", "op://private/GnuPG/password")
+                        standardOutput = output
+                        errorOutput = System.err
+                    }
+                        .rethrowFailure()
+                        .assertNormalExitValue()
+                    output.toString(Charsets.UTF_8)
                 }
                 useGpgCmd()
             }
