@@ -1,4 +1,7 @@
 
+import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
 import org.gradle.api.internal.tasks.userinput.UserInputHandler
 import org.gradle.configurationcache.extensions.serviceOf
 import org.gradle.jvm.tasks.Jar
@@ -81,7 +84,11 @@ val publication = with(the<PublishingExtension>()) {
     }
 
     publications.register<MavenPublication>("kotshi") {
-        from(project.components.getByName("java"))
+        if (pluginManager.hasPlugin("com.github.johnrengelman.shadow")) {
+            the<ShadowExtension>().component(this)
+        } else {
+            from(components["java"])
+        }
         artifact(sourcesJar)
         artifact(dokkaJavadocJar)
 
@@ -112,8 +119,30 @@ val publication = with(the<PublishingExtension>()) {
     }
 }
 
+pluginManager.withPlugin("com.github.johnrengelman.shadow") {
+    val shade: Configuration = configurations.create("compileShaded")
+    configurations.named("compileOnly") {
+        extendsFrom(shade)
+    }
+    configurations.named("testRuntimeOnly") {
+        extendsFrom(shade)
+    }
 
-if (System.getenv("CI") == null) {
+    val shadowJar = tasks.named<ShadowJar>("shadowJar") {
+        archiveClassifier.set("")
+        configurations = listOf(shade)
+        isEnableRelocation = true
+        relocationPrefix = "se.ansman.kotshi${project.path.replace(':', '.').replace('-', '_')}"
+        transformers.add(ServiceFileTransformer())
+    }
+
+    artifacts {
+        runtimeOnly(shadowJar)
+        archives(shadowJar)
+    }
+}
+
+if (providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() == true) {
     configure<SigningExtension> {
         gradle.taskGraph.whenReady {
             if (hasTask("${path}:sign${publication.name.replaceFirstChar(Char::uppercase)}Publication")) {
@@ -131,4 +160,10 @@ if (System.getenv("CI") == null) {
 tasks.register("publishSnapshot") {
     enabled = version.toString().endsWith("-SNAPSHOT")
     dependsOn("publishAllPublicationsToSonatypeSnapshotsRepository")
+}
+
+pluginManager.withPlugin("org.jetbrains.kotlin.kapt") {
+    tasks.named("dokkaJavadoc") {
+        dependsOn("compileKotlin")
+    }
 }
