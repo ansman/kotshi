@@ -35,8 +35,8 @@ assertk = "com.willowtreeapps.assertk:assertk-jvm:0.25"
 compileTesting-core = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "compileTesting" }
 compileTesting-ksp = { module = "com.github.tschuchortdev:kotlin-compile-testing-ksp", version.ref = "compileTesting" }
 
-moshi-oldestSupported = "com.squareup.moshi:moshi:1.8.0"
-moshi-current = "com.squareup.moshi:moshi:1.14.0"
+moshi-oldestSupported = "com.squareup.moshi:moshi:1.15.0"
+moshi-current = "com.squareup.moshi:moshi:1.15.0"
 
 findBugs = "com.google.code.findbugs:jsr305:3.0.2"
 
