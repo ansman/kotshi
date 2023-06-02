@@ -8,12 +8,31 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
-import com.squareup.kotlinpoet.metadata.*
+import com.squareup.kotlinpoet.metadata.isAbstract
+import com.squareup.kotlinpoet.metadata.isClass
+import com.squareup.kotlinpoet.metadata.isCompanionObjectClass
+import com.squareup.kotlinpoet.metadata.isEnumClass
+import com.squareup.kotlinpoet.metadata.isInnerClass
+import com.squareup.kotlinpoet.metadata.isInterface
+import com.squareup.kotlinpoet.metadata.isInternal
+import com.squareup.kotlinpoet.metadata.isLocal
+import com.squareup.kotlinpoet.metadata.isObject
+import com.squareup.kotlinpoet.metadata.isObjectClass
+import com.squareup.kotlinpoet.metadata.isPublic
+import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.moshi.JsonAdapter
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
-import se.ansman.kotshi.model.*
+import se.ansman.kotshi.ExperimentalKotshiApi
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.RegisterJsonAdapter
+import se.ansman.kotshi.constructors
+import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
+import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.JsonAdapterFactory.Companion.getManualAdapter
+import se.ansman.kotshi.model.RegisteredAdapter
+import se.ansman.kotshi.model.findKotshiConstructor
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -141,7 +160,7 @@ class FactoryProcessingStep(
                         ) { name }
                     },
                     getJsonQualifiers = {
-                        metadataAccessor.getTypeSpec(this).annotationSpecs.qualifiers(metadataAccessor)
+                        metadataAccessor.getTypeSpec(this).annotations.qualifiers(metadataAccessor)
                     }
                 )
             }
