@@ -62,7 +62,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
                     @OptIn(InternalKotshiApi::class)
                     internal object KotshiTestFactory : JsonAdapter.Factory {
-                      public override fun create(
+                      override fun create(
                         type: Type,
                         annotations: Set<Annotation>,
                         moshi: Moshi,
@@ -103,7 +103,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
                     @OptIn(InternalKotshiApi::class)
                     internal object KotshiTestFactory : JsonAdapter.Factory {
-                      public override fun create(
+                      override fun create(
                         type: Type,
                         annotations: Set<Annotation>,
                         moshi: Moshi,
@@ -153,7 +153,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
                     @OptIn(InternalKotshiApi::class)
                     internal object KotshiTestFactory : JsonAdapter.Factory {
-                      public override fun create(
+                      override fun create(
                         type: Type,
                         annotations: Set<Annotation>,
                         moshi: Moshi,
@@ -205,7 +205,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
                     @OptIn(InternalKotshiApi::class)
                     internal object KotshiTestFactory : JsonAdapter.Factory {
-                      public override fun create(
+                      override fun create(
                         type: Type,
                         annotations: Set<Annotation>,
                         moshi: Moshi,
@@ -251,7 +251,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
                     @OptIn(InternalKotshiApi::class)
                     internal object KotshiTestFactory : JsonAdapter.Factory {
-                      public override fun create(
+                      override fun create(
                         type: Type,
                         annotations: Set<Annotation>,
                         moshi: Moshi,

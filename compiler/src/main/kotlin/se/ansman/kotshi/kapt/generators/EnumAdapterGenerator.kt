@@ -37,7 +37,7 @@ class EnumAdapterGenerator(
             fallback = targetTypeSpec.enumConstants
                 .entries
                 .filter { (_, constant) ->
-                    constant.annotationSpecs.any { it.typeName == jsonDefaultValue }
+                    constant.annotations.any { it.typeName == jsonDefaultValue }
                 }
                 .let { defaultValues ->
                     when (defaultValues.size) {
@@ -51,6 +51,6 @@ class EnumAdapterGenerator(
     private fun Map.Entry<String, TypeSpec>.toEntry(): EnumJsonAdapter.Entry =
         EnumJsonAdapter.Entry(
             name = key,
-            serializedName = value.annotationSpecs.jsonName() ?: key
+            serializedName = value.annotations.jsonName() ?: key
         )
 }
