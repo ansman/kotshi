@@ -164,8 +164,9 @@ if (providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() == true)
 }
 
 tasks.register("publishSnapshot") {
-    enabled = version.toString().endsWith("-SNAPSHOT")
-    dependsOn("publishAllPublicationsToSonatypeSnapshotsRepository")
+    if (version.toString().endsWith("-SNAPSHOT")) {
+        dependsOn("publishAllPublicationsToSonatypeSnapshotsRepository")
+    }
 }
 
 pluginManager.withPlugin("org.jetbrains.kotlin.kapt") {
