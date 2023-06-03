@@ -154,7 +154,7 @@ if (providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() == true)
                     }
                         .rethrowFailure()
                         .assertNormalExitValue()
-                    output.toString(Charsets.UTF_8)
+                    output.toString(Charsets.UTF_8).trim()
                 }
                 useGpgCmd()
             }
