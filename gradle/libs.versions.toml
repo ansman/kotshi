@@ -14,7 +14,7 @@ kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibili
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
-dokka-gradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.8.10"
+dokka-gradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.8.20"
 
 auto-common = "com.google.auto:auto-common:1.2.1"
 
