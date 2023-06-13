@@ -16,7 +16,7 @@ kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 
 dokka-gradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.8.20"
 
-auto-common = "com.google.auto:auto-common:1.2.1"
+auto-common = "com.google.auto:auto-common:1.2.2"
 
 auto-service-api = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-compiler = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
