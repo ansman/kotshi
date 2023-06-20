@@ -15,7 +15,11 @@ import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import com.squareup.kotlinpoet.ksp.writeTo
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
+import se.ansman.kotshi.ProguardConfig
+import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.ksp.KspProcessingError
 import se.ansman.kotshi.ksp.getAnnotation
 import se.ansman.kotshi.ksp.getValue
@@ -62,7 +66,7 @@ abstract class AdapterGenerator(
         createAnnotationsUsingConstructor: Boolean,
         useLegacyDataClassRenderer: Boolean,
         generatedAnnotation: GeneratedAnnotation?,
-    ): GeneratedAdapter {
+    ): GeneratedAdapter<KSFile> {
         when {
             Modifier.INNER in targetElement.modifiers ->
                 throw KspProcessingError(Errors.dataClassCannotBeInner, targetElement)
@@ -80,7 +84,7 @@ abstract class AdapterGenerator(
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                 error = { KspProcessingError(it, targetElement) },
             )
-            .render(generatedAnnotation) {
+            .render(generatedAnnotation, originatingElement = targetElement.containingFile!!) {
                 addOriginatingKSFile(targetElement.containingFile!!)
             }
 

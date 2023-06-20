@@ -54,7 +54,7 @@ class FactoryProcessingStep(
     private val types: Types,
     private val elements: Elements,
     private val generatedAnnotation: GeneratedAnnotation?,
-    private val generatedAdapters: List<GeneratedAdapter>,
+    private val generatedAdapters: List<GeneratedAdapter<Element>>,
     private val metadataAccessor: MetadataAccessor,
     private val createAnnotationsUsingConstructor: Boolean?,
 ) : KotshiProcessor.GeneratingProcessingStep() {
@@ -83,7 +83,7 @@ class FactoryProcessingStep(
         }
     }
 
-    private fun generateFactory(element: TypeElement, manuallyRegisteredAdapters: List<RegisteredAdapter>) {
+    private fun generateFactory(element: TypeElement, manuallyRegisteredAdapters: List<RegisteredAdapter<Element>>) {
         val elementClassName = createClassName(metadataAccessor.getKmClass(element).name)
         val factory = JsonAdapterFactory(
             targetType = elementClassName,
@@ -106,12 +106,18 @@ class FactoryProcessingStep(
         JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
             .render(generatedAnnotation) {
                 addOriginatingElement(element)
+                for (adapter in generatedAdapters) {
+                    addOriginatingElement(adapter.originatingElement)
+                }
+                for (adapter in manuallyRegisteredAdapters) {
+                    addOriginatingElement(adapter.originatingElement)
+                }
             }
             .writeTo(filer)
     }
 
     @OptIn(DelicateKotlinPoetApi::class, ExperimentalKotshiApi::class)
-    private fun SetMultimap<Class<out Annotation>, Element>.getManualAdapters(hasFactory: Boolean): Sequence<RegisteredAdapter> =
+    private fun SetMultimap<Class<out Annotation>, Element>.getManualAdapters(hasFactory: Boolean): Sequence<RegisteredAdapter<Element>> =
         this[RegisterJsonAdapter::class.java]
             .asSequence()
             .map { MoreElements.asType(it) }

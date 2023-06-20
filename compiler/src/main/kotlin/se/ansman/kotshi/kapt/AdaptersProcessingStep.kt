@@ -8,7 +8,11 @@ import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.kotlinpoet.metadata.isSealed
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.kapt.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.kapt.generators.EnumAdapterGenerator
 import se.ansman.kotshi.kapt.generators.ObjectAdapterGenerator
@@ -31,7 +35,7 @@ class AdaptersProcessingStep(
     private val metadataAccessor: MetadataAccessor,
     private val messager: Messager,
     override val filer: Filer,
-    private val adapters: MutableList<GeneratedAdapter>,
+    private val adapters: MutableList<GeneratedAdapter<Element>>,
     private val types: Types,
     private val elements: Elements,
     private val generatedAnnotation: GeneratedAnnotation?,

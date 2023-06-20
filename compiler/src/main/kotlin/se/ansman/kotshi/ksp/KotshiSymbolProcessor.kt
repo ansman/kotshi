@@ -1,25 +1,51 @@
 package se.ansman.kotshi.ksp
 
-import com.google.devtools.ksp.*
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getClassDeclarationByName
+import com.google.devtools.ksp.getVisibility
+import com.google.devtools.ksp.isAbstract
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.Modifier
+import com.google.devtools.ksp.symbol.Origin
+import com.google.devtools.ksp.symbol.Visibility
 import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.ksp.*
+import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.toTypeVariableName
+import com.squareup.kotlinpoet.ksp.writeTo
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonQualifier
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import se.ansman.kotshi.Errors.polymorphicClassMustHaveJsonSerializable
 import se.ansman.kotshi.Errors.unsupportedFactoryType
+import se.ansman.kotshi.ExperimentalKotshiApi
+import se.ansman.kotshi.JsonDefaultValue
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.KotshiJsonAdapterFactory
+import se.ansman.kotshi.Options
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.RegisterJsonAdapter
+import se.ansman.kotshi.SerializeNulls
 import se.ansman.kotshi.ksp.generators.DataClassAdapterGenerator
 import se.ansman.kotshi.ksp.generators.EnumAdapterGenerator
 import se.ansman.kotshi.ksp.generators.ObjectAdapterGenerator
 import se.ansman.kotshi.ksp.generators.SealedClassAdapterGenerator
-import se.ansman.kotshi.model.*
+import se.ansman.kotshi.model.GeneratedAdapter
+import se.ansman.kotshi.model.GeneratedAnnotation
+import se.ansman.kotshi.model.GlobalConfig
+import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.JsonAdapterFactory.Companion.getManualAdapter
+import se.ansman.kotshi.model.findKotshiConstructor
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 
 class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
@@ -227,7 +253,15 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                     manuallyRegisteredAdapters = manualAdapters,
                 )
                 JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
-                    .render(generatedAnnotation) { addOriginatingKSFile(targetFactory.containingFile!!) }
+                    .render(generatedAnnotation) {
+                        addOriginatingKSFile(targetFactory.containingFile!!)
+                        for (adapter in generatedAdapters) {
+                            addOriginatingKSFile(adapter.originatingElement)
+                        }
+                        for (adapter in manualAdapters) {
+                            addOriginatingKSFile(adapter.originatingElement.containingFile!!)
+                        }
+                    }
                     .writeTo(environment.codeGenerator, aggregating = true)
             } catch (e: KspProcessingError) {
                 environment.logger.logKotshiError(e)
@@ -240,7 +274,7 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
         return emptyList()
     }
 
-    private fun generateAdapters(resolver: Resolver, globalConfig: GlobalConfig): List<GeneratedAdapter> =
+    private fun generateAdapters(resolver: Resolver, globalConfig: GlobalConfig): List<GeneratedAdapter<KSFile>> =
         resolver.getSymbolsWithAnnotation(JsonSerializable::class.qualifiedName!!).mapNotNull { annotated ->
             if (annotated.origin == Origin.JAVA || annotated.origin == Origin.JAVA_LIB) {
                 environment.logger.logKotshiError(javaClassNotSupported, annotated)
