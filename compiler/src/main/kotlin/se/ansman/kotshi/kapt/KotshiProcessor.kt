@@ -34,7 +34,7 @@ class KotshiProcessor : AbstractProcessor() {
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latestSupported()
 
     private fun initSteps(): Iterable<ProcessingStep> {
-        val adapters: MutableList<GeneratedAdapter> = mutableListOf()
+        val adapters: MutableList<GeneratedAdapter<Element>> = mutableListOf()
         return listOf(
             AdaptersProcessingStep(
                 processor = this,

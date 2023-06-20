@@ -1,14 +1,22 @@
 package se.ansman.kotshi.kapt.generators
 
 import com.google.auto.common.MoreElements
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isPublic
+import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
+import se.ansman.kotshi.Polymorphic
+import se.ansman.kotshi.PolymorphicLabel
+import se.ansman.kotshi.ProguardConfig
+import se.ansman.kotshi.getPolymorphicLabels
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.supportsCreatingAnnotationsWithConstructor
@@ -57,7 +65,7 @@ abstract class AdapterGenerator(
         filer: Filer,
         createAnnotationsUsingConstructor: Boolean?,
         useLegacyDataClassRenderer: Boolean,
-    ): GeneratedAdapter {
+    ): GeneratedAdapter<Element> {
         when {
             kmClass.isInner ->
                 throw KaptProcessingError(Errors.dataClassCannotBeInner, targetElement)
@@ -74,7 +82,7 @@ abstract class AdapterGenerator(
                 useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                 error = { KaptProcessingError(it, targetElement) },
             )
-            .render(generatedAnnotation) {
+            .render(generatedAnnotation, originatingElement = targetElement) {
                 addOriginatingElement(targetElement)
             }
 

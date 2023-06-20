@@ -8,11 +8,12 @@ import se.ansman.kotshi.ProguardConfig
 import se.ansman.kotshi.renderer.AdapterRenderer
 
 
-data class GeneratedAdapter(
+data class GeneratedAdapter<out OE>(
     val adapter: GeneratableJsonAdapter,
     val fileSpec: FileSpec,
-    val proguardConfig: ProguardConfig?
-) : Comparable<GeneratedAdapter> {
+    val proguardConfig: ProguardConfig?,
+    val originatingElement: OE,
+) : Comparable<GeneratedAdapter<*>> {
     private val adapterClassName: ClassName = ClassName(adapter.targetPackageName, adapter.adapterName)
 
     private val typeSpec = fileSpec.members.filterIsInstance<TypeSpec>().single()
@@ -27,5 +28,5 @@ data class GeneratedAdapter(
             ?.name,
     )
 
-    override fun compareTo(other: GeneratedAdapter): Int = adapterClassName.compareTo(other.adapterClassName)
+    override fun compareTo(other: GeneratedAdapter<*>): Int = adapterClassName.compareTo(other.adapterClassName)
 }

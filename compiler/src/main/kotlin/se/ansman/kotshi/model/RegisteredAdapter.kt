@@ -1,15 +1,22 @@
 package se.ansman.kotshi.model
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.Dynamic
+import com.squareup.kotlinpoet.LambdaTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.WildcardTypeName
 import se.ansman.kotshi.KotshiConstructor
 
-internal data class RegisteredAdapter(
+internal data class RegisteredAdapter<out OE>(
     val adapterTypeName: TypeName,
     val targetType: TypeName,
     val constructor: KotshiConstructor?,
     val qualifiers: Set<AnnotationModel>,
     val priority: Int,
-) : Comparable<RegisteredAdapter> {
+    val originatingElement: OE,
+) : Comparable<RegisteredAdapter<*>> {
     private val sortKey = adapterTypeName.toString()
 
     val adapterClassName = when (adapterTypeName) {
@@ -27,7 +34,7 @@ internal data class RegisteredAdapter(
         is WildcardTypeName -> true
     }
 
-    override fun compareTo(other: RegisteredAdapter): Int {
+    override fun compareTo(other: RegisteredAdapter<*>): Int {
         if (priority != other.priority) {
             return other.priority.compareTo(priority)
         }
