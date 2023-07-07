@@ -57,6 +57,7 @@ public final class se/ansman/kotshi/Polymorphic$Fallback : java/lang/Enum {
 	public static final field DEFAULT Lse/ansman/kotshi/Polymorphic$Fallback;
 	public static final field FAIL Lse/ansman/kotshi/Polymorphic$Fallback;
 	public static final field NULL Lse/ansman/kotshi/Polymorphic$Fallback;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/Polymorphic$Fallback;
 	public static fun values ()[Lse/ansman/kotshi/Polymorphic$Fallback;
 }
@@ -69,6 +70,7 @@ public final class se/ansman/kotshi/PrimitiveAdapters : java/lang/Enum {
 	public static final field DEFAULT Lse/ansman/kotshi/PrimitiveAdapters;
 	public static final field DISABLED Lse/ansman/kotshi/PrimitiveAdapters;
 	public static final field ENABLED Lse/ansman/kotshi/PrimitiveAdapters;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/PrimitiveAdapters;
 	public static fun values ()[Lse/ansman/kotshi/PrimitiveAdapters;
 }
@@ -81,6 +83,7 @@ public final class se/ansman/kotshi/SerializeNulls : java/lang/Enum {
 	public static final field DEFAULT Lse/ansman/kotshi/SerializeNulls;
 	public static final field DISABLED Lse/ansman/kotshi/SerializeNulls;
 	public static final field ENABLED Lse/ansman/kotshi/SerializeNulls;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lse/ansman/kotshi/SerializeNulls;
 	public static fun values ()[Lse/ansman/kotshi/SerializeNulls;
 }
