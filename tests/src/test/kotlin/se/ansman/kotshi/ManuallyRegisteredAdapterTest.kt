@@ -1,5 +1,6 @@
 package se.ansman.kotshi
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isInstanceOf
@@ -7,12 +8,9 @@ import assertk.assertions.isNotInstanceOf
 import assertk.assertions.isSameAs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
-import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
-import kotlin.test.assertSame
 
 class ManuallyRegisteredAdapterTest {
     private val moshi = Moshi.Builder()
@@ -62,23 +60,24 @@ class ManuallyRegisteredAdapterTest {
     @Test
     fun testRegistersGenericAdapter() {
         val adapter = moshi.adapter<String>(typeOf<ManuallyRegisteredGenericAdapter.GenericType<Int>>().javaType)
-        assertIs<ManuallyRegisteredGenericAdapter<*>>(adapter)
-        assertSame(moshi, adapter.moshi)
-        assertThat(adapter.types)
-            .containsExactly(Int::class.javaObjectType)
+        assertThat(adapter)
+            .isInstanceOf<ManuallyRegisteredGenericAdapter<*>>()
+            .given {
+                assertThat(it.moshi).isSameAs(moshi)
+                assertThat(it.types).containsExactly(Int::class.javaObjectType)
+            }
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun testManuallyRegisteredWrappedGenericAdapter() {
-        assertFailsWith<IllegalArgumentException> {
-            moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<Int>>>()
-        }
-        assertIs<ManuallyRegisteredWrappedGenericAdapter>(
+        assertFailure { moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<Int>>>() }
+            .isInstanceOf<IllegalArgumentException>()
+        assertThat(
             moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>(
                 typeOf<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>().javaType
             )
-        )
+        ).isInstanceOf<ManuallyRegisteredWrappedGenericAdapter>()
     }
 
     @OptIn(ExperimentalStdlibApi::class)

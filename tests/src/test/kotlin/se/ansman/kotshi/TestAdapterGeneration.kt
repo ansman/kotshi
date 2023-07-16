@@ -1,11 +1,20 @@
 package se.ansman.kotshi
 
-import com.squareup.moshi.*
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.hasMessage
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.ToJson
 import com.squareup.moshi.Types
 import okio.Buffer
-import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
 
 
 class TestAdapterGeneration {
@@ -82,15 +91,19 @@ class TestAdapterGeneration {
                 mapOf("key1" to setOf("set1", "set2")),
                 mapOf(
                     "key2" to setOf("set1", "set2"),
-                    "key3" to setOf())),
+                    "key3" to setOf()
+                )
+            ),
             abstractProperty = "abstract",
             customName = "other_value",
             annotated = "Hello, World!",
             anotherAnnotated = "Hello, Other World!",
-            genericClass = GenericClass(listOf("val1", "val2"), "val3", "val4"))
+            genericClass = GenericClass(listOf("val1", "val2"), "val3", "val4")
+        )
 
-        assertEquals(expected, actual)
-        assertEquals(json, Buffer()
+        assertThat(expected)
+            .isEqualTo(actual)
+        assertThat(Buffer()
             .apply {
                 JsonWriter.of(this).run {
                     indent = "  "
@@ -98,15 +111,17 @@ class TestAdapterGeneration {
                 }
             }
             .readUtf8())
+            .isEqualTo(json)
     }
 
     @Test
     fun testNull() {
-        val message = "The following properties were null: string, integer, isBoolean, aShort, aByte, aChar, " +
-            "list, nestedList, abstractProperty, customName, annotated, anotherAnnotated, genericClass (at path $)"
-        assertFailsWith<JsonDataException>(message) {
-            moshi.adapter(TestClass::class.java).fromJson("{}")
-        }
+        assertFailure { moshi.adapter(TestClass::class.java).fromJson("{}") }
+            .isInstanceOf<JsonDataException>()
+            .hasMessage(
+                "The following properties were null: string, integer, isBoolean, aShort, aByte, aChar, " +
+                    "list, nestedList, abstractProperty, customName (JSON name other_name), annotated, anotherAnnotated, genericClass (at path $)"
+            )
     }
 
     @Test
@@ -115,16 +130,20 @@ class TestAdapterGeneration {
         val adapter = moshi.adapter(CustomNames::class.java)
         val actual = adapter.fromJson(json)
         val expected = CustomNames("value1", "value2", "weird")
-        assertEquals(expected, actual)
-        assertEquals(json, adapter.toJson(actual))
+        assertThat(expected)
+            .isEqualTo(actual)
+        assertThat(json)
+            .isEqualTo(adapter.toJson(actual))
     }
 
     @Test
     fun testExtraFields() {
         val adapter = moshi.adapter(Simple::class.java)
         val actual = adapter.fromJson("""{"prop":"value","extra_prop":"extra_value"}""")
-        assertEquals(Simple("value"), actual)
-        assertEquals("""{"prop":"value"}""", adapter.toJson(actual))
+        assertThat(actual)
+            .isEqualTo(Simple("value"))
+        assertThat(adapter.toJson(actual))
+            .isEqualTo("""{"prop":"value"}""")
     }
 
     @Test
@@ -132,8 +151,10 @@ class TestAdapterGeneration {
         val adapter = moshi.adapter(NestedClasses::class.java)
         val json = """{"inner":{"prop":"value"}}"""
         val actual = adapter.fromJson(json)
-        assertEquals(NestedClasses(NestedClasses.Inner("value")), actual)
-        assertEquals(json, adapter.toJson(actual))
+        assertThat(actual)
+            .isEqualTo(NestedClasses(NestedClasses.Inner("value")))
+        assertThat(adapter.toJson(actual))
+            .isEqualTo(json)
     }
 
     @Test
@@ -142,8 +163,10 @@ class TestAdapterGeneration {
             moshi.adapter(Types.newParameterizedType(GenericClassWithQualifier::class.java, String::class.java))
         val json = """{"value":"world!"}"""
         val actual = adapter.fromJson(json)
-        assertEquals(GenericClassWithQualifier("Hello, world!"), actual)
-        assertEquals(json, adapter.toJson(actual))
+        assertThat(actual)
+            .isEqualTo(GenericClassWithQualifier("Hello, world!"))
+        assertThat(adapter.toJson(actual))
+            .isEqualTo(json)
     }
 
     @Test
@@ -178,13 +201,17 @@ class TestAdapterGeneration {
             .adapter(MultipleJsonQualifiers::class.java)
         val json = """{"string":{"name":["Hello, world!"]}}"""
         val value = MultipleJsonQualifiers("Hello, world!")
-        assertEquals(value, adapter.fromJson(json))
-        assertEquals(json, adapter.toJson(value))
+        assertThat(adapter.fromJson(json))
+            .isEqualTo(value)
+        assertThat(adapter.toJson(value))
+            .isEqualTo(json)
     }
 
     @Test
     fun testToString() {
-        assertEquals("KotshiJsonAdapter(NestedClasses)", moshi.adapter(NestedClasses::class.java).toString())
-        assertEquals("KotshiJsonAdapter(NestedClasses.Inner)", moshi.adapter(NestedClasses.Inner::class.java).toString())
+        assertThat(moshi.adapter(NestedClasses::class.java).toString())
+            .isEqualTo("KotshiJsonAdapter(NestedClasses)")
+        assertThat(moshi.adapter(NestedClasses.Inner::class.java).toString())
+            .isEqualTo("KotshiJsonAdapter(NestedClasses.Inner)")
     }
 }

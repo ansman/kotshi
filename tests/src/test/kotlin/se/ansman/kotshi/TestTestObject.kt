@@ -1,8 +1,10 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import com.squareup.moshi.Moshi
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class TestTestObject {
     private val adapter = Moshi.Builder()
@@ -12,14 +14,14 @@ class TestTestObject {
 
     @Test
     fun reading() {
-        assertEquals(TestObject, adapter.fromJson("{}"))
-        assertEquals(TestObject, adapter.fromJson("""{"foo":"bar"}"""))
-        assertEquals(null, adapter.fromJson("null"))
+        assertThat(adapter.fromJson("{}")).isEqualTo(TestObject)
+        assertThat(adapter.fromJson("""{"foo":"bar"}""")).isEqualTo(TestObject)
+        assertThat(adapter.fromJson("null")).isNull()
     }
 
     @Test
     fun writing() {
-        assertEquals("{}", adapter.toJson(TestObject))
-        assertEquals("null", adapter.toJson(null))
+        assertThat(adapter.toJson(TestObject)).isEqualTo<String?>("{}")
+        assertThat(adapter.toJson(null)).isEqualTo<String?>("null")
     }
 }

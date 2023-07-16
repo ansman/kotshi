@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class SealedClassWithComplexGenericTest {
     private val adapter = Moshi.Builder()
@@ -24,7 +24,7 @@ class SealedClassWithComplexGenericTest {
             .isEqualTo(SealedClassWithComplexGeneric.Type1(listOf(1, 2, 3, 4), "hello"))
 
         assertThat(adapter.fromJson("""{"type":"type2","error":"err"}"""))
-            .isEqualTo(SealedClassWithComplexGeneric.Type2<List<Int>>("err"))
+            .isEqualTo(SealedClassWithComplexGeneric.Type2("err"))
     }
 
     @Test

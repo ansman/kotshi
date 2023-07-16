@@ -40,8 +40,6 @@ tasks.withType<Test>().configureEach {
 tasks.withType<Javadoc> { enabled = false }
 
 dependencies {
-    testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertk)
-    testImplementation(libs.kotlin.test.junit)
 }

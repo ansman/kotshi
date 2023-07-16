@@ -8,10 +8,10 @@ val libs = the<LibrariesForLibs>()
 
 sourceSets {
     getByName("main") {
-        java.srcDir(rootDir.resolve("tests/src/main/kotlin"))
+        kotlin.srcDir(rootDir.resolve("tests/src/main/kotlin"))
     }
     getByName("test") {
-        java.srcDirs(rootDir.resolve("tests/src/test/kotlin"))
+        kotlin.srcDirs(rootDir.resolve("tests/src/test/kotlin"))
     }
 }
 

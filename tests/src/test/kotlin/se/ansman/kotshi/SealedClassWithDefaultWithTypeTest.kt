@@ -1,8 +1,9 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class SealedClassWithDefaultWithTypeWithoutTypeTest {
     private val adapter = Moshi.Builder()
@@ -13,22 +14,27 @@ class SealedClassWithDefaultWithTypeWithoutTypeTest {
     @Test
     fun reading_normal() {
         val json = """{"type":"type2","bar":"bar2"}"""
-        assertEquals(SealedClassWithDefaultWithType.Subclass2("bar2"), adapter.fromJson(json))
+        assertThat(adapter.fromJson(json))
+            .isEqualTo(SealedClassWithDefaultWithType.Subclass2("bar2"))
     }
 
     @Test
     fun reading_default() {
-        assertEquals(SealedClassWithDefaultWithType.Default, adapter.fromJson("""{"type":"type4"}"""))
-        assertEquals(SealedClassWithDefaultWithType.Default, adapter.fromJson("""{"type":"unknown"}"""))
+        assertThat(adapter.fromJson("""{"type":"type4"}"""))
+            .isEqualTo(SealedClassWithDefaultWithType.Default)
+        assertThat(adapter.fromJson("""{"type":"unknown"}"""))
+            .isEqualTo(SealedClassWithDefaultWithType.Default)
     }
 
     @Test
     fun writing_normal() {
-        assertEquals("""{"type":"type2","bar":"bar2"}""", adapter.toJson(SealedClassWithDefaultWithType.Subclass2("bar2")))
+        assertThat(adapter.toJson(SealedClassWithDefaultWithType.Subclass2("bar2")))
+            .isEqualTo("""{"type":"type2","bar":"bar2"}""")
     }
 
     @Test
     fun writing_default() {
-        assertEquals("""{"type":"type4"}""", adapter.toJson(SealedClassWithDefaultWithType.Default))
+        assertThat("""{"type":"type4"}""")
+            .isEqualTo(adapter.toJson(SealedClassWithDefaultWithType.Default))
     }
 }

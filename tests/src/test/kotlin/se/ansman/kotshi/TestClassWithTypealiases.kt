@@ -1,8 +1,9 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class TestClassWithTypealiases {
     private val adapter = Moshi.Builder()
@@ -39,11 +40,13 @@ class TestClassWithTypealiases {
 
     @Test
     fun read() {
-        assertEquals(value, adapter.fromJson(json))
+        assertThat(adapter.fromJson(json))
+            .isEqualTo(value)
     }
 
     @Test
     fun write() {
-        assertEquals(adapter.indent("  ").toJson(value), json)
+        assertThat(adapter.indent("  ").toJson(value))
+            .isEqualTo(json)
     }
 }

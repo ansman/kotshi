@@ -1,8 +1,9 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class TestSerializeNulls {
     private val adapter = Moshi.Builder()
@@ -12,18 +13,16 @@ class TestSerializeNulls {
 
     @Test
     fun root() {
-        assertEquals(
-            """{"nested":{"value":"v"}}""",
+        assertThat(
             adapter.toJson(ClassWithSerializeNulls(ClassWithSerializeNulls.Nested("v")))
-        )
-        assertEquals("""{"nested":null}""", adapter.toJson(ClassWithSerializeNulls(null)))
+        ).isEqualTo<String?>("""{"nested":{"value":"v"}}""")
+        assertThat(adapter.toJson(ClassWithSerializeNulls(null)))
+            .isEqualTo("""{"nested":null}""")
     }
 
     @Test
     fun nested() {
-        assertEquals(
-            """{"nested":{"value":null}}""",
-            adapter.toJson(ClassWithSerializeNulls(ClassWithSerializeNulls.Nested(null)))
-        )
+        assertThat(adapter.toJson(ClassWithSerializeNulls(ClassWithSerializeNulls.Nested(null))))
+            .isEqualTo<String?>("""{"nested":{"value":null}}""")
     }
 }

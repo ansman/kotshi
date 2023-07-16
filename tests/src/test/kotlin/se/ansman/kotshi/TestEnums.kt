@@ -1,11 +1,14 @@
 package se.ansman.kotshi
 
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
 
 class TestEnums {
     private val adapter1: JsonAdapter<SomeEnum>
@@ -21,30 +24,31 @@ class TestEnums {
 
     @Test
     fun normal() {
-        assertEquals(SomeEnum.VALUE1, adapter1.fromJson("\"VALUE1\""))
+        assertThat(adapter1.fromJson("\"VALUE1\"")).isEqualTo(SomeEnum.VALUE1)
     }
 
     @Test
     fun nullValue() {
-        assertEquals(null, adapter1.fromJson("null"))
+        assertThat(adapter1.fromJson("null")).isNull()
     }
 
     @Test
     fun customName() {
-        assertEquals(SomeEnum.VALUE3, adapter1.fromJson("\"VALUE3-alt\""))
-        assertEquals(SomeEnum.VALUE4, adapter1.fromJson("\"VALUE4-alt\""))
+        assertThat(adapter1.fromJson("\"VALUE3-alt\"")).isEqualTo(SomeEnum.VALUE3)
+        assertThat(adapter1.fromJson("\"VALUE4-alt\"")).isEqualTo(SomeEnum.VALUE4)
     }
 
     @Test
     fun unknown_error() {
-        assertFailsWith<JsonDataException> {
+        assertFailure {
             adapter1.fromJson("\"unknown\"")
         }
+            .isInstanceOf<JsonDataException>()
     }
 
     @Test
     fun unknown_fallback() {
-        assertEquals(SomeEnumWithFallback.VALUE1, adapter2.fromJson("\"VALUE1\""))
-        assertEquals(SomeEnumWithFallback.VALUE3, adapter2.fromJson("\"unknown\""))
+        assertThat(adapter2.fromJson("\"VALUE1\"")).isEqualTo(SomeEnumWithFallback.VALUE1)
+        assertThat(adapter2.fromJson("\"unknown\"")).isEqualTo(SomeEnumWithFallback.VALUE3)
     }
 }

@@ -1,7 +1,7 @@
 package se.ansman.kotshi
 
 import com.squareup.moshi.Moshi
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class TestClassWithQualifierWithDefaults {
     private val moshi = Moshi.Builder()

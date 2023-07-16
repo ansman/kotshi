@@ -5,7 +5,7 @@ import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class IgnoredPropertiesTest {
     private val moshi = Moshi.Builder().add(TestFactory).build()
