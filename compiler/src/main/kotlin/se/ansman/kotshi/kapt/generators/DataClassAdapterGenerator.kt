@@ -10,7 +10,11 @@ import kotlinx.metadata.jvm.signature
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.JsonSerializable
-import se.ansman.kotshi.kapt.*
+import se.ansman.kotshi.kapt.KaptProcessingError
+import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.isJsonIgnore
+import se.ansman.kotshi.kapt.jsonName
+import se.ansman.kotshi.kapt.qualifiers
 import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig

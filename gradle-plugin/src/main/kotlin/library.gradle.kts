@@ -18,6 +18,7 @@ extensions.configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = "1.8"
+        allWarningsAsErrors = true
         freeCompilerArgs = freeCompilerArgs + listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-Xjvm-default=all"

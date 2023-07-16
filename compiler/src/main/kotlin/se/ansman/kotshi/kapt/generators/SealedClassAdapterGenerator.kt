@@ -3,9 +3,10 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
+import kotlinx.metadata.Modality
+import kotlinx.metadata.modality
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.defaultSealedValueIsGeneric
 import se.ansman.kotshi.Errors.multipleJsonDefaultValueInSealedClass
@@ -34,7 +35,7 @@ class SealedClassAdapterGenerator(
     messager: Messager,
 ) : AdapterGenerator(metadataAccessor, types, elements, element, metadata, globalConfig, messager) {
     init {
-        require(metadata.flags.isSealed)
+        require(metadata.modality == Modality.SEALED)
     }
 
     override fun getGeneratableJsonAdapter(): GeneratableJsonAdapter {
@@ -104,7 +105,7 @@ class SealedClassAdapterGenerator(
                         typeElement to metadataAccessor.getKmClass(typeElement)
                     }
                 },
-                isSealed = { second.flags.isSealed },
+                isSealed = { second.modality == Modality.SEALED },
                 hasAnnotation = { first.getAnnotation(it) != null },
                 getPolymorphicLabelKey = { first.getAnnotation(Polymorphic::class.java)?.labelKey },
                 getPolymorphicLabel = { first.getAnnotation(PolymorphicLabel::class.java)?.value },

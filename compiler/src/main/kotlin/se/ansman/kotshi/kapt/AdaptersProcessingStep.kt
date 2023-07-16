@@ -7,7 +7,8 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.metadata.isEnum
 import com.squareup.kotlinpoet.metadata.isObject
-import com.squareup.kotlinpoet.metadata.isSealed
+import kotlinx.metadata.Modality
+import kotlinx.metadata.modality
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable
@@ -131,7 +132,7 @@ class AdaptersProcessingStep(
                         messager = messager
                     )
 
-                    metadata.flags.isSealed -> SealedClassAdapterGenerator(
+                    metadata.modality == Modality.SEALED -> SealedClassAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
                         element = typeElement,

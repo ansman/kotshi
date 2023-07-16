@@ -1,13 +1,38 @@
 package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreTypes
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.CHAR_ARRAY
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.INT_ARRAY
+import com.squareup.kotlinpoet.LONG_ARRAY
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.SHORT_ARRAY
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.U_BYTE
+import com.squareup.kotlinpoet.U_BYTE_ARRAY
+import com.squareup.kotlinpoet.U_INT
+import com.squareup.kotlinpoet.U_INT_ARRAY
+import com.squareup.kotlinpoet.U_LONG
+import com.squareup.kotlinpoet.U_LONG_ARRAY
+import com.squareup.kotlinpoet.U_SHORT
+import com.squareup.kotlinpoet.U_SHORT_ARRAY
+import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.metadata.isNullable
-import com.squareup.kotlinpoet.metadata.isPrimaryConstructor
 import com.squareup.kotlinpoet.tags.TypeAliasTag
-import kotlinx.metadata.*
+import kotlinx.metadata.KmClassifier
+import kotlinx.metadata.KmFlexibleTypeUpperBound
+import kotlinx.metadata.KmType
+import kotlinx.metadata.KmTypeProjection
+import kotlinx.metadata.KmVariance
+import kotlinx.metadata.isSecondary
 import se.ansman.kotshi.model.AnnotationModel
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
@@ -87,7 +112,7 @@ class AnnotationModelValueVisitor(
 
             val typesByName = metadata
                 ?.constructors
-                ?.find { it.flags.isPrimaryConstructor }
+                ?.find { !it.isSecondary }
                 ?.valueParameters
                 ?.associateBy({ it.name }) { it.type.toAnnotationTypeName() }
                 ?: emptyMap()

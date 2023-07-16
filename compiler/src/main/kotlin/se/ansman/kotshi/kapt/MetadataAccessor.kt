@@ -1,11 +1,15 @@
 package se.ansman.kotshi.kapt
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.metadata.toKmClass
+import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
-import kotlinx.metadata.isLocal
+import kotlinx.metadata.isLocalClassName
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -42,7 +46,7 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
 }
 
 fun createClassName(kotlinMetadataName: String): ClassName {
-    require(!kotlinMetadataName.isLocal) {
+    require(!kotlinMetadataName.isLocalClassName()) {
         "Local/anonymous classes are not supported!"
     }
     // Top-level: package/of/class/MyClass

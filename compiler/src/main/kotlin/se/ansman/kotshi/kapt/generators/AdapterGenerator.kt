@@ -7,11 +7,10 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.metadata.isInner
-import com.squareup.kotlinpoet.metadata.isInternal
-import com.squareup.kotlinpoet.metadata.isLocal
-import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
+import kotlinx.metadata.Visibility
+import kotlinx.metadata.visibility
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel
@@ -69,9 +68,9 @@ abstract class AdapterGenerator(
         when {
             kmClass.isInner ->
                 throw KaptProcessingError(Errors.dataClassCannotBeInner, targetElement)
-            kmClass.flags.isLocal ->
+            kmClass.visibility == Visibility.LOCAL ->
                 throw KaptProcessingError(Errors.dataClassCannotBeLocal, targetElement)
-            !kmClass.flags.isPublic && !kmClass.flags.isInternal ->
+            kmClass.visibility != Visibility.PUBLIC && kmClass.visibility != Visibility.INTERNAL->
                 throw KaptProcessingError(Errors.privateClass, targetElement)
         }
 
