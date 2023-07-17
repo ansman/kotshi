@@ -8,19 +8,16 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
-import com.squareup.kotlinpoet.metadata.isAbstract
 import com.squareup.kotlinpoet.metadata.isClass
-import com.squareup.kotlinpoet.metadata.isCompanionObjectClass
-import com.squareup.kotlinpoet.metadata.isEnumClass
-import com.squareup.kotlinpoet.metadata.isInnerClass
-import com.squareup.kotlinpoet.metadata.isInterface
-import com.squareup.kotlinpoet.metadata.isInternal
-import com.squareup.kotlinpoet.metadata.isLocal
 import com.squareup.kotlinpoet.metadata.isObject
-import com.squareup.kotlinpoet.metadata.isObjectClass
-import com.squareup.kotlinpoet.metadata.isPublic
-import com.squareup.kotlinpoet.metadata.isSealed
 import com.squareup.moshi.JsonAdapter
+import kotlinx.metadata.ClassKind
+import kotlinx.metadata.Modality
+import kotlinx.metadata.Visibility
+import kotlinx.metadata.isInner
+import kotlinx.metadata.kind
+import kotlinx.metadata.modality
+import kotlinx.metadata.visibility
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
 import se.ansman.kotshi.ExperimentalKotshiApi
@@ -73,7 +70,10 @@ class FactoryProcessingStep(
             .map(MoreElements::asType)
         val manuallyRegisteredAdapters = elementsByAnnotation.getManualAdapters(elements.isNotEmpty()).toList()
         if (elements.size > 1) {
-            messager.logKotshiError(Errors.multipleFactories(elements.map { it.qualifiedName.toString() }), elements.first())
+            messager.logKotshiError(
+                Errors.multipleFactories(elements.map { it.qualifiedName.toString() }),
+                elements.first()
+            )
         } else for (element in elements) {
             try {
                 generateFactory(element, manuallyRegisteredAdapters)
@@ -92,7 +92,10 @@ class FactoryProcessingStep(
                 Modifier.ABSTRACT in element.modifiers
             ) {
                 messager.logKotshiWarning(abstractFactoriesAreDeprecated, element)
-                JsonAdapterFactory.UsageType.Subclass(elementClassName, parentIsInterface = element.kind == ElementKind.INTERFACE)
+                JsonAdapterFactory.UsageType.Subclass(
+                    elementClassName,
+                    parentIsInterface = element.kind == ElementKind.INTERFACE
+                )
             } else {
                 JsonAdapterFactory.UsageType.Standalone
             },
@@ -101,7 +104,8 @@ class FactoryProcessingStep(
         )
 
         val createAnnotationsUsingConstructor =
-            createAnnotationsUsingConstructor ?: metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
+            createAnnotationsUsingConstructor
+                ?: metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
 
         JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
             .render(generatedAnnotation) {
@@ -127,19 +131,29 @@ class FactoryProcessingStep(
                     return@mapNotNull null
                 }
                 if (!kmClass.isObject && (!kmClass.isClass ||
-                        kmClass.flags.isAbstract ||
-                        kmClass.flags.isLocal ||
-                        kmClass.flags.isInnerClass ||
-                        kmClass.flags.isSealed ||
-                        kmClass.flags.isEnumClass
+                        kmClass.modality == Modality.ABSTRACT ||
+                        kmClass.visibility == Visibility.LOCAL ||
+                        kmClass.isInner ||
+                        kmClass.modality == Modality.SEALED ||
+                        kmClass.kind == ClassKind.ENUM_CLASS
                         )
                 ) {
                     messager.logKotshiError(Errors.invalidRegisterAdapterType, element)
                     return@mapNotNull null
                 }
-                if (!kmClass.flags.isPublic && !kmClass.flags.isInternal) {
-                    messager.logKotshiError(Errors.invalidRegisterAdapterVisibility, element)
-                    return@mapNotNull null
+                when (kmClass.visibility) {
+                    Visibility.PUBLIC,
+                    Visibility.INTERNAL -> {
+                        // no-op
+                    }
+
+                    Visibility.PRIVATE,
+                    Visibility.PROTECTED,
+                    Visibility.PRIVATE_TO_THIS,
+                    Visibility.LOCAL -> {
+                        messager.logKotshiError(Errors.invalidRegisterAdapterVisibility, element)
+                        return@mapNotNull null
+                    }
                 }
 
                 if (!hasFactory) {
@@ -152,11 +166,31 @@ class FactoryProcessingStep(
                     getSuperClass = {
                         superclass.takeUnless { it.kind == TypeKind.NONE }?.let(MoreTypes::asTypeElement)
                     },
-                    getSuperTypeName = { metadataAccessor.getTypeSpecOrNull(this)?.superclass ?: superclass.asTypeName() },
+                    getSuperTypeName = {
+                        metadataAccessor.getTypeSpecOrNull(this)?.superclass ?: superclass.asTypeName()
+                    },
                     adapterClassName = createClassName(kmClass.name),
-                    typeVariables = { metadataAccessor.getTypeSpecOrNull(this)?.typeVariables ?: typeParameters.map { it.asTypeVariableName() } },
-                    isObject = kmClass.flags.isObjectClass || kmClass.flags.isCompanionObjectClass,
-                    isAbstract = kmClass.flags.isInterface || kmClass.flags.isAbstract || kmClass.flags.isSealed,
+                    typeVariables = {
+                        metadataAccessor.getTypeSpecOrNull(this)?.typeVariables
+                            ?: typeParameters.map { it.asTypeVariableName() }
+                    },
+                    isObject = when (kmClass.kind) {
+                        ClassKind.CLASS,
+                        ClassKind.INTERFACE,
+                        ClassKind.ENUM_CLASS,
+                        ClassKind.ENUM_ENTRY,
+                        ClassKind.ANNOTATION_CLASS -> false
+
+                        ClassKind.OBJECT,
+                        ClassKind.COMPANION_OBJECT -> true
+                    },
+                    isAbstract = kmClass.kind == ClassKind.INTERFACE || when (kmClass.modality) {
+                        Modality.FINAL,
+                        Modality.OPEN -> false
+
+                        Modality.ABSTRACT,
+                        Modality.SEALED -> true
+                    },
                     priority = annotation.priority,
                     getKotshiConstructor = {
                         metadataAccessor.getTypeSpec(this).constructors().findKotshiConstructor(
