@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="EntryPointsManager">
+    <list size="2">
+      <item index="0" class="java.lang.String" itemvalue="com.squareup.moshi.FromJson" />
+      <item index="1" class="java.lang.String" itemvalue="com.squareup.moshi.ToJson" />
+    </list>
+  </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="zulu-15" project-jdk-type="JavaSDK" />
 </project>

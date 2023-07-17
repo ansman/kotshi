@@ -2,11 +2,11 @@ package se.ansman.kotshi
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import com.squareup.moshi.Moshi
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import se.ansman.kotshi.assertions.isEmpty
-import kotlin.test.assertEquals
 
 class TestClassWithQualifierWithEmptyArrays {
     @OptIn(ExperimentalUnsignedTypes::class)
@@ -49,15 +49,16 @@ class TestClassWithQualifierWithEmptyArrays {
                         assertThat(annotation.stringArrayArg).isEmpty()
                         assertThat(annotation.enumArrayArg).isEmpty()
                         assertThat(annotation.annotationArrayArg).isEmpty()
-                        // This will fail with runtime annotations https://youtrack.jetbrains.com/issue/KT-47703 until fixed
-                        // assertThat(annotation.classArrayArg).isEqualTo(emptyArray<KClass<*>>())
+                        assertThat(annotation.classArrayArg).isEmpty()
                         moshi.adapter(String::class.java)
                     }
+
                     else -> null
                 }
             }
             .build()
             .adapter(ClassWithQualifierWithEmptyArrays::class.java)
-        assertEquals(1, callCount)
+        assertThat(1)
+            .isEqualTo(callCount)
     }
 }

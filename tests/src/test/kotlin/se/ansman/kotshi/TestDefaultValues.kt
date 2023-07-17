@@ -1,27 +1,28 @@
 package se.ansman.kotshi
 
-import com.squareup.moshi.*
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.hasMessage
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
+import com.squareup.moshi.Moshi
 import okio.Buffer
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class TestDefaultValues {
-    private lateinit var moshi: Moshi
-
-    @Before
-    fun setup() {
-        moshi = Moshi.Builder()
-            .add(TestFactory)
-            .add(LocalDate::class.java, LocalDateAdapter)
-            .add(LocalTime::class.java, LocalTimeAdapter)
-            .add(LocalDateTime::class.java, LocalDateTimeAdapter)
-            .build()
-    }
+    private val moshi = Moshi.Builder()
+        .add(TestFactory)
+        .add(LocalDate::class.java, LocalDateAdapter)
+        .add(LocalTime::class.java, LocalTimeAdapter)
+        .add(LocalDateTime::class.java, LocalDateTimeAdapter)
+        .build()
 
     @Test
     fun withValues() {
@@ -62,7 +63,8 @@ class TestDefaultValues {
     fun withNullValues() {
         val expected = ClassWithDefaultValues(v10 = "10")
 
-        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""{
+        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson(
+            """{
              |  "v1": null,
              |  "v2": null,
              |  "v3": null,
@@ -73,41 +75,44 @@ class TestDefaultValues {
              |  "v8": null,
              |  "v9": null,
              |  "v10": "10"
-             |}""".trimMargin())
+             |}""".trimMargin()
+        )
 
-        assertEquals(expected, actual)
+        assertThat(actual).isEqualTo(expected)
     }
 
     @Test
     fun withAbsentValues() {
         val expected = ClassWithDefaultValues(v10 = "10")
-        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson("""
+        val actual = moshi.adapter(ClassWithDefaultValues::class.java).fromJson(
+            """
             |{
             |  "v10": "10"
             |}
-        """.trimMargin())
-        assertEquals(expected, actual)
+        """.trimMargin()
+        )
+        assertThat(actual).isEqualTo(expected)
     }
 
     @Test
     fun throwsJsonDataExceptionWhenNotUsingDefaultValues() {
-        assertFailsWith<JsonDataException>("The following properties were null: v10 (at path $)") {
-            moshi.adapter(ClassWithDefaultValues::class.java).fromJson("{}")
-        }
+        assertFailure { moshi.adapter(ClassWithDefaultValues::class.java).fromJson("{}") }
+            .isInstanceOf<JsonDataException>()
+            .hasMessage("The following properties were null: v10 (at path $)")
     }
 
     private inline fun <reified T> T.testFormatting(json: String) {
         val adapter = moshi.adapter(T::class.java)
         val actual = adapter.fromJson(json)
-        assertEquals(this, actual)
-        assertEquals(json, Buffer()
-            .apply {
-                JsonWriter.of(this).run {
-                    indent = "  "
-                    adapter.toJson(this, actual)
+        assertThat(actual).isEqualTo(this)
+        assertThat(Buffer()
+                .apply {
+                    JsonWriter.of(this).run {
+                        indent = "  "
+                        adapter.toJson(this, actual)
+                    }
                 }
-            }
-            .readUtf8())
+                .readUtf8()).isEqualTo<String>(json)
     }
 
     object LocalDateAdapter : JsonAdapter<LocalDate>() {

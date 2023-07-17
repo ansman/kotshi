@@ -1,8 +1,9 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class SealedClassWithExistingLabelTest {
     private val adapter = Moshi.Builder()
@@ -12,23 +13,19 @@ class SealedClassWithExistingLabelTest {
 
     @Test
     fun reading_normal() {
-        assertEquals(SealedClassWithExistingLabel.Type1, adapter.fromJson("""{"type": "type1"}"""))
-        assertEquals(
-            SealedClassWithExistingLabel.Type2("some name"),
-            adapter.fromJson("""{"type": "type2", "name": "some name"}""")
-        )
+        assertThat(adapter.fromJson("""{"type": "type1"}"""))
+            .isEqualTo(SealedClassWithExistingLabel.Type1)
+        assertThat(adapter.fromJson("""{"type": "type2", "name": "some name"}"""))
+            .isEqualTo(SealedClassWithExistingLabel.Type2("some name"))
     }
 
     @Test
     fun writing_with_label() {
-        assertEquals("""{"type":"type1"}""", adapter.toJson(SealedClassWithExistingLabel.Type1))
-        assertEquals(
-            """{"name":"some name","type":"type2"}""",
-            adapter.toJson(SealedClassWithExistingLabel.Type2(name = "some name", type = "type2"))
-        )
-        assertEquals(
-            """{"name":"some other name","type":"type3"}""",
-            adapter.toJson(SealedClassWithExistingLabel.Type2(name = "some other name", type = "type3"))
-        )
+        assertThat(adapter.toJson(SealedClassWithExistingLabel.Type1))
+            .isEqualTo("""{"type":"type1"}""")
+        assertThat(adapter.toJson(SealedClassWithExistingLabel.Type2(name = "some name", type = "type2")))
+            .isEqualTo("""{"name":"some name","type":"type2"}""")
+        assertThat(adapter.toJson(SealedClassWithExistingLabel.Type2(name = "some other name", type = "type3")))
+            .isEqualTo("""{"name":"some other name","type":"type3"}""")
     }
 }

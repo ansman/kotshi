@@ -1,9 +1,10 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonWriter
 import okio.Buffer
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 @InternalKotshiApi
 class TestClassWithJavaKeyword {
@@ -17,7 +18,8 @@ class TestClassWithJavaKeyword {
             |  "case": 1337
             |}""".trimMargin()
 
-        assertEquals(ClassWithJavaKeyword(true, 4711, 1337), adapter.fromJson(json))
+        assertThat(adapter.fromJson(json))
+            .isEqualTo(ClassWithJavaKeyword(true, 4711, 1337))
     }
 
     @Test
@@ -30,13 +32,16 @@ class TestClassWithJavaKeyword {
 
         val actual = Buffer()
             .apply {
-                adapter.toJson(JsonWriter.of(this)
-                    .apply {
-                        indent = "  "
-                    }, ClassWithJavaKeyword(true, 4711, 1337))
+                adapter.toJson(
+                    JsonWriter.of(this)
+                        .apply {
+                            indent = "  "
+                        }, ClassWithJavaKeyword(true, 4711, 1337)
+                )
             }
             .readUtf8()
-        assertEquals(expected, actual)
+        assertThat(actual)
+            .isEqualTo(expected)
     }
 
 }

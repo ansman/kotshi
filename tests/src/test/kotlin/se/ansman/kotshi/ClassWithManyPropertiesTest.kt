@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isNotNull
 import com.squareup.moshi.Moshi
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class ClassWithManyPropertiesTest {
     private val adapter = Moshi.Builder()

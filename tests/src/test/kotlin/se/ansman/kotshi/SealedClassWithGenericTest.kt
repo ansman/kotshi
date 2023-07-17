@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class SealedClassWithGenericTest {
     private val adapter = Moshi.Builder()

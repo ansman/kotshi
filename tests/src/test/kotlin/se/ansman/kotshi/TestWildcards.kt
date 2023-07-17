@@ -1,10 +1,11 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import okio.Buffer
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 
 class TestWildcards {
@@ -30,19 +31,21 @@ class TestWildcards {
         val adapter = moshi.adapter(Wildcards.AnyBound::class.java)
         val actual = adapter.fromJson(json)
 
-        val expected = Wildcards.AnyBound(listOf(
-            mapOf("a" to 1.0, "b" to "value"),
-            mapOf("d" to "value", "e" to true)
-        ))
+        val expected = Wildcards.AnyBound(
+            listOf(
+                mapOf("a" to 1.0, "b" to "value"),
+                mapOf("d" to "value", "e" to true)
+            )
+        )
 
-        assertEquals(expected, actual)
-        assertEquals(json, Buffer()
-            .apply {
-                JsonWriter.of(this).run {
-                    indent = "  "
-                    adapter.toJson(this, actual)
+        assertThat(actual).isEqualTo(expected)
+        assertThat(Buffer()
+                .apply {
+                    JsonWriter.of(this).run {
+                        indent = "  "
+                        adapter.toJson(this, actual)
+                    }
                 }
-            }
-            .readUtf8())
+                .readUtf8()).isEqualTo<String>(json)
     }
 }

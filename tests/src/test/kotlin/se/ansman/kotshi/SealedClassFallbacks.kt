@@ -1,11 +1,13 @@
 package se.ansman.kotshi
 
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
-import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class SealedClassFallbacks {
     private val moshi = Moshi.Builder().add(TestFactory).build()
@@ -16,25 +18,31 @@ class SealedClassFallbacks {
 
     @Test
     fun invalid_fail() {
-        assertFailsWith<JsonDataException> { a1.fromJson("""{"type":"type2"}""") }
-        assertEquals(SealedClassOnInvalidFail.Default, a1.fromJson("{}"))
+        assertFailure { a1.fromJson("""{"type":"type2"}""") }
+            .isInstanceOf<JsonDataException>()
+        assertThat(a1.fromJson("{}"))
+            .isEqualTo(SealedClassOnInvalidFail.Default)
     }
 
     @Test
     fun invalid_null() {
         assertNull(a2.fromJson("""{"type":"type2"}"""))
-        assertEquals(SealedClassOnInvalidNull.Default, a2.fromJson("{}"))
+        assertThat(a2.fromJson("{}"))
+            .isEqualTo(SealedClassOnInvalidNull.Default)
     }
 
     @Test
     fun missing_fail() {
-        assertFailsWith<JsonDataException> { a3.fromJson("{}") }
-        assertEquals(SealedClassOnMissingFail.Default, a3.fromJson("""{"type":"type2"}"""))
+        assertFailure { a3.fromJson("{}") }
+            .isInstanceOf<JsonDataException>()
+        assertThat(a3.fromJson("""{"type":"type2"}"""))
+            .isEqualTo(SealedClassOnMissingFail.Default)
     }
 
     @Test
     fun missing_null() {
         assertNull(a4.fromJson("{}"))
-        assertEquals(SealedClassOnMissingNull.Default, a4.fromJson("""{"type":"type2"}"""))
+        assertThat(a4.fromJson("""{"type":"type2"}"""))
+            .isEqualTo(SealedClassOnMissingNull.Default)
     }
 }

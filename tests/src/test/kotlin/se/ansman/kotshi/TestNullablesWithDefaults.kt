@@ -1,21 +1,16 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import okio.Buffer
-import org.junit.Before
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class TestNullablesWithDefaults {
-    private lateinit var moshi: Moshi
-
-    @Before
-    fun setup() {
-        moshi = Moshi.Builder()
-            .add(TestFactory)
-            .build()
-    }
+    private val moshi = Moshi.Builder()
+        .add(TestFactory)
+        .build()
 
     @Test
     fun withValues() {
@@ -64,7 +59,8 @@ class TestNullablesWithDefaults {
             v9 = null
         )
 
-        val actual = moshi.adapter(NullablesWithDefaults::class.java).fromJson("""
+        val actual = moshi.adapter(NullablesWithDefaults::class.java).fromJson(
+            """
             |{
             |  "v1": null,
             |  "v2": null,
@@ -76,29 +72,30 @@ class TestNullablesWithDefaults {
             |  "v8": null,
             |  "v9": null
             |}
-        """.trimMargin())
+        """.trimMargin()
+        )
 
-        assertEquals(expected, actual)
+        assertThat(actual).isEqualTo(expected)
     }
 
     @Test
     fun withAbsentValues() {
         val expected = NullablesWithDefaults()
         val actual = moshi.adapter(NullablesWithDefaults::class.java).fromJson("{}")
-        assertEquals(expected, actual)
+        assertThat(actual).isEqualTo(expected)
     }
 
     private inline fun <reified T> T.testFormatting(json: String) {
         val adapter = moshi.adapter(T::class.java)
         val actual = adapter.fromJson(json)
-        assertEquals(this, actual)
-        assertEquals(json, Buffer()
-            .apply {
-                JsonWriter.of(this).run {
-                    indent = "  "
-                    adapter.toJson(this, actual)
+        assertThat(actual).isEqualTo(this)
+        assertThat(Buffer()
+                .apply {
+                    JsonWriter.of(this).run {
+                        indent = "  "
+                        adapter.toJson(this, actual)
+                    }
                 }
-            }
-            .readUtf8())
+                .readUtf8()).isEqualTo<String>(json)
     }
 }

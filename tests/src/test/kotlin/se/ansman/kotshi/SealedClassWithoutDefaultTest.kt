@@ -1,10 +1,12 @@
 package se.ansman.kotshi
 
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
-import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
 
 class SealedClassWithoutDefaultTest {
     private val adapter = Moshi.Builder()
@@ -15,23 +17,28 @@ class SealedClassWithoutDefaultTest {
     @Test
     fun reading_normal() {
         val json = """{"type":"type2","bar":"bar2"}"""
-        assertEquals(SealedClassWithoutDefault.Subclass2("bar2"), adapter.fromJson(json))
+        assertThat(adapter.fromJson(json))
+            .isEqualTo(SealedClassWithoutDefault.Subclass2("bar2"))
     }
 
     @Test
     fun reading_default() {
-        assertFailsWith<JsonDataException> { adapter.fromJson("""{"type":"unknown"}""") }
-        assertFailsWith<JsonDataException> { adapter.fromJson("{}") }
+        assertFailure { adapter.fromJson("""{"type":"unknown"}""") }
+            .isInstanceOf<JsonDataException>()
+        assertFailure { adapter.fromJson("{}") }
+            .isInstanceOf<JsonDataException>()
     }
 
     @Test
     fun writing_normal() {
-        assertEquals("""{"type":"type2","bar":"bar2"}""", adapter.toJson(SealedClassWithoutDefault.Subclass2("bar2")))
+        assertThat(adapter.toJson(SealedClassWithoutDefault.Subclass2("bar2")))
+            .isEqualTo("""{"type":"type2","bar":"bar2"}""")
     }
 
     @Test
     fun failOnUnknown() {
         val json = """{"baz":"baz3","type":"type3"}"""
-        assertEquals(SealedClassWithoutDefault.Subclass3("baz3", "type3"), adapter.failOnUnknown().fromJson(json))
+        assertThat(adapter.failOnUnknown().fromJson(json))
+            .isEqualTo(SealedClassWithoutDefault.Subclass3("baz3", "type3"))
     }
 }

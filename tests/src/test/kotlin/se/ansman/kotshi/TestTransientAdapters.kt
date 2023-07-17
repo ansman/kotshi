@@ -1,21 +1,16 @@
 package se.ansman.kotshi
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import okio.Buffer
-import org.junit.Before
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 
 class TestTransientAdapters {
-    private lateinit var moshi: Moshi
-
-    @Before
-    fun setup() {
-        moshi = Moshi.Builder()
-            .add(TestFactory)
-            .build()
-    }
+    private val moshi = Moshi.Builder()
+        .add(TestFactory)
+        .build()
 
     @Test
     fun withValues() {
@@ -26,7 +21,8 @@ class TestTransientAdapters {
         val expected = ClassWithTransient(
             value = "",
             value2 = "string2",
-            list = listOf())
+            list = listOf()
+        )
 
         expected.testFormatting(json)
     }
@@ -40,24 +36,25 @@ class TestTransientAdapters {
              |}""".trimMargin()
 
         val expected = ClassWithTransient(
-                value = "",
-                value2 = "string2",
-                list = listOf())
+            value = "",
+            value2 = "string2",
+            list = listOf()
+        )
 
-        assertEquals(expected, moshi.adapter(ClassWithTransient::class.java).fromJson(json))
+        assertThat(moshi.adapter(ClassWithTransient::class.java).fromJson(json)).isEqualTo(expected)
     }
 
     private inline fun <reified T> T.testFormatting(json: String) {
         val adapter = moshi.adapter(T::class.java)
         val actual = adapter.fromJson(json)
-        assertEquals(this, actual)
-        assertEquals(json, Buffer()
-            .apply {
-                JsonWriter.of(this).run {
-                    indent = "  "
-                    adapter.toJson(this, actual)
+        assertThat(actual).isEqualTo(this)
+        assertThat(Buffer()
+                .apply {
+                    JsonWriter.of(this).run {
+                        indent = "  "
+                        adapter.toJson(this, actual)
+                    }
                 }
-            }
-            .readUtf8())
+                .readUtf8()).isEqualTo<String>(json)
     }
 }
