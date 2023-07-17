@@ -13,7 +13,7 @@ Most of the limitations will be addressed as the support for Kotlin annotation p
 You can find the generated documentation by visiting [kotshi.ansman.se](https://kotshi.ansman.se/).
 
 ## Usage
-First you must annotate your objects with the `@JsonSerializable` annotation
+First you must annotate your types with the `@JsonSerializable` annotation
 <details open>
   <summary>Annotated class</summary>
   
@@ -33,7 +33,7 @@ First you must annotate your objects with the `@JsonSerializable` annotation
 </details>
 
 The following types are supported:
-* `object` (serialized as an empty JSON object)
+* `data object` (serialized as an empty JSON object)
 * `data class`
 * `enum class`
 * `sealed class`
@@ -206,7 +206,7 @@ Examples:
 
 ## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
-* Only data classes, enums, sealed classes and objects are supported.
+* Only data classes, enums, sealed classes and data objects are supported.
   - Only constructor properties will be serialized.
   - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
 * Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
