@@ -7,6 +7,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
@@ -313,4 +314,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
             )
         }
     }
+
+    @Disabled("kotlin-compile-testing doesn't work well with overriding language version yet")
+    override fun `non data object logs warnings`() {}
 }

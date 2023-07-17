@@ -5,7 +5,7 @@ package se.ansman.kotshi
 sealed class SealedClassWithExistingLabel {
     @PolymorphicLabel("type1")
     @JsonSerializable
-    object Type1 : SealedClassWithExistingLabel()
+    data object Type1 : SealedClassWithExistingLabel()
 
     @PolymorphicLabel("type2")
     @JsonSerializable

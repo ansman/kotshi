@@ -9,5 +9,5 @@ sealed class SealedClassOnInvalidNull {
 
     @JsonSerializable
     @JsonDefaultValue
-    object Default : SealedClassOnInvalidNull()
+    data object Default : SealedClassOnInvalidNull()
 }

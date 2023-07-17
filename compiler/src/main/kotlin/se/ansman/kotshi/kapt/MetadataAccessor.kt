@@ -29,6 +29,8 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
         getMetadataOrNull(type)
             ?: throw KaptProcessingError(javaClassNotSupported, type)
 
+    fun getLanguageVersion(type: Element): KotlinVersion = getMetadata(type).languageVersion
+
     fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) { metadata.toKmClass() }
     fun getKmClass(type: Element): KmClass = getKmClass(getMetadata(type))
     fun getKmClassOrNull(type: Element): KmClass? = getMetadataOrNull(type)?.let(::getKmClass)

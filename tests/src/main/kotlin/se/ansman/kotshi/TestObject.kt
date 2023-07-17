@@ -1,6 +1,6 @@
 package se.ansman.kotshi
 
 @JsonSerializable
-object TestObject {
+data object TestObject {
     val someProperty = "someValue"
 }
