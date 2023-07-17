@@ -2,6 +2,7 @@ package se.ansman.kotshi
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonAdapter
@@ -153,7 +154,7 @@ abstract class BaseGeneratorTest {
               @se.ansman.kotshi.JsonSerializable
               @se.ansman.kotshi.PolymorphicLabel("default")
               @se.ansman.kotshi.JsonDefaultValue
-              object Default : SealedClass()
+              data object Default : SealedClass()
             }
         """))
         assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
@@ -229,7 +230,7 @@ abstract class BaseGeneratorTest {
     fun `objects must not be private`() {
         val result = compile(kotlin("source.kt", """
            @se.ansman.kotshi.JsonSerializable
-           private object Singleton
+           private data object Singleton
         """))
         assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result::messages).contains(privateClass)
@@ -509,7 +510,7 @@ abstract class BaseGeneratorTest {
         """)
         val source = kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
-            object TestObject
+            data object TestObject
 
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
@@ -533,7 +534,7 @@ abstract class BaseGeneratorTest {
     fun `can add jdk 9 generated annotation`() {
         val source = kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
-            object TestObject
+            data object TestObject
 
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
@@ -556,7 +557,7 @@ abstract class BaseGeneratorTest {
     fun `cannot add invalid generated annotation`() {
         val source = kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
-            object TestObject
+            data object TestObject
 
             @se.ansman.kotshi.KotshiJsonAdapterFactory
             object TestFactory : com.squareup.moshi.JsonAdapter.Factory by KotshiTestFactory
@@ -567,12 +568,40 @@ abstract class BaseGeneratorTest {
         assertThat(result::messages).contains(Errors.invalidGeneratedAnnotation(annotationClass))
     }
 
-    protected fun compile(vararg sources: SourceFile, options: Map<String, String> = emptyMap()) =
+    @Test
+    open fun `non data object logs warnings`() {
+        val source = kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            object TestObject
+        """)
+        val result = compile(source)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::messages).contains(Errors.nonDataObject)
+    }
+
+    @Test
+    fun `non data object does not logs warnings when using Kotlin 1_8`() {
+        val source = kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            object TestObject
+        """)
+        val result = compile(source, languageVersion = "1.8")
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::messages).doesNotContain(Errors.nonDataObject)
+    }
+
+    protected fun compile(
+        vararg sources: SourceFile,
+        options: Map<String, String> = emptyMap(),
+        languageVersion: String = "1.9"
+    ) =
         KotlinCompilation()
             .apply {
                 workingDir = temporaryFolder
                 this.sources = sources.asList()
                 inheritClassPath = true
+                // TODO: Remove once kotlin-compile-testing supports Kotlin 1.9
+                this.languageVersion = languageVersion
                 messageOutputStream = System.out // see diagnostics in real time
                 setUp(options)
             }

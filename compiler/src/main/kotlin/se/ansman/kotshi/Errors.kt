@@ -24,6 +24,7 @@ object Errors {
     const val invalidRegisterAdapterVisibility = "Types annotated @RegisterJsonAdapter must be public or internal"
     const val abstractFactoriesAreDeprecated = "Having abstract factories is deprecated and will be removed in the future. Please migrate to use objects with delegation to the generated factory."
     const val registeredAdapterWithoutFactory = "Found classes annotated with @RegisterJsonAdapter but no factory annotated with @KotshiJsonAdapterFactory"
+    const val nonDataObject = "JsonSerializable objects must be data objects. This warning will become an error in the future."
     fun privateDataClassProperty(propertyName: String) = "Property $propertyName must be public or internal"
     fun transientDataClassPropertyWithoutDefaultValue(propertyName: String) = "Transient property $propertyName must declare a default value"
     fun ignoredDataClassPropertyWithoutDefaultValue(propertyName: String) = "Ignored property $propertyName must declare a default value"

@@ -18,5 +18,5 @@ sealed class SealedClassWithDefaultWithType {
     @JsonSerializable
     @JsonDefaultValue
     @PolymorphicLabel("type4")
-    object Default : SealedClassWithDefaultWithType()
+    data object Default : SealedClassWithDefaultWithType()
 }

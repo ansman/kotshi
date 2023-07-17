@@ -102,6 +102,16 @@ class AdaptersProcessingStep(
                 }
 
                 val generator = when {
+                    metadata.isObject -> ObjectAdapterGenerator(
+                        metadataAccessor = metadataAccessor,
+                        types = types,
+                        element = typeElement,
+                        metadata = metadata,
+                        elements = elements,
+                        globalConfig = globalConfig,
+                        messager = messager,
+                    )
+
                     metadata.isData -> DataClassAdapterGenerator(
                         metadataAccessor = metadataAccessor,
                         types = types,
@@ -118,16 +128,6 @@ class AdaptersProcessingStep(
                         elements = elements,
                         element = typeElement,
                         metadata = metadata,
-                        globalConfig = globalConfig,
-                        messager = messager
-                    )
-
-                    metadata.isObject -> ObjectAdapterGenerator(
-                        metadataAccessor = metadataAccessor,
-                        types = types,
-                        element = typeElement,
-                        metadata = metadata,
-                        elements = elements,
                         globalConfig = globalConfig,
                         messager = messager
                     )

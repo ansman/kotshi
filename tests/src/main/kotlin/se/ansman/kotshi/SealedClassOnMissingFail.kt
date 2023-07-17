@@ -9,5 +9,5 @@ sealed class SealedClassOnMissingFail {
 
     @JsonSerializable
     @JsonDefaultValue
-    object Default : SealedClassOnMissingFail()
+    data object Default : SealedClassOnMissingFail()
 }

@@ -18,4 +18,4 @@ data class SealedClassWithDefaultWithoutTypeSubclass3(val baz: String) : SealedC
 
 @JsonSerializable
 @JsonDefaultValue
-object SealedClassWithDefaultWithoutTypeDefault : SealedClassWithDefaultWithoutType()
+data object SealedClassWithDefaultWithoutTypeDefault : SealedClassWithDefaultWithoutType()
