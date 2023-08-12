@@ -590,6 +590,20 @@ abstract class BaseGeneratorTest {
         assertThat(result::messages).doesNotContain(Errors.nonDataObject)
     }
 
+    @Test
+    fun `data class can use escaped Kotlin identifiers`() {
+        val result = compile(kotlin("source.kt", """
+            @se.ansman.kotshi.JsonSerializable
+            data class Foo(val `in`: String)
+        """))
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        val kotshiAdapter = result.tryLoadClass("KotshiFooJsonAdapter")
+        if (kotshiAdapter != null) {
+            assertThat(kotshiAdapter).isAssignableTo(result.classLoader.loadClass("com.squareup.moshi.JsonAdapter"))
+        }
+    }
+
+
     protected fun compile(
         vararg sources: SourceFile,
         options: Map<String, String> = emptyMap(),
