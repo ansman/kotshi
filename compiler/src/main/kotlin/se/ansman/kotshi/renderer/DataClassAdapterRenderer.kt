@@ -111,7 +111,7 @@ class DataClassAdapterRenderer(
                 }
                 .applyEach(adapter.serializedProperties) { property ->
                     addCode(".name(%S)", property.jsonName)
-                    val getter = CodeBlock.of("%N.%L", valueParameter, property.name)
+                    val getter = CodeBlock.of("%N.%N", valueParameter, property.name)
 
                     if (property.shouldUseAdapter) {
                         addCode(".%M {\n", Functions.Kotlin.apply)
