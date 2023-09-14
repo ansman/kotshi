@@ -28,7 +28,7 @@ kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.7.0"
 
 junit-jupiter = "org.junit.jupiter:junit-jupiter:5.10.0"
 
-assertk = "com.willowtreeapps.assertk:assertk-jvm:0.26.1"
+assertk = "com.willowtreeapps.assertk:assertk-jvm:0.27.0"
 
 compileTesting-core = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "compileTesting" }
 compileTesting-ksp = { module = "com.github.tschuchortdev:kotlin-compile-testing-ksp", version.ref = "compileTesting" }
