@@ -43,6 +43,6 @@ incap-compiler = { module = "net.ltgt.gradle.incap:incap-processor", version.ref
 
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
-asm = "org.ow2.asm:asm:9.5"
+asm = "org.ow2.asm:asm:9.6"
 
 shadow = "com.github.johnrengelman:shadow:8.1.1"
