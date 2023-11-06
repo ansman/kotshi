@@ -26,7 +26,7 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin
 
 kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.7.0"
 
-junit-jupiter = "org.junit.jupiter:junit-jupiter:5.10.0"
+junit-jupiter = "org.junit.jupiter:junit-jupiter:5.10.1"
 
 assertk = "com.willowtreeapps.assertk:assertk-jvm:0.27.0"
 
