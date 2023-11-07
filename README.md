@@ -16,7 +16,7 @@ You can find the generated documentation by visiting [kotshi.ansman.se](https://
 First you must annotate your types with the `@JsonSerializable` annotation
 <details open>
   <summary>Annotated class</summary>
-  
+
   ```kotlin
   @JsonSerializable
   data class Person(
@@ -41,7 +41,7 @@ The following types are supported:
 Then create a class that will be your factory.
 <details open>
   <summary>Factory setup</summary>
-  
+
   ```kotlin
   @KotshiJsonAdapterFactory
   object ApplicationJsonAdapterFactory : JsonAdapter.Factory by KotshiApplicationJsonAdapterFactory
@@ -92,7 +92,7 @@ Properties marked with `@Transient` are not serialized. All transient properties
 Only properties declared in the constructor needs to be annotated since other properties are ignores.
 
 ### Custom Names
-By default, the property or enum entry name is used when reading and writing JSON. To change the name used you may use 
+By default, the property or enum entry name is used when reading and writing JSON. To change the name used you may use
 the `@JsonProperty` annotation or the regular `@Json` annotation from Moshi to annotate the property or enum entry.
 
 ### Json Qualifiers
@@ -100,7 +100,7 @@ Kotshi has full support for `@JsonQualifier`, both plain and those with argument
 desired qualifiers and Kotshi will pick them up.
 
 ### Registered adapters
-It's often required to have a few adapters that are handwritten, for example for framework classes. Handling this in a 
+It's often required to have a few adapters that are handwritten, for example for framework classes. Handling this in a
 custom factory can be tedious, especially for generic types. To make this easier you may annotate any class or object
 that extends `JsonAdapter` with `@RegisterJsonAdapter` and Kotshi will generate the needed code in the adapter factory.
 
@@ -142,7 +142,7 @@ See more about instantiating annotations here: https://kotlinlang.org/docs/whats
 #### `kotshi.useLegacyDataClassRenderer`
 This option allows you to use the old way of creating classes with parameters that has default values.
 
-From 2.10.0 reflection is used create data classes, but by setting this option to `true` the old behavior can be used 
+From 2.10.0 reflection is used create data classes, but by setting this option to `true` the old behavior can be used
 instead which used the `copy` method.
 
 Examples:
@@ -172,7 +172,7 @@ Examples:
 #### `kotshi.generatedAnnotation`
 This option tells Kotshi to add the `@Generated` annotation to all generated classes which is disabled by default.
 
-For Java 9+ use `javax.annotation.processing.Generated` and for Java 8 and below use `javax.annotation.Generated`. 
+For Java 9+ use `javax.annotation.processing.Generated` and for Java 8 and below use `javax.annotation.Generated`.
 
 Examples:
 <details open>
@@ -221,9 +221,9 @@ Examples:
   plugins {
     id("com.google.devtools.ksp") version "<version>"
   }
-  
+
   dependencies {
-    val kotshiVersion = "2.13.1"
+    val kotshiVersion = "2.14.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     ksp("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -237,9 +237,9 @@ Examples:
   plugins {
     kotlin("kapt")
   }
-  
+
   dependencies {
-    val kotshiVersion = "2.13.1"
+    val kotshiVersion = "2.14.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -253,9 +253,9 @@ Examples:
   plugins {
     id "com.google.devtools.ksp" version "<version>"
   }
-  
+
   dependencies {
-    def kotshiVersion = "2.13.1"
+    def kotshiVersion = "2.14.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     ksp "se.ansman.kotshi:compiler:$kotshiVersion"
   }
@@ -269,9 +269,9 @@ Examples:
   plugins {
     id "org.jetbrains.kotlin.kapt"
   }
-  
+
   dependencies {
-    def kotshiVersion = "2.13.1"
+    def kotshiVersion = "2.14.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     kapt "se.ansman.kotshi:compiler:$kotshiVersion"
   }
