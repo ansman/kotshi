@@ -1,8 +1,41 @@
 package se.ansman.kotshi.ksp
 
-import com.google.devtools.ksp.symbol.*
-import com.squareup.kotlinpoet.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.CHAR
+import com.squareup.kotlinpoet.CHAR_ARRAY
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.INT_ARRAY
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.LONG_ARRAY
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.SHORT_ARRAY
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.U_BYTE
+import com.squareup.kotlinpoet.U_BYTE_ARRAY
+import com.squareup.kotlinpoet.U_INT
+import com.squareup.kotlinpoet.U_INT_ARRAY
+import com.squareup.kotlinpoet.U_LONG
+import com.squareup.kotlinpoet.U_LONG_ARRAY
+import com.squareup.kotlinpoet.U_SHORT
+import com.squareup.kotlinpoet.U_SHORT_ARRAY
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.JsonQualifier
@@ -24,7 +57,9 @@ fun Sequence<KSAnnotation>.getAnnotation(type: Class<out Annotation>): KSAnnotat
     }
 
 inline fun <reified V> KSAnnotation.getValue(name: String): V =
-    arguments.first { it.name?.asString() == name }.value as V
+    getValueOrDefault(name) {
+        throw IllegalArgumentException("Annotation ${annotationType.resolve().declaration.qualifiedName?.asString()} is missing argument $name. Arguments: ${arguments.map { it.name?.asString() }}")
+    }
 
 inline fun <reified V> KSAnnotation.getValueOrDefault(name: String, defaultValue: () -> V): V {
     val arg = arguments.firstOrNull { it.name?.asString() == name } ?: return defaultValue()

@@ -78,6 +78,7 @@ abstract class BaseGeneratorTest {
 
     @Test
     fun `ignored data class properties must have default values`() {
+        if (usingLegacyMoshi) return
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = true) val property: String)
@@ -88,6 +89,7 @@ abstract class BaseGeneratorTest {
 
     @Test
     fun `non ignored data class properties must not be transient`() {
+        if (usingLegacyMoshi) return
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             data class Foo(@com.squareup.moshi.Json(ignore = false) @Transient val property: String)

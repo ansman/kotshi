@@ -4,12 +4,10 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
 import org.junit.jupiter.api.Test
 
 class IgnoredPropertiesTest {
     private val moshi = Moshi.Builder().add(TestFactory).build()
-    @OptIn(ExperimentalStdlibApi::class)
     private val adapter: JsonAdapter<IgnoredProperties> = moshi.adapter()
 
     @Test

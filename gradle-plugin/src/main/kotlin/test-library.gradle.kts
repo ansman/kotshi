@@ -16,6 +16,7 @@ sourceSets {
 }
 
 tasks.withType<Test>().configureEach {
+    systemProperty("usingLegacyMoshi", providers.gradleProperty("kotshi.internal.useLegacyMoshi").orElse("false").get())
     jvmArgs(
         "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -33,7 +34,12 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(project(":api"))
     implementation(project(":compiler"))
-    implementation(libs.moshi.current)
+    if (providers.gradleProperty("kotshi.internal.useLegacyMoshi").orNull?.toBooleanStrict() == true) {
+        compileOnly(libs.moshi.current)
+        testImplementation(libs.moshi.oldestSupported)
+    } else {
+        implementation(libs.moshi.current)
+    }
     compileOnly(libs.findBugs)
     testImplementation(libs.compileTesting.core)
 }

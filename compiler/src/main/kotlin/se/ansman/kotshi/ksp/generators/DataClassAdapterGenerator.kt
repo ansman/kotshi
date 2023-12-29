@@ -11,9 +11,20 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.moshi.Json
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.privateDataClassProperty
-import se.ansman.kotshi.ksp.*
+import se.ansman.kotshi.ExperimentalKotshiApi
+import se.ansman.kotshi.JSON_UNSET_NAME
+import se.ansman.kotshi.JsonProperty
+import se.ansman.kotshi.JsonSerializable
+import se.ansman.kotshi.PrimitiveAdapters
+import se.ansman.kotshi.SerializeNulls
+import se.ansman.kotshi.ksp.KspProcessingError
+import se.ansman.kotshi.ksp.getAnnotation
+import se.ansman.kotshi.ksp.getEnumValue
+import se.ansman.kotshi.ksp.getValueOrDefault
+import se.ansman.kotshi.ksp.isJsonQualifier
+import se.ansman.kotshi.ksp.toAnnotationModel
 import se.ansman.kotshi.model.DataClassJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
@@ -81,13 +92,13 @@ class DataClassAdapterGenerator(
             globalConfig = globalConfig,
             useAdaptersForPrimitives = annotation.getEnumValue("useAdaptersForPrimitives", PrimitiveAdapters.DEFAULT),
             parameterJsonName = (getAnnotation<JsonProperty>() ?: jsonAnnotation)
-                ?.getValue<String?>("name")
+                ?.getValueOrDefault<String?>("name") { null }
                 ?.takeUnless { it == JSON_UNSET_NAME },
             propertyJsonName = (property.getAnnotation<JsonProperty>() ?: propertyJsonAnnotation)
-                ?.getValue<String?>("name")
+                ?.getValueOrDefault<String?>("name") { null }
                 ?.takeUnless { it == JSON_UNSET_NAME },
             isTransient = property.getAnnotation<Transient>() != null,
-            isJsonIgnore = (jsonAnnotation ?: propertyJsonAnnotation)?.getValue("ignore"),
+            isJsonIgnore = (jsonAnnotation ?: propertyJsonAnnotation)?.getValueOrDefault("ignore") { false },
             hasDefaultValue = hasDefault,
             error = { KspProcessingError(it, property) }
         )

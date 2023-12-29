@@ -7,7 +7,6 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotInstanceOf
 import assertk.assertions.isSameInstanceAs
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
 import org.junit.jupiter.api.Test
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -71,13 +70,16 @@ class ManuallyRegisteredAdapterTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun testManuallyRegisteredWrappedGenericAdapter() {
-        assertFailure { moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<Int>>>() }
-            .isInstanceOf<IllegalArgumentException>()
         assertThat(
             moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>(
                 typeOf<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<String>>>().javaType
             )
         ).isInstanceOf<ManuallyRegisteredWrappedGenericAdapter>()
+        if (!usingLegacyMoshi) {
+            // Legacy moshi doesn't throw on unsupported Kotlin types
+            assertFailure { moshi.adapter<ManuallyRegisteredWrappedGenericAdapter.GenericType<List<Int>>>() }
+                .isInstanceOf<IllegalArgumentException>()
+        }
     }
 
     @OptIn(ExperimentalStdlibApi::class)
