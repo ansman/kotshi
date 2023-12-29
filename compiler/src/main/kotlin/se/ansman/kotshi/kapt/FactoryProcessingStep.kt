@@ -51,7 +51,6 @@ class FactoryProcessingStep(
     private val generatedAnnotation: GeneratedAnnotation?,
     private val generatedAdapters: List<GeneratedAdapter<Element>>,
     private val metadataAccessor: MetadataAccessor,
-    private val createAnnotationsUsingConstructor: Boolean?,
 ) : KotshiProcessor.GeneratingProcessingStep() {
 
     @OptIn(ExperimentalKotshiApi::class)
@@ -101,9 +100,7 @@ class FactoryProcessingStep(
             manuallyRegisteredAdapters = manuallyRegisteredAdapters,
         )
 
-        val createAnnotationsUsingConstructor =
-            createAnnotationsUsingConstructor
-                ?: metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
+        val createAnnotationsUsingConstructor = metadataAccessor.getMetadata(element).supportsCreatingAnnotationsWithConstructor
 
         JsonAdapterFactoryRenderer(factory, createAnnotationsUsingConstructor)
             .render(generatedAnnotation) {

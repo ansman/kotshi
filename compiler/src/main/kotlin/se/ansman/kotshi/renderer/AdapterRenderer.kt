@@ -145,16 +145,10 @@ abstract class AdapterRenderer(private val adapter: GeneratableJsonAdapter) {
 
 fun GeneratableJsonAdapter.createRenderer(
     createAnnotationsUsingConstructor: Boolean,
-    useLegacyDataClassRenderer: Boolean,
     error: (String) -> Throwable,
 ): AdapterRenderer =
     when (this) {
-        is DataClassJsonAdapter ->
-            if (useLegacyDataClassRenderer) {
-                LegacyDataClassAdapterRenderer(this, createAnnotationsUsingConstructor)
-            } else {
-                DataClassAdapterRenderer(this, createAnnotationsUsingConstructor)
-            }
+        is DataClassJsonAdapter -> DataClassAdapterRenderer(this, createAnnotationsUsingConstructor)
         is EnumJsonAdapter -> EnumAdapterRenderer(this)
         is ObjectJsonAdapter -> ObjectAdapterRenderer(this)
         is SealedClassJsonAdapter -> SealedClassAdapterRenderer(this, error)

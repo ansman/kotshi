@@ -64,7 +64,6 @@ abstract class AdapterGenerator(
 
     fun generateAdapter(
         createAnnotationsUsingConstructor: Boolean,
-        useLegacyDataClassRenderer: Boolean,
         generatedAnnotation: GeneratedAnnotation?,
     ): GeneratedAdapter<KSFile> {
         when {
@@ -81,7 +80,6 @@ abstract class AdapterGenerator(
         val generatedAdapter = getGeneratableJsonAdapter()
             .createRenderer(
                 createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
-                useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                 error = { KspProcessingError(it, targetElement) },
             )
             .render(generatedAnnotation, originatingElement = targetElement.containingFile!!) {
