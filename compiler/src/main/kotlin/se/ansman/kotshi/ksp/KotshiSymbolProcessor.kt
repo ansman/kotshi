@@ -49,13 +49,7 @@ import se.ansman.kotshi.model.findKotshiConstructor
 import se.ansman.kotshi.renderer.JsonAdapterFactoryRenderer
 
 class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
-    private val createAnnotationsUsingConstructor = environment.options[Options.createAnnotationsUsingConstructor]
-        ?.toBooleanStrict()
-        ?: environment.kotlinVersion.isAtLeast(1, 6)
-
-    private val useLegacyDataClassRenderer = environment.options[Options.useLegacyDataClassRenderer]
-        ?.toBooleanStrict()
-        ?: false
+    private val createAnnotationsUsingConstructor = environment.kotlinVersion.isAtLeast(1, 6)
 
     private val generatedAnnotation = environment.options[Options.generatedAnnotation]
         ?.let { name ->
@@ -329,7 +323,6 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
 
                 generator.generateAdapter(
                     createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
-                    useLegacyDataClassRenderer = useLegacyDataClassRenderer,
                     generatedAnnotation = generatedAnnotation,
                 )
             } catch (e: KspProcessingError) {

@@ -27,8 +27,6 @@ import javax.lang.model.util.Types
 @AutoService(Processor::class)
 @IncrementalAnnotationProcessor(AGGREGATING)
 class KotshiProcessor : AbstractProcessor() {
-    private var createAnnotationsUsingConstructor: Boolean? = null
-    private var useLegacyDataClassRenderer: Boolean = false
     private var generatedAnnotation: GeneratedAnnotation? = null
     private lateinit var elements: Elements
     private lateinit var types: Types
@@ -49,8 +47,6 @@ class KotshiProcessor : AbstractProcessor() {
                 types = types,
                 elements = processingEnv.elementUtils,
                 generatedAnnotation = generatedAnnotation,
-                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
-                useLegacyDataClassRenderer = useLegacyDataClassRenderer,
             ),
             FactoryProcessingStep(
                 processor = this,
@@ -61,7 +57,6 @@ class KotshiProcessor : AbstractProcessor() {
                 generatedAnnotation = generatedAnnotation,
                 generatedAdapters = adapters,
                 metadataAccessor = metadataAccessor,
-                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor,
             )
         )
     }
@@ -69,8 +64,6 @@ class KotshiProcessor : AbstractProcessor() {
     @Synchronized
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
-        createAnnotationsUsingConstructor = processingEnv.options[Options.createAnnotationsUsingConstructor]?.toBooleanStrict()
-        useLegacyDataClassRenderer = processingEnv.options[Options.useLegacyDataClassRenderer]?.toBooleanStrict() ?: useLegacyDataClassRenderer
         generatedAnnotation = processingEnv.options[Options.generatedAnnotation]
             ?.let { name ->
                 Options.possibleGeneratedAnnotations[name] ?: run {
@@ -95,7 +88,7 @@ class KotshiProcessor : AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> =
         getSupportedAnnotationClasses().mapTo(mutableSetOf()) { it.canonicalName }
 
-    override fun getSupportedOptions(): Set<String> = setOf("kotshi.createAnnotationsUsingConstructor")
+    override fun getSupportedOptions(): Set<String> = setOf(Options.generatedAnnotation)
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         if (!roundEnv.processingOver()) {

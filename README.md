@@ -106,69 +106,6 @@ that extends `JsonAdapter` with `@RegisterJsonAdapter` and Kotshi will generate 
 
 ### Options
 
-#### `kotshi.createAnnotationsUsingConstructor`
-This option enables a new way of creating annotations instances at runtime. Normally Kotshi uses reflection to create
-the qualifier annotations but as of 1.5.30 of Kotlin you can enable creating annotations by calling the constructor.
-
-This behavior is enabled by default when using language version 1.6 but can be explicitly enabled or disabled using this
-option.
-
-Examples:
-<details open>
-  <summary>KSP</summary>
-
-  ```kotlin
-  ksp {
-    arg("kotshi.createAnnotationsUsingConstructor", "false")
-  }
-  ```
-</details>
-
-
-<details>
-  <summary>KAPT</summary>
-
-  ```kotlin
-  kapt {
-    arguments {
-      arg("kotshi.createAnnotationsUsingConstructor", false)
-    }
-  }
-  ```
-</details>
-
-See more about instantiating annotations here: https://kotlinlang.org/docs/whatsnew1530.html#instantiation-of-annotation-classes
-
-#### `kotshi.useLegacyDataClassRenderer`
-This option allows you to use the old way of creating classes with parameters that has default values.
-
-From 2.10.0 reflection is used create data classes, but by setting this option to `true` the old behavior can be used
-instead which used the `copy` method.
-
-Examples:
-<details open>
-  <summary>KSP</summary>
-
-  ```kotlin
-  ksp {
-      arg("kotshi.createAnnotationsUsingConstructor", "false")
-  }
-  ```
-</details>
-
-
-<details>
-  <summary>KAPT</summary>
-
-  ```kotlin
-  kapt {
-      arguments {
-          arg("kotshi.useLegacyDataClassRenderer", true)
-      }
-  }
-  ```
-</details>
-
 #### `kotshi.generatedAnnotation`
 This option tells Kotshi to add the `@Generated` annotation to all generated classes which is disabled by default.
 

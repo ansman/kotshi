@@ -62,8 +62,6 @@ abstract class AdapterGenerator(
     fun generateAdapter(
         generatedAnnotation: GeneratedAnnotation?,
         filer: Filer,
-        createAnnotationsUsingConstructor: Boolean?,
-        useLegacyDataClassRenderer: Boolean,
     ): GeneratedAdapter<Element> {
         when {
             kmClass.isInner ->
@@ -76,9 +74,7 @@ abstract class AdapterGenerator(
 
         val generatedAdapter = getGeneratableJsonAdapter()
             .createRenderer(
-                createAnnotationsUsingConstructor = createAnnotationsUsingConstructor
-                    ?: metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor,
-                useLegacyDataClassRenderer = useLegacyDataClassRenderer,
+                createAnnotationsUsingConstructor = metadataAccessor.getMetadata(targetElement).supportsCreatingAnnotationsWithConstructor,
                 error = { KaptProcessingError(it, targetElement) },
             )
             .render(generatedAnnotation, originatingElement = targetElement) {
