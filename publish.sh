@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
 ./gradlew clean
-./gradlew publishAllPublicationsToMavenCentralRepository -PsignArtifacts=true --no-parallel
+PASSPHRASE=$(op read op://private/GnuPG/password | xargs)
+./gradlew publishAllPublicationsToMavenCentralRepository -PsignArtifacts=true "-Psigning.gnupg.passphrase=$PASSPHRASE" --no-parallel --no-configuration-cache
