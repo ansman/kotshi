@@ -1,12 +1,12 @@
 package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.metadata.isEnum
 import kotlinx.metadata.KmClass
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Types.Kotshi.jsonDefaultValue
 import se.ansman.kotshi.kapt.KaptProcessingError
 import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.isEnum
 import se.ansman.kotshi.kapt.jsonName
 import se.ansman.kotshi.model.EnumJsonAdapter
 import se.ansman.kotshi.model.GeneratableJsonAdapter

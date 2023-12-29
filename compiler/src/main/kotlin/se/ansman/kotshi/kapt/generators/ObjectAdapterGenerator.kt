@@ -1,10 +1,10 @@
 package se.ansman.kotshi.kapt.generators
 
-import com.squareup.kotlinpoet.metadata.isObject
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.isData
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.kapt.MetadataAccessor
+import se.ansman.kotshi.kapt.isObject
 import se.ansman.kotshi.kapt.logKotshiWarning
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig

@@ -2,10 +2,10 @@ package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.metadata.isData
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.KmConstructor
+import kotlinx.metadata.isData
 import kotlinx.metadata.jvm.signature
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.privateDataClassProperty

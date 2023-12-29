@@ -8,8 +8,6 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
-import com.squareup.kotlinpoet.metadata.isClass
-import com.squareup.kotlinpoet.metadata.isObject
 import com.squareup.moshi.JsonAdapter
 import kotlinx.metadata.ClassKind
 import kotlinx.metadata.Modality

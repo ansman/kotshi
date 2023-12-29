@@ -6,10 +6,10 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.metadata.isInner
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.Visibility
+import kotlinx.metadata.isInner
 import kotlinx.metadata.visibility
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Polymorphic

@@ -4,10 +4,8 @@ package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import com.squareup.kotlinpoet.metadata.isData
-import com.squareup.kotlinpoet.metadata.isEnum
-import com.squareup.kotlinpoet.metadata.isObject
 import kotlinx.metadata.Modality
+import kotlinx.metadata.isData
 import kotlinx.metadata.modality
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.JsonDefaultValue
