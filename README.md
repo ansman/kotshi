@@ -160,7 +160,7 @@ Examples:
   }
 
   dependencies {
-    val kotshiVersion = "2.14.0"
+    val kotshiVersion = "2.15.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     ksp("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -176,7 +176,7 @@ Examples:
   }
 
   dependencies {
-    val kotshiVersion = "2.14.0"
+    val kotshiVersion = "2.15.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -192,7 +192,7 @@ Examples:
   }
 
   dependencies {
-    def kotshiVersion = "2.14.0"
+    def kotshiVersion = "2.15.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     ksp "se.ansman.kotshi:compiler:$kotshiVersion"
   }
@@ -208,7 +208,7 @@ Examples:
   }
 
   dependencies {
-    def kotshiVersion = "2.14.0"
+    def kotshiVersion = "2.15.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     kapt "se.ansman.kotshi:compiler:$kotshiVersion"
   }
