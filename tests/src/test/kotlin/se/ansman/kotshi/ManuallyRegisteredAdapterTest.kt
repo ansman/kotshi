@@ -5,7 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import org.junit.jupiter.api.Test
@@ -20,7 +20,7 @@ class ManuallyRegisteredAdapterTest {
     @Test
     fun testRegistersRegularAdapter() {
         assertThat(moshi.adapter(ManuallyRegisteredAdapter.Type::class.java))
-            .isSameAs(ManuallyRegisteredAdapter)
+            .isSameInstanceAs(ManuallyRegisteredAdapter)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -63,7 +63,7 @@ class ManuallyRegisteredAdapterTest {
         assertThat(adapter)
             .isInstanceOf<ManuallyRegisteredGenericAdapter<*>>()
             .given {
-                assertThat(it.moshi).isSameAs(moshi)
+                assertThat(it.moshi).isSameInstanceAs(moshi)
                 assertThat(it.types).containsExactly(Int::class.javaObjectType)
             }
     }

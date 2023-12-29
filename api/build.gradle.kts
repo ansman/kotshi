@@ -8,13 +8,13 @@ dependencies {
     api(libs.moshi.oldestSupported)
 }
 
-val packagesMarkdown = buildDir.resolve("generated/docs/packages.md")
+val packagesMarkdown = layout.buildDirectory.file("generated/docs/packages.md")
 val buildPackagesDocs by tasks.registering {
     val readme = rootDir.resolve("README.md")
     inputs.file(readme)
     outputs.file(packagesMarkdown)
     doFirst {
-        packagesMarkdown.writer().use { writer ->
+        packagesMarkdown.get().asFile.writer().use { writer ->
             writer.write("# Module kotshi\n\n")
             readme.reader().use { reader ->
                 reader.copyTo(writer)
