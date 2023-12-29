@@ -25,13 +25,13 @@ import com.squareup.kotlinpoet.U_SHORT
 import com.squareup.kotlinpoet.U_SHORT_ARRAY
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
-import com.squareup.kotlinpoet.metadata.isNullable
 import com.squareup.kotlinpoet.tags.TypeAliasTag
 import kotlinx.metadata.KmClassifier
 import kotlinx.metadata.KmFlexibleTypeUpperBound
 import kotlinx.metadata.KmType
 import kotlinx.metadata.KmTypeProjection
 import kotlinx.metadata.KmVariance
+import kotlinx.metadata.isNullable
 import kotlinx.metadata.isSecondary
 import se.ansman.kotshi.model.AnnotationModel
 import javax.lang.model.element.AnnotationMirror
