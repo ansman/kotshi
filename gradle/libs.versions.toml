@@ -24,7 +24,7 @@ kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoe
 kotlinpoet-metadata = { module = "com.squareup:kotlinpoet-metadata", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
-kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.8.0"
+kotlinx-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.9.0"
 
 junit-jupiter = "org.junit.jupiter:junit-jupiter:5.10.1"
 
