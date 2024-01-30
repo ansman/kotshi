@@ -8,7 +8,7 @@ ksp = "1.9.22-1.0.16"
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.13.2"
+kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.14.0"
 
 [libraries]
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
