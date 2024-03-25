@@ -5,6 +5,8 @@ kotlinpoet = "1.15.3"
 compileTesting = "1.5.0"
 incap = "1.0.0"
 ksp = "1.9.23-1.0.19"
+moshi-oldestSupported = "1.8.0"
+moshi-latest = "1.15.0"
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
@@ -33,8 +35,7 @@ assertk = "com.willowtreeapps.assertk:assertk-jvm:0.28.0"
 compileTesting-core = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "compileTesting" }
 compileTesting-ksp = { module = "com.github.tschuchortdev:kotlin-compile-testing-ksp", version.ref = "compileTesting" }
 
-moshi-oldestSupported = "com.squareup.moshi:moshi:1.8.0"
-moshi-current = "com.squareup.moshi:moshi:1.15.0"
+moshi-latest = { module = "com.squareup.moshi:moshi", version.ref = "moshi-latest" }
 
 findBugs = "com.google.code.findbugs:jsr305:3.0.2"
 

@@ -30,15 +30,14 @@ tasks.withType<Test>().configureEach {
         "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
     )
 }
-
 dependencies {
     implementation(project(":api"))
     implementation(project(":compiler"))
     if (providers.gradleProperty("kotshi.internal.useLegacyMoshi").orNull?.toBooleanStrict() == true) {
-        compileOnly(libs.moshi.current)
-        testImplementation(libs.moshi.oldestSupported)
+        compileOnly(libs.moshi.latest)
+        testImplementation(libs.oldestSupportedMoshi)
     } else {
-        implementation(libs.moshi.current)
+        implementation(libs.moshi.latest)
     }
     compileOnly(libs.findBugs)
     testImplementation(libs.compileTesting.core)

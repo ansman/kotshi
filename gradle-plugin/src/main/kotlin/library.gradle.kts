@@ -21,7 +21,8 @@ tasks.withType<KotlinCompile>().configureEach {
         allWarningsAsErrors = true
         freeCompilerArgs = freeCompilerArgs + listOf(
             "-opt-in=kotlin.RequiresOptIn",
-            "-Xjvm-default=all"
+            "-Xjvm-default=all",
+            "-Xcontext-receivers"
         )
     }
 }

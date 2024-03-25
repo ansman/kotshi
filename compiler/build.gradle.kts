@@ -33,7 +33,7 @@ dependencies {
     shade(libs.kotlinx.metadata) {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib")
     }
-    implementation(libs.moshi.oldestSupported)
+    implementation(libs.oldestSupportedMoshi)
     implementation(libs.ksp.api)
     implementation(libs.asm)
 }

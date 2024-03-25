@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.moshi.oldestSupported)
+    api(libs.oldestSupportedMoshi)
 }
 
 val packagesMarkdown = layout.buildDirectory.file("generated/docs/packages.md")
