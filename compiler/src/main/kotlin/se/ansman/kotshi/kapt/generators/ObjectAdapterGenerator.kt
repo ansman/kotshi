@@ -5,7 +5,7 @@ import kotlinx.metadata.isData
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.isObject
-import se.ansman.kotshi.kapt.logKotshiWarning
+import se.ansman.kotshi.kapt.logKotshiError
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
 import se.ansman.kotshi.model.ObjectJsonAdapter
@@ -26,7 +26,7 @@ class ObjectAdapterGenerator(
     init {
         require(metadata.isObject)
         if (!metadata.isData && metadataAccessor.getLanguageVersion(element) >= KotlinVersion(1, 9)) {
-            messager.logKotshiWarning(Errors.nonDataObject, element)
+            messager.logKotshiError(Errors.nonDataObject, element)
         }
     }
 

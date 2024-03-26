@@ -574,13 +574,13 @@ abstract class BaseGeneratorTest {
     }
 
     @Test
-    open fun `non data object logs warnings`() {
+    fun `non data object fails the build`() {
         val source = kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             object TestObject
         """)
         val result = compile(source)
-        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result::messages).contains(Errors.nonDataObject)
     }
 
@@ -619,7 +619,6 @@ abstract class BaseGeneratorTest {
                 workingDir = temporaryFolder
                 this.sources = sources.asList()
                 inheritClassPath = true
-                // TODO: Remove once kotlin-compile-testing supports Kotlin 1.9
                 this.languageVersion = languageVersion
                 messageOutputStream = System.out // see diagnostics in real time
                 setUp(options)
