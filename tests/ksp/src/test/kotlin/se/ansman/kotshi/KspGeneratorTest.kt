@@ -2,11 +2,14 @@ package se.ansman.kotshi
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
@@ -16,6 +19,7 @@ import se.ansman.kotshi.ksp.KotshiSymbolProcessorProvider
 import java.io.File
 
 @Execution(ExecutionMode.SAME_THREAD)
+@OptIn(ExperimentalCompilerApi::class)
 class KspGeneratorTest : BaseGeneratorTest() {
     override val processorClassName: String get() = KotshiSymbolProcessor::class.java.canonicalName
 
@@ -24,12 +28,12 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
         kspIncremental = true
-        symbolProcessorProviders = listOf(KotshiSymbolProcessorProvider())
+        symbolProcessorProviders = listOf<SymbolProcessorProvider>(KotshiSymbolProcessorProvider())
         kspArgs.putAll(options)
     }
 
     // https://github.com/tschuchortdev/kotlin-compile-testing/issues/312
-    override fun KotlinCompilation.Result.tryLoadClass(name: String): Class<*>? = null
+    override fun JvmCompilationResult.tryLoadClass(name: String): Class<*>? = null
 
     @Test
     fun `incremental compilation`() {

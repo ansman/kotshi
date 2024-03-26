@@ -2,7 +2,7 @@
 kotlin = "1.9.23"
 auto-service = "1.1.1"
 kotlinpoet = "1.16.0"
-compileTesting = "1.5.0"
+compileTesting = "0.4.0"
 incap = "1.0.0"
 ksp = "1.9.23-1.0.19"
 moshi-oldestSupported = "1.8.0"
@@ -32,8 +32,8 @@ junit-jupiter = "org.junit.jupiter:junit-jupiter:5.10.2"
 
 assertk = "com.willowtreeapps.assertk:assertk-jvm:0.28.0"
 
-compileTesting-core = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "compileTesting" }
-compileTesting-ksp = { module = "com.github.tschuchortdev:kotlin-compile-testing-ksp", version.ref = "compileTesting" }
+compileTesting-core = { module = "dev.zacsweers.kctfork:core", version.ref = "compileTesting" }
+compileTesting-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "compileTesting" }
 
 moshi-latest = { module = "com.squareup.moshi:moshi", version.ref = "moshi-latest" }
 

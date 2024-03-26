@@ -6,10 +6,12 @@ import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import com.squareup.moshi.JsonAdapter
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.SourceFile.Companion.java
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import se.ansman.kotshi.Errors.ignoredDataClassPropertyWithoutDefaultValue
@@ -28,6 +30,7 @@ import se.ansman.kotshi.Errors.unsupportedSerializableType
 import se.ansman.kotshi.assertions.isAssignableTo
 import java.io.File
 
+@OptIn(ExperimentalCompilerApi::class)
 abstract class BaseGeneratorTest {
     @TempDir
     lateinit var temporaryFolder: File
@@ -624,8 +627,8 @@ abstract class BaseGeneratorTest {
             .compile()
 
     protected abstract fun KotlinCompilation.setUp(options: Map<String, String>)
-    protected abstract fun KotlinCompilation.Result.tryLoadClass(name: String): Class<*>?
-    protected fun KotlinCompilation.Result.getSourceByName(name: String): String =
+    protected abstract fun JvmCompilationResult.tryLoadClass(name: String): Class<*>?
+    protected fun JvmCompilationResult.getSourceByName(name: String): String =
         sourcesGeneratedByAnnotationProcessor.plus(extraGeneratedFiles)
             .first { it.name == name }
             .readText()
