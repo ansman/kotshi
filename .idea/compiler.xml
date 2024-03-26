@@ -2,8 +2,11 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="1.8">
+      <module name="gradle-plugin" target="19" />
       <module name="gradle-plugin.kotshi.buildSrc.main" target="19" />
       <module name="gradle-plugin.kotshi.buildSrc.test" target="19" />
+      <module name="gradle-plugin.main" target="19" />
+      <module name="gradle-plugin.test" target="19" />
       <module name="kotshi.buildSrc" target="19" />
       <module name="kotshi.tests.main" target="11" />
       <module name="kotshi.tests.test" target="11" />

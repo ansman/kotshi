@@ -13,7 +13,6 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-
 version = providers.gradleProperty("version").get()
 group = "se.ansman.kotshi"
 
@@ -25,6 +24,7 @@ fun ExtraPropertiesExtension.getOrPut(name: String, block: () -> String): String
     if (has(name)) get(name) as String else block().also { set(name, it) }
 
 tasks.withType<DokkaTask>().configureEach {
+    moduleVersion.set(version.toString())
     dokkaSourceSets.configureEach {
         externalDocumentationLink { url.set(URL("https://square.github.io/okio/2.x/okio/")) }
         externalDocumentationLink { url.set(URL("https://square.github.io/moshi/1.x/moshi/")) }

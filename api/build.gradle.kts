@@ -9,18 +9,9 @@ dependencies {
 }
 
 val packagesMarkdown = layout.buildDirectory.file("generated/docs/packages.md")
-val buildPackagesDocs by tasks.registering {
-    val readme = rootDir.resolve("README.md")
-    inputs.file(readme)
-    outputs.file(packagesMarkdown)
-    doFirst {
-        packagesMarkdown.get().asFile.writer().use { writer ->
-            writer.write("# Module kotshi\n\n")
-            readme.reader().use { reader ->
-                reader.copyTo(writer)
-            }
-        }
-    }
+val buildPackagesDocs by tasks.registering(CopyReadmeTask::class) {
+    readme.set(rootProject.file("README.md"))
+    outputFile.set(packagesMarkdown)
 }
 
 tasks.withType<DokkaTask>().configureEach {
@@ -29,6 +20,25 @@ tasks.withType<DokkaTask>().configureEach {
     dokkaSourceSets {
         configureEach {
             includes.from(packagesMarkdown)
+        }
+    }
+}
+
+abstract class CopyReadmeTask : DefaultTask() {
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    abstract val readme: RegularFileProperty
+
+    @get:OutputFile
+    abstract val outputFile: RegularFileProperty
+
+    @TaskAction
+    fun copyReadme() {
+        outputFile.get().asFile.writer().use { writer ->
+            writer.write("# Module kotshi\n\n")
+            readme.get().asFile.reader().use { reader ->
+                reader.copyTo(writer)
+            }
         }
     }
 }
