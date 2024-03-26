@@ -227,7 +227,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         object2 = SourceFile.kotlin(
             "object2.kt", """
             @se.ansman.kotshi.JsonSerializable
-            object Object2
+            data object Object2
         """.trimIndent()
         )
         with(compile(factory, object1, object2)) {
@@ -318,7 +318,4 @@ class KspGeneratorTest : BaseGeneratorTest() {
             )
         }
     }
-
-    @Disabled("kotlin-compile-testing doesn't work well with overriding language version yet")
-    override fun `non data object logs warnings`() {}
 }
