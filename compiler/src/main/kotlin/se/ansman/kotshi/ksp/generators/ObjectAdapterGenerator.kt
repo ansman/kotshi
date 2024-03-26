@@ -6,7 +6,6 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import se.ansman.kotshi.Errors
-import se.ansman.kotshi.ksp.logKotshiError
 import se.ansman.kotshi.ksp.logKotshiWarning
 import se.ansman.kotshi.model.GeneratableJsonAdapter
 import se.ansman.kotshi.model.GlobalConfig
@@ -21,7 +20,6 @@ class ObjectAdapterGenerator(
     init {
         require(element.classKind == ClassKind.OBJECT)
         if (Modifier.DATA !in element.modifiers && environment.apiVersion >= KotlinVersion(1, 9)) {
-            environment.logger.logKotshiError(environment.apiVersion.toString(), element)
             environment.logger.logKotshiWarning(Errors.nonDataObject, element)
         }
     }

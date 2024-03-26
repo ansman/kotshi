@@ -19,7 +19,7 @@ jobs:
     - uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
-        java-version: '19'
+        java-version: '21'
     - uses: gradle/gradle-build-action@v2
       with:
         arguments: check --continue --stacktrace
@@ -30,7 +30,7 @@ jobs:
     - uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
-        java-version: '19'
+        java-version: '21'
     - uses: gradle/gradle-build-action@v2
       with:
         arguments: check --continue --stacktrace -Pkotshi.internal.useLegacyMoshi=true
@@ -42,7 +42,7 @@ jobs:
     - uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
-        java-version: '19'
+        java-version: '21'
     - uses: gradle/gradle-build-action@v2
       if: github.ref == 'refs/heads/main'
       with:
