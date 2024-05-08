@@ -4,7 +4,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.dokka.gradle.DokkaTask
-import java.net.URL
 
 plugins {
     id("library")
@@ -26,8 +25,8 @@ fun ExtraPropertiesExtension.getOrPut(name: String, block: () -> String): String
 tasks.withType<DokkaTask>().configureEach {
     moduleVersion.set(version.toString())
     dokkaSourceSets.configureEach {
-        externalDocumentationLink { url.set(URL("https://square.github.io/okio/2.x/okio/")) }
-        externalDocumentationLink { url.set(URL("https://square.github.io/moshi/1.x/moshi/")) }
+        externalDocumentationLink { url.set(uri("https://square.github.io/okio/2.x/okio/").toURL()) }
+        externalDocumentationLink { url.set(uri("https://square.github.io/moshi/1.x/moshi/").toURL()) }
         sourceLink {
             localDirectory.set(file("src/main/kotlin"))
             remoteUrl.set(

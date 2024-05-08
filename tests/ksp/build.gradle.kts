@@ -14,6 +14,7 @@ kotlin {
 
 dependencies {
     ksp(projects.compiler)
+    testRuntimeOnly(libs.ksp)
     testImplementation(libs.ksp.api)
     testImplementation(libs.compileTesting.ksp)
 }
