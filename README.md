@@ -2,7 +2,7 @@
 An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
-increase the binary size which in a constrained environment such as Android is something is not preferable.
+increases the binary size which in a constrained environment such as Android is not preferable.
 
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
 written them by hand yourself. It will automatically regenerate the adapters when you modify your class.
@@ -89,7 +89,7 @@ should be used when an unknown value is encountered (by default an exception is 
 ### Transient Values
 Properties marked with `@Transient` are not serialized. All transient properties must have a default value.
 
-Only properties declared in the constructor needs to be annotated since other properties are ignores.
+Only properties declared in the constructor need to be annotated since other properties are ignored.
 
 ### Custom Names
 By default, the property or enum entry name is used when reading and writing JSON. To change the name used you may use
