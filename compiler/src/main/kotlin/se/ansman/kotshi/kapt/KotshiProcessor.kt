@@ -74,7 +74,7 @@ class KotshiProcessor : AbstractProcessor() {
             ?.let { GeneratedAnnotation(it, KotshiProcessor::class.asClassName()) }
         elements = processingEnv.elementUtils
         types = processingEnv.typeUtils
-        metadataAccessor = MetadataAccessor(ElementsClassInspector.create(elements, processingEnv.typeUtils))
+        metadataAccessor = MetadataAccessor(ElementsClassInspector.create(lenient = true, elements, processingEnv.typeUtils))
         steps = ImmutableList.copyOf(initSteps())
     }
 

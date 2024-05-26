@@ -6,10 +6,10 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
-import com.squareup.kotlinpoet.metadata.toKmClass
 import com.squareup.kotlinpoet.tag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.isLocalClassName
+import kotlinx.metadata.jvm.KotlinClassMetadata
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -31,7 +31,9 @@ class MetadataAccessor(private val classInspector: ClassInspector) {
 
     fun getLanguageVersion(type: Element): KotlinVersion = getMetadata(type).languageVersion
 
-    fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) { metadata.toKmClass() }
+    fun getKmClass(metadata: Metadata): KmClass = kmClassPerMetadata.getOrPut(metadata) {
+        (KotlinClassMetadata.readLenient(metadata) as KotlinClassMetadata.Class).kmClass
+    }
     fun getKmClass(type: Element): KmClass = getKmClass(getMetadata(type))
     fun getKmClassOrNull(type: Element): KmClass? = getMetadataOrNull(type)?.let(::getKmClass)
 
