@@ -8,7 +8,9 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
+import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -28,8 +30,9 @@ class KspGeneratorTest : BaseGeneratorTest() {
 
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
         kspIncremental = true
-        symbolProcessorProviders = listOf<SymbolProcessorProvider>(KotshiSymbolProcessorProvider())
-        kspArgs.putAll(options)
+        symbolProcessorProviders += KotshiSymbolProcessorProvider()
+        kspProcessorOptions.putAll(options)
+        useKsp2()
     }
 
     // https://github.com/tschuchortdev/kotlin-compile-testing/issues/312

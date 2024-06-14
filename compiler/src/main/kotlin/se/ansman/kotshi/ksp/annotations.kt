@@ -63,11 +63,22 @@ inline fun <reified V> KSAnnotation.getValue(name: String): V =
 
 inline fun <reified V> KSAnnotation.getValueOrDefault(name: String, defaultValue: () -> V): V {
     val arg = arguments.firstOrNull { it.name?.asString() == name } ?: return defaultValue()
-    return arg.value as V
+    if (arg.value is V) {
+        return arg.value as V
+    } else {
+        error("Expected ${arg.value} to be of type ${V::class.java} but was ${arg.value?.javaClass}")
+    }
 }
 
-inline fun <reified V : Enum<V>> KSAnnotation.getEnumValue(name: String, defaultValue: V): V =
-    getValue<KSType?>(name)?.let { enumValueOf<V>(it.declaration.simpleName.getShortName()) } ?: defaultValue
+inline fun <reified V : Enum<V>> KSAnnotation.getEnumValue(name: String, defaultValue: V): V {
+    val declaration = when (val value = getValue<Any?>(name)) {
+        is KSType -> value.declaration
+        is KSClassDeclaration -> value
+        null -> return defaultValue
+        else -> error("Expected $value to be a KSType or KSClassDeclaration but was ${value.javaClass}")
+    }
+    return enumValueOf<V>(declaration.simpleName.getShortName())
+}
 
 fun KSAnnotation.isJsonQualifier(): Boolean =
     annotationType.resolve().declaration.annotations.any {
@@ -100,17 +111,18 @@ fun KSAnnotation.toAnnotationModel(): AnnotationModel {
 
 private fun Any.toAnnotationValue(node: KSNode, type: TypeName): Value<*> =
     when (this) {
-        is KSType -> {
-            val declaration = declaration as KSClassDeclaration
-            if (declaration.classKind == ClassKind.ENUM_ENTRY) {
+        is KSClassDeclaration -> {
+            if (classKind == ClassKind.ENUM_ENTRY) {
                 Value.Enum(
-                    (declaration.parentDeclaration as KSClassDeclaration).toClassName(),
-                    declaration.simpleName.asString()
+                    (parentDeclaration as KSClassDeclaration).toClassName(),
+                    simpleName.asString()
                 )
             } else {
-                Value.Class(declaration.toClassName())
+                Value.Class(toClassName())
             }
         }
+
+        is KSType -> (declaration as KSClassDeclaration).toAnnotationValue(node, type)
 
         is KSName -> Value.Enum(
             enumType = ClassName.bestGuess(getQualifier()),

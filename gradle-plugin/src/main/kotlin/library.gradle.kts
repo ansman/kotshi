@@ -1,5 +1,6 @@
+
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm")
@@ -15,11 +16,12 @@ extensions.configure<JavaPluginExtension> {
     }
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "1.8"
-        allWarningsAsErrors = true
-        freeCompilerArgs = freeCompilerArgs + listOf(
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
+        allWarningsAsErrors.set(true)
+        freeCompilerArgs.addAll(
+            "-Xsuppress-version-warnings",
             "-opt-in=kotlin.RequiresOptIn",
             "-Xjvm-default=all",
             "-Xcontext-receivers"

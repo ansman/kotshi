@@ -5,8 +5,8 @@ plugins {
 }
 
 tasks.compileKotlin {
-    kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs + listOf(
+    compilerOptions {
+        freeCompilerArgs.addAll(
             "-opt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview",
         )
     }
