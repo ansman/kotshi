@@ -17,6 +17,7 @@ sourceSets {
 
 tasks.withType<Test>().configureEach {
     systemProperty("usingLegacyMoshi", providers.gradleProperty("kotshi.internal.useLegacyMoshi").orElse("false").get())
+    maxHeapSize = "1g"
     jvmArgs(
         "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
         "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",

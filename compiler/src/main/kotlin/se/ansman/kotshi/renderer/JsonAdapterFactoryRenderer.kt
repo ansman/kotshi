@@ -1,12 +1,34 @@
 package se.ansman.kotshi.renderer
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.NOTHING
+import com.squareup.kotlinpoet.NameAllocator
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.moshi.JsonAdapter
-import se.ansman.kotshi.*
+import se.ansman.kotshi.Functions
+import se.ansman.kotshi.KotshiConstructor
+import se.ansman.kotshi.Types
+import se.ansman.kotshi.addControlFlow
+import se.ansman.kotshi.applyEachIndexed
+import se.ansman.kotshi.applyIf
+import se.ansman.kotshi.hasParameters
+import se.ansman.kotshi.mapTypeArguments
 import se.ansman.kotshi.model.GeneratedAnnotation
 import se.ansman.kotshi.model.JsonAdapterFactory
 import se.ansman.kotshi.model.render
+import se.ansman.kotshi.nullable
+import se.ansman.kotshi.rawType
+import se.ansman.kotshi.unwrapTypeVariables
 
 internal class JsonAdapterFactoryRenderer(
     private val factory: JsonAdapterFactory,
@@ -39,18 +61,7 @@ internal class JsonAdapterFactoryRenderer(
                 TypeSpec.objectBuilder(factory.factoryClassName)
                     .addModifiers(KModifier.INTERNAL)
                     .apply { generatedAnnotation?.toAnnotationSpec()?.let(::addAnnotation) }
-                    .apply {
-                        when (factory.usageType) {
-                            JsonAdapterFactory.UsageType.Standalone -> addSuperinterface(Types.Moshi.jsonAdapterFactory)
-                            is JsonAdapterFactory.UsageType.Subclass -> {
-                                if (factory.usageType.parentIsInterface) {
-                                    addSuperinterface(factory.usageType.parent)
-                                } else {
-                                    superclass(factory.usageType.parent)
-                                }
-                            }
-                        }
-                    }
+                    .addSuperinterface(Types.Moshi.jsonAdapterFactory)
                     .addAnnotations(annotations)
                     .addProperties(properties)
                     .addFunction(createFunction)

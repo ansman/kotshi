@@ -8,7 +8,6 @@ import com.google.common.collect.SetMultimap
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.asTypeVariableName
-import com.squareup.moshi.JsonAdapter
 import kotlinx.metadata.ClassKind
 import kotlinx.metadata.Modality
 import kotlinx.metadata.Visibility
@@ -17,7 +16,6 @@ import kotlinx.metadata.kind
 import kotlinx.metadata.modality
 import kotlinx.metadata.visibility
 import se.ansman.kotshi.Errors
-import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
 import se.ansman.kotshi.ExperimentalKotshiApi
 import se.ansman.kotshi.KotshiJsonAdapterFactory
 import se.ansman.kotshi.RegisterJsonAdapter
@@ -33,14 +31,10 @@ import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
-import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
-import kotlin.reflect.KClass
 
 class FactoryProcessingStep(
     override val processor: KotshiProcessor,
@@ -84,18 +78,6 @@ class FactoryProcessingStep(
         val elementClassName = createClassName(metadataAccessor.getKmClass(element).name)
         val factory = JsonAdapterFactory(
             targetType = elementClassName,
-            usageType = if (
-                element.asType().implements(JsonAdapter.Factory::class) &&
-                Modifier.ABSTRACT in element.modifiers
-            ) {
-                messager.logKotshiWarning(abstractFactoriesAreDeprecated, element)
-                JsonAdapterFactory.UsageType.Subclass(
-                    elementClassName,
-                    parentIsInterface = element.kind == ElementKind.INTERFACE
-                )
-            } else {
-                JsonAdapterFactory.UsageType.Standalone
-            },
             generatedAdapters = generatedAdapters,
             manuallyRegisteredAdapters = manuallyRegisteredAdapters,
         )
@@ -199,7 +181,4 @@ class FactoryProcessingStep(
                     }
                 )
             }
-
-    private fun TypeMirror.implements(someType: KClass<*>): Boolean =
-        types.isSubtype(this, elements.getTypeElement(someType.java.canonicalName).asType())
 }

@@ -2,10 +2,13 @@ package se.ansman.kotshi
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.google.devtools.ksp.processing.KSPJvmConfig
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.Ksp2PrecursorTool
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.configureKsp
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.kspIncremental
 import com.tschuchort.compiletesting.kspProcessorOptions
@@ -29,14 +32,17 @@ class KspGeneratorTest : BaseGeneratorTest() {
         get() = temporaryFolder.resolve("ksp/sources/kotlin/").listFiles()?.asList() ?: emptyList()
 
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
-        kspIncremental = true
-        symbolProcessorProviders += KotshiSymbolProcessorProvider()
-        kspProcessorOptions.putAll(options)
-        useKsp2()
+        configureKsp(useKsp2 = true) {
+            // Needed because KCT doesn't clean up sources between runs
+            workingDir.resolve("sources").deleteRecursively()
+            incremental = true
+            symbolProcessorProviders += KotshiSymbolProcessorProvider()
+            processorOptions.putAll(options)
+        }
     }
 
     // https://github.com/tschuchortdev/kotlin-compile-testing/issues/312
-    override fun JvmCompilationResult.tryLoadClass(name: String): Class<*>? = null
+//    override fun JvmCompilationResult.tryLoadClass(name: String): Class<*>? = null
 
     @Test
     fun `incremental compilation`() {
