@@ -1,7 +1,4 @@
 
-import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.dokka.gradle.DokkaTask
 
@@ -81,11 +78,7 @@ val publication = with(the<PublishingExtension>()) {
     }
 
     publications.register<MavenPublication>("kotshi") {
-        if (pluginManager.hasPlugin("com.github.johnrengelman.shadow")) {
-            the<ShadowExtension>().component(this)
-        } else {
-            from(components["java"])
-        }
+        from(components["java"])
         artifact(sourcesJar)
         artifact(dokkaJavadocJar)
 
@@ -113,29 +106,6 @@ val publication = with(the<PublishingExtension>()) {
                 url.set("https://github.com/ansman/kotshi")
             }
         }
-    }
-}
-
-pluginManager.withPlugin("com.github.johnrengelman.shadow") {
-    val shade: Configuration = configurations.create("compileShaded")
-    configurations.named("compileOnly") {
-        extendsFrom(shade)
-    }
-    configurations.named("testRuntimeOnly") {
-        extendsFrom(shade)
-    }
-
-    val shadowJar = tasks.named<ShadowJar>("shadowJar") {
-        archiveClassifier.set("")
-        configurations = listOf(shade)
-        isEnableRelocation = true
-        relocationPrefix = "se.ansman.kotshi${project.path.replace(':', '.').replace('-', '_')}"
-        transformers.add(ServiceFileTransformer())
-    }
-
-    artifacts {
-        runtimeOnly(shadowJar)
-        archives(shadowJar)
     }
 }
 

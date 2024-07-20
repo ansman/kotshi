@@ -4,9 +4,9 @@ package se.ansman.kotshi.kapt
 
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
-import kotlinx.metadata.Modality
-import kotlinx.metadata.isData
-import kotlinx.metadata.modality
+import kotlin.metadata.Modality
+import kotlin.metadata.isData
+import kotlin.metadata.modality
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.JsonDefaultValue
 import se.ansman.kotshi.JsonSerializable

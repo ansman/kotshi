@@ -8,7 +8,6 @@ dependencies {
     implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
     api(libs.kotlin.gradlePlugin)
     api(libs.dokka.gradlePlugin)
-    api(libs.shadow)
     implementation(gradleKotlinDsl())
 }
 

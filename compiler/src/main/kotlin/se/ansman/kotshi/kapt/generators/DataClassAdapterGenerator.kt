@@ -3,10 +3,10 @@ package se.ansman.kotshi.kapt.generators
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.tag
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.KmConstructor
-import kotlinx.metadata.isData
-import kotlinx.metadata.jvm.signature
+import kotlin.metadata.KmClass
+import kotlin.metadata.KmConstructor
+import kotlin.metadata.isData
+import kotlin.metadata.jvm.signature
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.privateDataClassProperty
 import se.ansman.kotshi.JsonSerializable

@@ -1,7 +1,7 @@
 package se.ansman.kotshi.kapt.generators
 
 import com.squareup.kotlinpoet.TypeSpec
-import kotlinx.metadata.KmClass
+import kotlin.metadata.KmClass
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Types.Kotshi.jsonDefaultValue
 import se.ansman.kotshi.kapt.KaptProcessingError
