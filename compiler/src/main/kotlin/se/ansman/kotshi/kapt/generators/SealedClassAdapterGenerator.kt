@@ -4,9 +4,9 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.tag
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.Modality
-import kotlinx.metadata.modality
+import kotlin.metadata.KmClass
+import kotlin.metadata.Modality
+import kotlin.metadata.modality
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Errors.defaultSealedValueIsGeneric
 import se.ansman.kotshi.Errors.multipleJsonDefaultValueInSealedClass

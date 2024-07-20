@@ -7,10 +7,10 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.tag
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.Visibility
-import kotlinx.metadata.isInner
-import kotlinx.metadata.visibility
+import kotlin.metadata.KmClass
+import kotlin.metadata.Visibility
+import kotlin.metadata.isInner
+import kotlin.metadata.visibility
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.Polymorphic
 import se.ansman.kotshi.PolymorphicLabel

@@ -3,12 +3,6 @@ plugins {
     alias(libs.plugins.kotlinx.binaryCompatibilityValidator)
 }
 
-buildscript {
-    dependencies {
-        classpath(libs.shadow)
-    }
-}
-
 apiValidation {
     allprojects.filterNot { it.path == ":api" }.mapTo(ignoredProjects) { it.name }
 }

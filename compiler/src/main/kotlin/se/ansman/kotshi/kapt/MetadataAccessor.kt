@@ -7,12 +7,12 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.tag
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.isLocalClassName
-import kotlinx.metadata.jvm.KotlinClassMetadata
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
+import kotlin.metadata.KmClass
+import kotlin.metadata.isLocalClassName
+import kotlin.metadata.jvm.KotlinClassMetadata
 
 class MetadataAccessor(private val classInspector: ClassInspector) {
     private val metadataPerType = mutableMapOf<ClassName, Metadata?>()

@@ -1,7 +1,7 @@
 package se.ansman.kotshi.kapt.generators
 
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.isData
+import kotlin.metadata.KmClass
+import kotlin.metadata.isData
 import se.ansman.kotshi.Errors
 import se.ansman.kotshi.kapt.MetadataAccessor
 import se.ansman.kotshi.kapt.isObject
