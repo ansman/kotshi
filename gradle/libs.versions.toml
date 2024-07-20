@@ -16,6 +16,8 @@ kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibili
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-metadata = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 
+sonatypePublishFix = "se.ansman.sonatype-publish-fix:gradle-plugin:1.0.0"
+
 dokka-gradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.9.20"
 
 auto-common = "com.google.auto:auto-common:1.2.2"

@@ -7,6 +7,7 @@ plugins {
     id("maven-publish")
     id("signing")
     id("org.jetbrains.dokka")
+    id("se.ansman.sonatype-publish-fix")
 }
 
 version = providers.gradleProperty("version").get()

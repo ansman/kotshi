@@ -70,10 +70,10 @@ the module wide setting).
 
 ### Annotations
 * `@JsonSerializable` is the annotation used to generate `JsonAdapter`'s. Should only be placed on data classes, enums, sealed classes and objects.
-* `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an abstract class that implements `JsonAdapter.Factory`.
+* `@KotshiJsonAdapterFactory` makes Kotshi generate a JsonAdapter factory. Should be placed on an object that implements `JsonAdapter.Factory`.
 * `@JsonDefaultValue` can be used to annotate a fallback for enums or sealed classes when an unknown entry is encountered. The default is to thrown an exception.
 * `@JsonProperty` can be used to customize how a property or enum entry is serialized to and from JSON.
-* `@Polymorphic` and `@PolymorphicLabel` used on sealed classes and their implementions.
+* `@Polymorphic` and `@PolymorphicLabel` used on sealed classes and their implementations.
 * `@RegisterJsonAdapter` registers a json adapter into the Kotshi json adapter factory.
 
 ### Default Values
@@ -160,7 +160,7 @@ Examples:
   }
 
   dependencies {
-    val kotshiVersion = "2.15.0"
+    val kotshiVersion = "3.0.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     ksp("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -176,7 +176,7 @@ Examples:
   }
 
   dependencies {
-    val kotshiVersion = "2.15.0"
+    val kotshiVersion = "3.0.0"
     implementation("se.ansman.kotshi:api:$kotshiVersion")
     kapt("se.ansman.kotshi:compiler:$kotshiVersion")
   }
@@ -192,7 +192,7 @@ Examples:
   }
 
   dependencies {
-    def kotshiVersion = "2.15.0"
+    def kotshiVersion = "3.0.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     ksp "se.ansman.kotshi:compiler:$kotshiVersion"
   }
@@ -208,7 +208,7 @@ Examples:
   }
 
   dependencies {
-    def kotshiVersion = "2.15.0"
+    def kotshiVersion = "3.0.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     kapt "se.ansman.kotshi:compiler:$kotshiVersion"
   }
