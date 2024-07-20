@@ -14,7 +14,6 @@ import se.ansman.kotshi.Types
 
 internal data class JsonAdapterFactory(
     val targetType: ClassName,
-    val usageType: UsageType,
     val generatedAdapters: List<GeneratedAdapter<*>>,
     val manuallyRegisteredAdapters: List<RegisteredAdapter<*>>,
 ) {
@@ -120,14 +119,6 @@ internal data class JsonAdapterFactory(
                 ?.takeIf { it.rawType.toString() == JsonAdapter::class.java.name }
                 ?.typeArguments
                 ?.single()
-    }
-
-    sealed class UsageType {
-        /** Generates an object that directly implements JsonAdapter.Factory */
-        object Standalone : UsageType()
-
-        /** Generates an object that implements the given [parent] which in turn implements JsonAdapter.Factory */
-        data class Subclass(val parent: TypeName, val parentIsInterface: Boolean) : UsageType()
     }
 }
 

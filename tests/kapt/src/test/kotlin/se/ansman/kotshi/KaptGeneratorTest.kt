@@ -12,6 +12,7 @@ class KaptGeneratorTest : BaseGeneratorTest() {
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
         annotationProcessors = listOf(KotshiProcessor())
         kaptArgs.putAll(options)
+        useKapt4 = true
     }
 
     override fun JvmCompilationResult.tryLoadClass(name: String): Class<*> = classLoader.loadClass(name)

@@ -16,5 +16,7 @@ dependencies {
     ksp(projects.compiler)
     testRuntimeOnly(libs.ksp)
     testImplementation(libs.ksp.api)
+    testImplementation(libs.ksp.commonDeps)
+    testImplementation(libs.ksp.aaEmbeddable)
     testImplementation(libs.compileTesting.ksp)
 }

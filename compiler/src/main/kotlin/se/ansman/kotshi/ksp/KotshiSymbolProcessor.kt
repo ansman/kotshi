@@ -1,7 +1,6 @@
 package se.ansman.kotshi.ksp
 
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.isAnnotationPresent
@@ -12,6 +11,7 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.Visibility
@@ -21,10 +21,8 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.toTypeVariableName
 import com.squareup.kotlinpoet.ksp.writeTo
-import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonQualifier
 import se.ansman.kotshi.Errors
-import se.ansman.kotshi.Errors.abstractFactoriesAreDeprecated
 import se.ansman.kotshi.Errors.javaClassNotSupported
 import se.ansman.kotshi.Errors.polymorphicClassMustHaveJsonSerializable
 import se.ansman.kotshi.Errors.unsupportedFactoryType
@@ -227,22 +225,8 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
 
         if (targetFactory != null) {
             try {
-                val jsonAdapterFactoryType = resolver.getClassDeclarationByName<JsonAdapter.Factory>()!!
-                    .asType(emptyList())
                 val factory = JsonAdapterFactory(
                     targetType = targetFactory.toClassName(),
-                    usageType = if (
-                        targetFactory.classKind == ClassKind.INTERFACE ||
-                        targetFactory.asType(emptyList()).isAssignableFrom(jsonAdapterFactoryType)
-                    ) {
-                        environment.logger.logKotshiWarning(abstractFactoriesAreDeprecated, targetFactory)
-                        JsonAdapterFactory.UsageType.Subclass(
-                            parent = targetFactory.toClassName(),
-                            parentIsInterface = targetFactory.classKind == ClassKind.INTERFACE
-                        )
-                    } else {
-                        JsonAdapterFactory.UsageType.Standalone
-                    },
                     generatedAdapters = generatedAdapters,
                     manuallyRegisteredAdapters = manualAdapters,
                 )
@@ -275,6 +259,10 @@ class KotshiSymbolProcessor(private val environment: SymbolProcessorEnvironment)
                 return@mapNotNull null
             }
             if (annotated !is KSClassDeclaration) {
+                if (annotated is KSFunctionDeclaration && annotated.origin == Origin.SYNTHETIC) {
+                    // This is a workaround for https://github.com/google/ksp/issues/1996
+                    return@mapNotNull null
+                }
                 environment.logger.logKotshiError(Errors.unsupportedSerializableType, annotated)
                 return@mapNotNull null
             }

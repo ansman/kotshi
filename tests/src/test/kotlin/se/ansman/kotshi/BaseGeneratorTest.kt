@@ -393,19 +393,6 @@ abstract class BaseGeneratorTest {
     }
 
     @Test
-    fun `factories can be abstract classes`() {
-        val result = compile(kotlin("source.kt", """
-            @se.ansman.kotshi.KotshiJsonAdapterFactory
-            abstract class Factory : com.squareup.moshi.JsonAdapter.Factory
-        """))
-        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val kotshiFactory = result.tryLoadClass("KotshiFactory")
-        if (kotshiFactory != null) {
-            assertThat(kotshiFactory).isAssignableTo(result.classLoader.loadClass("Factory"))
-        }
-    }
-
-    @Test
     fun `factories can be objects`() {
         val result = compile(kotlin("source.kt", """
             @se.ansman.kotshi.KotshiJsonAdapterFactory
@@ -415,24 +402,6 @@ abstract class BaseGeneratorTest {
         val factory = result.tryLoadClass("KotshiFactory")
         if (factory != null) {
             assertThat(factory).isAssignableTo<JsonAdapter.Factory>()
-        }
-    }
-
-    @Test
-    fun `factories can be interfaces`() {
-        val result = compile(
-            kotlin(
-                "source.kt", """
-            @se.ansman.kotshi.KotshiJsonAdapterFactory
-            interface Factory : com.squareup.moshi.JsonAdapter.Factory
-        """
-            )
-        )
-        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        assertThat(result::messages).contains(Errors.abstractFactoriesAreDeprecated)
-        val kotshiFactory = result.tryLoadClass("KotshiFactory")
-        if (kotshiFactory != null) {
-            assertThat(kotshiFactory).isAssignableTo(result.classLoader.loadClass("Factory"))
         }
     }
 
@@ -612,7 +581,7 @@ abstract class BaseGeneratorTest {
     protected fun compile(
         vararg sources: SourceFile,
         options: Map<String, String> = emptyMap(),
-        languageVersion: String = "1.9"
+        languageVersion: String? = null
     ) =
         KotlinCompilation()
             .apply {
@@ -620,13 +589,14 @@ abstract class BaseGeneratorTest {
                 this.sources = sources.asList()
                 inheritClassPath = true
                 this.languageVersion = languageVersion
+                this.apiVersion = languageVersion
                 messageOutputStream = System.out // see diagnostics in real time
                 setUp(options)
             }
             .compile()
 
     protected abstract fun KotlinCompilation.setUp(options: Map<String, String>)
-    protected abstract fun JvmCompilationResult.tryLoadClass(name: String): Class<*>?
+    protected open fun JvmCompilationResult.tryLoadClass(name: String): Class<*>? = classLoader.loadClass(name)
     protected fun JvmCompilationResult.getSourceByName(name: String): String =
         sourcesGeneratedByAnnotationProcessor.plus(extraGeneratedFiles)
             .first { it.name == name }
