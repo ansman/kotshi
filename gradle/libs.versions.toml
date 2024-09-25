@@ -29,7 +29,7 @@ kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoe
 kotlinpoet-metadata = { module = "com.squareup:kotlinpoet-metadata", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
-junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.0"
+junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.1"
 
 assertk = "com.willowtreeapps.assertk:assertk-jvm:0.28.1"
 
