@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.0.20"
+kotlin = "2.0.21"
 auto-service = "1.1.1"
 kotlinpoet = "1.18.1"
 compileTesting = "0.5.1"
