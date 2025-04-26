@@ -4,7 +4,7 @@ auto-service = "1.1.1"
 kotlinpoet = "2.1.0"
 compileTesting = "0.7.0"
 incap = "1.0.0"
-ksp = "2.1.10-1.0.31"
+ksp = "2.1.20-2.0.0"
 moshi-oldestSupported = "1.8.0"
 moshi-latest = "1.15.2"
 
