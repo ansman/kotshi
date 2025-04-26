@@ -125,29 +125,11 @@ Examples:
   ```
 </details>
 
-
-<details>
-  <summary>KAPT</summary>
-
-  ```kotlin
-  kapt {
-      arguments {
-        // When using Java 9 and above
-        arg("kotshi.generatedAnnotation", "javax.annotation.processing.Generated")
-        // When using Java 8 and below
-        arg("kotshi.generatedAnnotation", "javax.annotation.Generated")
-      }
-  }
-  ```
-</details>
-
 ## Limitations
 * Kotshi only processes files written in Kotlin, types written in Java are not supported.
 * Only data classes, enums, sealed classes and data objects are supported.
   - Only constructor properties will be serialized.
   - Qualifiers whose arguments are named as a Java keyword cannot be seen by annotations processors and cannot be used.
-* Due to limitation in KAPT, properties with a `java` keyword as a name cannot be marked as transient.
-* Due to a KAPT bug/limitation you cannot add qualifiers to parameters that are inline classes ([youtrack issue](https://youtrack.jetbrains.com/issue/KT-36352)).
 
 ## Download
 
@@ -168,22 +150,6 @@ Examples:
 </details>
 
 <details>
-  <summary>Kotlin with KAPT</summary>
-
-  ```kotlin
-  plugins {
-    kotlin("kapt")
-  }
-
-  dependencies {
-    val kotshiVersion = "3.0.0"
-    implementation("se.ansman.kotshi:api:$kotshiVersion")
-    kapt("se.ansman.kotshi:compiler:$kotshiVersion")
-  }
-  ```
-</details>
-
-<details>
   <summary>Groovy with KSP</summary>
 
   ```groovy
@@ -195,22 +161,6 @@ Examples:
     def kotshiVersion = "3.0.0"
     implementation "se.ansman.kotshi:api:$kotshiVersion"
     ksp "se.ansman.kotshi:compiler:$kotshiVersion"
-  }
-  ```
-</details>
-
-<details>
-  <summary>Groovy with KAPT</summary>
-
-  ```groovy
-  plugins {
-    id "org.jetbrains.kotlin.kapt"
-  }
-
-  dependencies {
-    def kotshiVersion = "3.0.0"
-    implementation "se.ansman.kotshi:api:$kotshiVersion"
-    kapt "se.ansman.kotshi:compiler:$kotshiVersion"
   }
   ```
 </details>
