@@ -57,7 +57,9 @@ tasks.withType<Test>().configureEach {
 tasks.withType<Javadoc> { enabled = false }
 
 dependencies {
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.assertk)
 }
 
