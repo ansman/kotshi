@@ -9,8 +9,7 @@ pluginManagement {
 rootProject.name = "kotshi"
 include("compiler")
 include("api")
-include("tests:ksp")
-include("tests:kapt")
+include("tests")
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 includeBuild("gradle-plugin")

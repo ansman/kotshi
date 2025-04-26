@@ -122,9 +122,3 @@ tasks.register("publishSnapshot") {
         dependsOn("publishAllPublicationsToSonatypeSnapshotsRepository")
     }
 }
-
-pluginManager.withPlugin("org.jetbrains.kotlin.kapt") {
-    tasks.named("dokkaJavadoc") {
-        dependsOn("compileKotlin")
-    }
-}

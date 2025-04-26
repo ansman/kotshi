@@ -2,20 +2,10 @@ package se.ansman.kotshi
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import com.google.devtools.ksp.processing.KSPJvmConfig
-import com.google.devtools.ksp.processing.SymbolProcessorProvider
-import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.Ksp2PrecursorTool
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.configureKsp
-import com.tschuchort.compiletesting.kspArgs
-import com.tschuchort.compiletesting.kspIncremental
-import com.tschuchort.compiletesting.kspProcessorOptions
-import com.tschuchort.compiletesting.symbolProcessorProviders
-import com.tschuchort.compiletesting.useKsp2
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
