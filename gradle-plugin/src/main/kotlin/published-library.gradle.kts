@@ -1,124 +1,111 @@
-
-import org.gradle.jvm.tasks.Jar
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
+import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     id("library")
-    id("maven-publish")
-    id("signing")
     id("org.jetbrains.dokka")
-    id("se.ansman.sonatype-publish-fix")
+    id("org.jetbrains.dokka-javadoc")
+    id("com.vanniktech.maven.publish")
+    id("signing")
 }
 
-version = providers.gradleProperty("version").get()
-group = "se.ansman.kotshi"
+val group = "se.ansman.kotshi"
+    .also { project.group = it }
+val artifactId = name
+val version = providers.gradleProperty("version").get()
+    .also { project.version = it }
 
-fun MavenPublication.printPublishedInfo() {
-    println("Published artifact $groupId:$artifactId:$version")
+val gitCommit = project.providers
+    .exec {
+        commandLine("git", "rev-parse", "HEAD")
+        workingDir = project.rootDir
+    }
+    .run {
+        result.flatMap {
+            it.assertNormalExitValue()
+            it.rethrowFailure()
+            standardOutput.asText
+        }
+    }
+    .map { it.trim() }
+
+
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    val group = project.group
+    val artifactId = project.name
+    val version = providers.gradleProperty("version").get()
+    doLast {
+        println("Published artifact $group:$artifactId:$version")
+    }
 }
 
-fun ExtraPropertiesExtension.getOrPut(name: String, block: () -> String): String =
-    if (has(name)) get(name) as String else block().also { set(name, it) }
+val signArtifacts = providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() ?: false
+mavenPublishing {
+    coordinates(group, artifactId, version)
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    configure(
+        KotlinJvm(
+            javadocJar = JavadocJar.Dokka(tasks.dokkaGeneratePublicationJavadoc.name),
+            sourcesJar = true
+        )
+    )
+
+    if (signArtifacts) {
+        signAllPublications()
+    }
+
+    pom {
+        name.set("Kotshi ${project.name}")
+        description = "An annotations processor that generates Moshi adapters from Kotlin data classes"
+        url = "https://github.com/ansman/kotshi"
+        licenses {
+            license {
+                name = "The Apache Software License, Version 2.0"
+                url = gitCommit.map { "https://github.com/ansman/kotshi/blob/$it/LICENSE.txt" }
+                distribution = "repo"
+            }
+        }
+        developers {
+            developer {
+                id = "ansman"
+                name = "Nicklas Ansman"
+                email = "nicklas@ansman.se"
+            }
+        }
+        scm {
+            connection = "scm:git:git://github.com/ansman/kotshi.git"
+            developerConnection = "scm:git:ssh://git@github.com/ansman/kotshi.git"
+            url = "https://github.com/ansman/kotshi"
+        }
+    }
+}
+
+if (signArtifacts) {
+    signing {
+        useGpgCmd()
+    }
+}
+
+tasks.register("publishSnapshot") {
+    if (providers.gradleProperty("version").get().endsWith("-SNAPSHOT")) {
+        dependsOn("publishAllPublicationsToMavenCentralRepository")
+    }
+}
 
 tasks.withType<DokkaTask>().configureEach {
-    moduleVersion.set(version.toString())
+    moduleVersion.set(version)
     dokkaSourceSets.configureEach {
         externalDocumentationLink { url.set(uri("https://square.github.io/okio/2.x/okio/").toURL()) }
         externalDocumentationLink { url.set(uri("https://square.github.io/moshi/1.x/moshi/").toURL()) }
         sourceLink {
             localDirectory.set(file("src/main/kotlin"))
             remoteUrl.set(
-                uri("https://github.com/ansman/kotshi/blob/main/${name}/src/main/kotlin").toURL()
+                gitCommit.map { uri("https://github.com/ansman/kotshi/blob/${it}/${name}/src/main/kotlin").toURL() }
             )
             remoteLineSuffix.set("#L")
         }
-    }
-}
-
-tasks.withType<AbstractPublishToMaven>().configureEach {
-    doLast { publication.printPublishedInfo() }
-}
-
-val sourcesJar = tasks.register<Jar>("sourcesJar") {
-    dependsOn("classes")
-    archiveClassifier.set("sources")
-    from(sourceSets.getByName("main").allSource)
-}
-
-val dokkaJavadoc = tasks.named("dokkaJavadoc")
-val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
-    from(dokkaJavadoc)
-    archiveClassifier.set("javadoc")
-}
-
-val publication = with(the<PublishingExtension>()) {
-    repositories.maven {
-        name = "mavenCentral"
-        setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-        credentials.apply {
-            username = providers.gradleProperty("sonatype.oss.sonatype.org.username")
-                .orElse(providers.environmentVariable("SONATYPE_USERNAME"))
-                .orNull
-            password = providers.gradleProperty("sonatype.oss.sonatype.org.password")
-                .orElse(providers.environmentVariable("SONATYPE_PASSWORD"))
-                .orNull
-        }
-    }
-
-    repositories.maven {
-        name = "sonatypeSnapshots"
-        setUrl("https://oss.sonatype.org/content/repositories/snapshots/")
-        with(credentials) {
-            username = providers.gradleProperty("sonatype.oss.sonatype.org.username")
-                .orElse(providers.environmentVariable("SONATYPE_USERNAME"))
-                .orNull
-            password = providers.gradleProperty("sonatype.oss.sonatype.org.password")
-                .orElse(providers.environmentVariable("SONATYPE_PASSWORD"))
-                .orNull
-        }
-    }
-
-    publications.register<MavenPublication>("kotshi") {
-        from(components["java"])
-        artifact(sourcesJar)
-        artifact(dokkaJavadocJar)
-
-        with(pom) {
-            name.set("Kotshi ${project.name}")
-            description.set("An annotations processor that generates Moshi adapters from Kotlin data classes")
-            url.set("https://github.com/ansman/kotshi")
-            licenses {
-                license {
-                    name.set("The Apache Software License, Version 2.0")
-                    url.set("https://github.com/ansman/kotshi/blob/main/LICENSE.txt")
-                    distribution.set("repo")
-                }
-            }
-            developers {
-                developer {
-                    id.set("ansman")
-                    name.set("Nicklas Ansman Giertz")
-                    email.set("nicklas@ansman.se")
-                }
-            }
-            scm {
-                connection.set("scm:git:git://github.com/ansman/kotshi.git")
-                developerConnection.set("scm:git:ssh://git@github.com/ansman/kotshi.git")
-                url.set("https://github.com/ansman/kotshi")
-            }
-        }
-    }
-}
-
-if (providers.gradleProperty("signArtifacts").orNull?.toBooleanStrict() == true) {
-    configure<SigningExtension> {
-        useGpgCmd()
-        sign(publication.get())
-    }
-}
-
-tasks.register("publishSnapshot") {
-    if (version.toString().endsWith("-SNAPSHOT")) {
-        dependsOn("publishAllPublicationsToSonatypeSnapshotsRepository")
     }
 }

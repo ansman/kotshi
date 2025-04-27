@@ -3,7 +3,7 @@
 3. Update the `README.md` with the new version.
 4. `git commit -am "Prepare for release X.Y.Z"` (where X.Y.Z is the new version)
 5. `./publish.sh`.
-6. Close and release on [Sonatype](https://oss.sonatype.org/#stagingRepositories).
+6. Close and release on [Maven Central](https://central.sonatype.com/publishing).
 7. `git push origin`
 8. Release on GitHub:
    1. Create a new release [here](https://github.com/ansman/kotshi/releases/new).

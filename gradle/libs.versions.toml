@@ -16,8 +16,6 @@ kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibili
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-metadata = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 
-sonatypePublishFix = "se.ansman.sonatype-publish-fix:gradle-plugin:1.0.0"
-
 dokka-gradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
 
 auto-common = "com.google.auto:auto-common:1.2.2"
@@ -51,3 +49,5 @@ ksp-commonDeps = { module = "com.google.devtools.ksp:symbol-processing-common-de
 ksp-aaEmbeddable = { module = "com.google.devtools.ksp:symbol-processing-aa-embeddable", version.ref = "ksp" }
 
 asm = "org.ow2.asm:asm:9.8"
+
+gradleMavenPublish = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.31.0"
