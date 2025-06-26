@@ -10,7 +10,7 @@ moshi-latest = "1.15.2"
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.17.0"
+kotlinx-binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.18.0"
 
 [libraries]
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
