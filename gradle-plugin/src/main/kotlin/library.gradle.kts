@@ -24,7 +24,8 @@ kotlin {
             "-Xsuppress-version-warnings",
             "-opt-in=kotlin.RequiresOptIn",
             "-Xjvm-default=all",
-            "-Xcontext-receivers"
+            "-Xcontext-parameters",
+            "-Xannotation-default-target=param-property",
         )
     }
 }
