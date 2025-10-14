@@ -2,7 +2,7 @@
 kotlin = "2.2.10"
 auto-service = "1.1.1"
 kotlinpoet = "2.2.0"
-compileTesting = "0.8.0"
+compileTesting = "0.10.1"
 incap = "1.0.0"
 ksp = "2.2.10-2.0.2"
 moshi-oldestSupported = "1.8.0"
