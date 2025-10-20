@@ -1,5 +1,5 @@
 # Kotshi [![Build Gradle](https://github.com/ansman/kotshi/actions/workflows/gradle.yml/badge.svg)](https://github.com/ansman/kotshi/actions/workflows/gradle.yml) [![Maven Central](https://img.shields.io/maven-central/v/se.ansman.kotshi/api.svg)](https://central.sonatype.com/search?namespace=se.ansman.kotshi)
-An annotation processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
+A Kotlin Symbol Processor that generates [Moshi](https://github.com/square/moshi) adapters from Kotlin classes.
 
 There is a reflective adapter for Kotlin but that requires the kotlin reflection library which adds a lot of methods and
 increases the binary size which in a constrained environment such as Android is not preferable.
@@ -8,7 +8,7 @@ This is where Kotshi comes in, it generates fast and optimized adapters for your
 written them by hand yourself. It will automatically regenerate the adapters when you modify your class.
 
 It's made to work with minimal setup, through there are [limitations](#limitations).
-Most of the limitations will be addressed as the support for Kotlin annotation processors improves.
+Most of the limitations will be addressed as the support for Kotlin Symbol Processors improves.
 
 You can find the generated documentation by visiting [kotshi.ansman.se](https://kotshi.ansman.se/).
 
