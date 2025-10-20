@@ -40,9 +40,6 @@ moshi-latest = { module = "com.squareup.moshi:moshi", version.ref = "moshi-lates
 
 findBugs = "com.google.code.findbugs:jsr305:3.0.2"
 
-incap-api = { module = "net.ltgt.gradle.incap:incap", version.ref = "incap" }
-incap-compiler = { module = "net.ltgt.gradle.incap:incap-processor", version.ref = "incap" }
-
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 ksp-commonDeps = { module = "com.google.devtools.ksp:symbol-processing-common-deps", version.ref = "ksp" }
