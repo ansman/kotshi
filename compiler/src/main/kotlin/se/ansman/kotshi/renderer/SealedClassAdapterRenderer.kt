@@ -21,22 +21,22 @@ class SealedClassAdapterRenderer(
     private val labels = adapter.subtypes.map { it.label }
     private val labelOptions = jsonOptionsProperty(labels)
     private val adapters by lazy {
-        PropertySpec
-            .builder(nameAllocator.newName("adapters"), ARRAY.plusParameter(adapterType), KModifier.PRIVATE)
-            .initializer(
-                CodeBlock.builder()
-                    .add("arrayOf(«")
-                    .applyEachIndexed(adapter.subtypes) { index, subtype ->
-                        if (index > 0) {
-                            add(",")
-                        }
-                        add("\nmoshi.adapter<%T>(", adapter.targetType)
-                        add(subtype.render(forceBox = true))
-                        add(")")
-                    }
-                    .add("\n»)\n")
-                    .build())
-            .build()
+        adapter.subtypes.map { subtype ->
+            val subtypeName = when (val type = subtype.type) {
+                is ClassName -> type.simpleName
+                else -> type.toString().substringAfterLast('.')
+            }
+            val adapterName = "adapter_${adapter.targetSimpleNames.joinToString("_")}_$subtypeName"
+            PropertySpec
+                .builder(nameAllocator.newName(adapterName), adapterType, KModifier.PRIVATE)
+                .initializer(
+                    CodeBlock.builder()
+                        .add("moshi.adapter<%T>(", adapter.targetType)
+                        .add(subtype.render(forceBox = true))
+                        .add(")")
+                        .build())
+                .build()
+        }
     }
 
     private val defaultAdapterIndex = adapter.subtypes.indexOfFirst { it.type == adapter.defaultType }
@@ -50,7 +50,7 @@ class SealedClassAdapterRenderer(
     }
 
     private val defaultAdapterAccessor = when {
-        defaultAdapterIndex != -1 -> CodeBlock.of("%N[%L]", adapters, defaultAdapterIndex)
+        defaultAdapterIndex != -1 -> CodeBlock.of("%N", adapters[defaultAdapterIndex])
         defaultAdapterProperty != null -> CodeBlock.of("%N", defaultAdapterProperty)
         else -> null
     }
@@ -72,7 +72,9 @@ class SealedClassAdapterRenderer(
             .build())
         addProperty(labelKeyOptions)
         addProperty(labelOptions)
-        addProperty(adapters)
+        adapters.forEach { adapter ->
+            addProperty(adapter)
+        }
 
         if (defaultAdapterProperty != null) {
             addProperty(defaultAdapterProperty)
@@ -112,7 +114,12 @@ class SealedClassAdapterRenderer(
                     }
                 }
                 addElse {
-                    addStatement("adapters[labelIndex]")
+                    addControlFlow("when·(labelIndex)") {
+                        adapters.forEachIndexed { index, adapter ->
+                            addStatement("%L·-> %N", index, adapter)
+                        }
+                        addStatement("else·-> throw·%T(%P)", IllegalStateException::class.java, "Unexpected label index: \$labelIndex")
+                    }
                 }
                 addStatement("return·adapter.fromJson(%N)", readerParameter)
             }
@@ -139,7 +146,7 @@ class SealedClassAdapterRenderer(
             .addElse {
                 addControlFlow("val adapter = when (%N)", value) {
                     adapter.subtypes.forEachIndexed { index, subtype ->
-                        addStatement("is %T·-> %N[%L]", subtype.wildcardType, adapters, index)
+                        addStatement("is %T·-> %N", subtype.wildcardType, adapters[index])
                     }
                     val defaultType = adapter.defaultType
                     if (defaultType != null && defaultAdapterIndex == -1) {
