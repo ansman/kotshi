@@ -47,4 +47,4 @@ ksp-aaEmbeddable = { module = "com.google.devtools.ksp:symbol-processing-aa-embe
 
 asm = "org.ow2.asm:asm:9.9"
 
-gradleMavenPublish = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.34.0"
+gradleMavenPublish = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.35.0"
