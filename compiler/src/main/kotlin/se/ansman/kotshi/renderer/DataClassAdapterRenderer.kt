@@ -348,7 +348,7 @@ class DataClassAdapterRenderer(
                 if (hasDefaultValueConstructor) {
                     val allMasksAreSetBlock = maskNames.withIndex()
                         .map { (index, maskName) ->
-                            CodeBlock.of("$maskName·== 0x${Integer.toHexString(maskAllSetValues[index])}.toInt()")
+                            CodeBlock.of("$maskName·== %L", maskAllSetValues[index])
                         }
                         .joinToCode("·&& ")
                     beginControlFlow("if (%L)", allMasksAreSetBlock)
@@ -488,7 +488,7 @@ class DataClassAdapterRenderer(
             } else if (hasDefaultValue) {
                 CodeBlock.builder()
                     .add("// \$mask = \$mask and (1 shl %L).inv()\n", maskIndex)
-                    .addStatement("%1L = %1L and 0x%2L.toInt()", maskName, Integer.toHexString(mask.inv()))
+                    .addStatement("%1L = %1L and %2L", maskName, mask.inv())
                     .build()
             } else {
                 null
@@ -496,14 +496,14 @@ class DataClassAdapterRenderer(
             isSet = if (localIsSet != null) {
                 CodeBlock.of("%N", localIsSet)
             } else if (hasDefaultValue) {
-                CodeBlock.of("%1L and 0x%2L.toInt() != 0", maskName, Integer.toHexString(mask))
+                CodeBlock.of("%1L and %2L != 0", maskName, mask)
             } else {
                 CodeBlock.of("%N != null", value)
             },
             isNotSet = if (localIsSet != null) {
                 CodeBlock.of("!%N", localIsSet)
             } else if (hasDefaultValue) {
-                CodeBlock.of("%1L and 0x%2L.toInt() == 0", maskName, Integer.toHexString(mask))
+                CodeBlock.of("%1L and %2L == 0", maskName, mask)
             } else {
                 CodeBlock.of("%N == null", value)
             },
