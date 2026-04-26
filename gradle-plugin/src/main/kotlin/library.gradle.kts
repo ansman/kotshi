@@ -1,5 +1,6 @@
 
 import org.gradle.accessors.dm.LibrariesForLibs
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -19,11 +20,11 @@ extensions.configure<JavaPluginExtension> {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_1_8)
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
         allWarningsAsErrors.set(true)
         freeCompilerArgs.addAll(
             "-Xsuppress-version-warnings",
             "-opt-in=kotlin.RequiresOptIn",
-            "-Xjvm-default=all",
             "-Xcontext-parameters",
             "-Xannotation-default-target=param-property",
         )

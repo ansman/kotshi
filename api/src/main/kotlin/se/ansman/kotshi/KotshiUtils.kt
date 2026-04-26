@@ -138,8 +138,11 @@ object KotshiUtils {
             override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
                 when (method.name) {
                     "annotationType" -> this@createJsonQualifierImplementation
-                    "equals" -> args!![0] === proxy || isInstance(args!![0]) && annotationMethods.all { m ->
-                        annotationValuesEquals(m.invoke(args[0]), annotationArguments[m.name] ?: m.defaultValue)
+                    "equals" -> {
+                        val other = args?.get(0)
+                        other === proxy || isInstance(other) && annotationMethods.all { m ->
+                            annotationValuesEquals(m.invoke(other), annotationArguments[m.name] ?: m.defaultValue)
+                        }
                     }
                     // For the implementation see https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/annotation/Annotation.html#hashCode()
                     "hashCode" -> annotationMethods.sumOf { m ->
