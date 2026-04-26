@@ -554,14 +554,14 @@ abstract class BaseGeneratorTest {
     }
 
     @Test
-    fun `language version 1_8 is rejected`() {
+    fun `non data object does not logs warnings when using Kotlin 1_8`() {
         val source = kotlin("source.kt", """
             @se.ansman.kotshi.JsonSerializable
             object TestObject
         """)
         val result = compile(source, languageVersion = "1.8")
-        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result::messages).contains("Language version 1.8 is no longer supported")
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        assertThat(result::messages).doesNotContain(Errors.nonDataObject)
     }
 
     @Test
