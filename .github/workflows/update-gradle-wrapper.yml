@@ -5,19 +5,22 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   update-gradle-wrapper:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3
         with:
           distribution: 'zulu'
           java-version: '21'
 
       - name: Update Gradle Wrapper
-        uses: gradle-update/update-gradle-wrapper-action@v1
+        uses: gradle-update/update-gradle-wrapper-action@0407394b9d173dfc9cf5695f9f560fef6d61a5fe # v1
         with:
           repo-token: ${{ secrets.GRADLE_WRAPPER_UPDATE_TOKEN }}
