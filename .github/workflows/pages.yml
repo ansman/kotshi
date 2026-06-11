@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: "pages"
@@ -16,17 +14,19 @@ concurrency:
 
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - uses: actions/setup-java@v2
+        uses: actions/configure-pages@b8130d9ab958b325bbde9786d62f2c97a9885a0e # v3
+      - uses: actions/setup-java@91d3aa4956ec4a53e477c4907347b5e3481be8c9 # v2
         with:
           distribution: 'zulu'
           java-version: '21'
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/gradle-build-action@a8f75513eafdebd8141bd1cd4e30fcd194af8dfa # v2
         with:
           arguments: :api:dokkaHtml
       - name: Archive
@@ -38,12 +38,15 @@ jobs:
             -cvf ${{ runner.temp }}/artifact.tar \
             .
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: github-pages
           path: ${{ runner.temp }}/artifact.tar
 
   deploy:
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -52,4 +55,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@de14547edc9944350dc0481aa5b7afb08e75f254 # v2
