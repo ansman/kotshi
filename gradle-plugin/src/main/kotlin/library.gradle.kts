@@ -25,8 +25,6 @@ kotlin {
         freeCompilerArgs.addAll(
             "-Xsuppress-version-warnings",
             "-opt-in=kotlin.RequiresOptIn",
-            "-Xcontext-parameters",
-            "-Xannotation-default-target=param-property",
         )
     }
 }
