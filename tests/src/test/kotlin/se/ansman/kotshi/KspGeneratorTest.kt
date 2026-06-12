@@ -22,7 +22,7 @@ class KspGeneratorTest : BaseGeneratorTest() {
         get() = temporaryFolder.resolve("ksp/sources/kotlin/").listFiles()?.asList() ?: emptyList()
 
     override fun KotlinCompilation.setUp(options: Map<String, String>) {
-        configureKsp(useKsp2 = true) {
+        configureKsp {
             // Needed because KCT doesn't clean up sources between runs
             workingDir.resolve("sources").deleteRecursively()
             incremental = true
