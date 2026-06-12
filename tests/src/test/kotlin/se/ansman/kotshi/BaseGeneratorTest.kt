@@ -588,8 +588,11 @@ abstract class BaseGeneratorTest {
                 workingDir = temporaryFolder
                 this.sources = sources.asList()
                 inheritClassPath = true
-                this.languageVersion = languageVersion
-                this.apiVersion = languageVersion
+                optIn = emptyList()
+                if (languageVersion != null) {
+                    this.languageVersion = languageVersion
+                    this.apiVersion = languageVersion
+                }
                 messageOutputStream = System.out // see diagnostics in real time
                 setUp(options)
             }
