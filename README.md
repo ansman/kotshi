@@ -7,7 +7,7 @@ increases the binary size which in a constrained environment such as Android is 
 This is where Kotshi comes in, it generates fast and optimized adapters for your Kotlin data classes, just as if you'd
 written them by hand yourself. It will automatically regenerate the adapters when you modify your class.
 
-It's made to work with minimal setup, through there are [limitations](#limitations).
+It's made to work with minimal setup, though there are limitations.
 Most of the limitations will be addressed as the support for Kotlin Symbol Processors improves.
 
 You can find the generated documentation by visiting [kotshi.ansman.se](https://kotshi.ansman.se/).
