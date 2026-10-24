@@ -19,29 +19,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Pages
-        uses: actions/configure-pages@b8130d9ab958b325bbde9786d62f2c97a9885a0e # v3
-      - uses: actions/setup-java@91d3aa4956ec4a53e477c4907347b5e3481be8c9 # v2
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'zulu'
           java-version: '21'
-      - uses: gradle/gradle-build-action@a8f75513eafdebd8141bd1cd4e30fcd194af8dfa # v2
-        with:
-          arguments: :api:dokkaHtml
-      - name: Archive
-        shell: bash
-        run: |
-          tar \
-            --dereference --hard-dereference \
-            --directory api/build/dokka/html/ \
-            -cvf ${{ runner.temp }}/artifact.tar \
-            .
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Generate API documentation
+        run: ./gradlew :api:dokkaGeneratePublicationHtml --warning-mode=all
       - name: Upload artifact
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          name: github-pages
-          path: ${{ runner.temp }}/artifact.tar
+          path: api/build/dokka/html/
 
   deploy:
     permissions:
@@ -55,4 +46,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@de14547edc9944350dc0481aa5b7afb08e75f254 # v2
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

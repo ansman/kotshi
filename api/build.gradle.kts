@@ -1,5 +1,3 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
     id("published-library")
 }
@@ -9,17 +7,16 @@ dependencies {
 }
 
 val packagesMarkdown = layout.buildDirectory.file("generated/docs/packages.md")
-val buildPackagesDocs by tasks.registering(CopyReadmeTask::class) {
+val buildPackagesDocs = tasks.register<CopyReadmeTask>("buildPackagesDocs") {
     readme.set(rootProject.file("README.md"))
     outputFile.set(packagesMarkdown)
 }
 
-tasks.withType<DokkaTask>().configureEach {
-    dependsOn(buildPackagesDocs)
+dokka {
     moduleName.set("kotshi")
     dokkaSourceSets {
         configureEach {
-            includes.from(packagesMarkdown)
+            includes.from(buildPackagesDocs.flatMap { it.outputFile })
         }
     }
 }

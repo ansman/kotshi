@@ -1,6 +1,6 @@
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
-import org.jetbrains.dokka.gradle.DokkaTask
+import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
     id("library")
@@ -48,7 +48,7 @@ mavenPublishing {
     configure(
         KotlinJvm(
             javadocJar = JavadocJar.Dokka(tasks.dokkaGeneratePublicationJavadoc.name),
-            sourcesJar = true
+            sourcesJar = SourcesJar.Sources()
         )
     )
 
@@ -94,15 +94,19 @@ tasks.register("publishSnapshot") {
     }
 }
 
-tasks.withType<DokkaTask>().configureEach {
+dokka {
     moduleVersion.set(version)
     dokkaSourceSets.configureEach {
-        externalDocumentationLink { url.set(uri("https://square.github.io/okio/2.x/okio/").toURL()) }
-        externalDocumentationLink { url.set(uri("https://square.github.io/moshi/1.x/moshi/").toURL()) }
+        externalDocumentationLinks.register("okio") {
+            url("https://lysine.dev/okio/2.x/okio/")
+        }
+        externalDocumentationLinks.register("moshi") {
+            url("https://square.github.io/moshi/1.x/moshi/")
+        }
         sourceLink {
             localDirectory.set(file("src/main/kotlin"))
             remoteUrl.set(
-                gitCommit.map { uri("https://github.com/ansman/kotshi/blob/${it}/${name}/src/main/kotlin").toURL() }
+                gitCommit.map { uri("https://github.com/ansman/kotshi/blob/$it/$artifactId/src/main/kotlin") }
             )
             remoteLineSuffix.set("#L")
         }
