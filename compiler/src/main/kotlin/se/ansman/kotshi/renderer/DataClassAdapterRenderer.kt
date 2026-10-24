@@ -47,7 +47,7 @@ class DataClassAdapterRenderer(
                 .map { it.toReflectionString() }
         }
         return ProguardConfig(
-            targetClass = adapter.adapterClassName,
+            targetClass = adapter.rawTargetType,
             targetConstructorParams = parameterTypes,
         )
     }

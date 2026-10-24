@@ -1,6 +1,8 @@
 package se.ansman.kotshi
 
 import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -29,6 +31,23 @@ class KspGeneratorTest : BaseGeneratorTest() {
             symbolProcessorProviders += KotshiSymbolProcessorProvider()
             processorOptions.putAll(options)
         }
+    }
+
+    @Test
+    fun `generated ProGuard rule targets the model class`() {
+        val result = compile(SourceFile.kotlin("source.kt", """
+            package sample
+
+            @se.ansman.kotshi.JsonSerializable
+            data class Model(val value: String = "default")
+        """))
+
+        assertThat(result::exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        val proguardRule = temporaryFolder.resolve(
+            "ksp/sources/resources/META-INF/proguard/kotshi-sample.Model.pro"
+        ).readText()
+        assertThat(proguardRule).contains("-keepclassmembers class sample.Model {")
+        assertThat(proguardRule).doesNotContain("-keepclassmembers class KotshiModelJsonAdapter {")
     }
 
     // https://github.com/tschuchortdev/kotlin-compile-testing/issues/312
